@@ -38,6 +38,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Endpoints Públicos
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/onboarding/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/procedimentos/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/disponibilidade/**").permitAll()
@@ -48,8 +49,13 @@ public class SecurityConfig {
                 // H2 Console (se habilitado em dev)
                 .requestMatchers("/h2-console/**").permitAll()
 
-                // Endpoints protegidos
-                .anyRequest().authenticated()
+                // Recursos estáticos Frontend e SPA
+                .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.jpg", "/*.svg", "/assets/**", "/media/**").permitAll()
+                .requestMatchers("/catalogo/**", "/agendar/**", "/meus-agendamentos/**", "/admin/**", "/login/**", "/registrar/**", "/parceiro/**").permitAll()
+
+                // Endpoints protegidos da API
+                .requestMatchers("/api/**").authenticated()
+                .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

@@ -10,14 +10,19 @@ import {
   Procedimento,
   Profissional,
   StatusAgendamento,
-  Usuario
+  Usuario,
+  TenantPublicDTO,
+  CadastroLojistaRequest,
+  CadastroLojistaResponse
 } from '../models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private readonly baseUrl = 'http://localhost:8080/api/v1';
+  private readonly baseUrl = (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
+    ? '/api/v1'
+    : 'http://localhost:8080/api/v1';
 
   constructor(private http: HttpClient) {}
 
@@ -211,6 +216,20 @@ export class ApiService {
   // Dashboard
   getDashboardResumo(): Observable<DashboardResumo> {
     return this.http.get<DashboardResumo>(`${this.baseUrl}/dashboard/resumo`);
+  }
+
+  // Onboarding de Lojistas / Parceiros Whitelabel
+  cadastrarLojista(payload: CadastroLojistaRequest): Observable<CadastroLojistaResponse> {
+    return this.http.post<CadastroLojistaResponse>(`${this.baseUrl}/onboarding/lojista`, payload);
+  }
+
+  getTenantPorSlug(slug: string): Observable<TenantPublicDTO> {
+    return this.http.get<TenantPublicDTO>(`${this.baseUrl}/onboarding/tenant/${slug}`);
+  }
+
+  verificarDisponibilidadeSlug(slug: string): Observable<{ disponivel: boolean }> {
+    const params = new HttpParams().set('slug', slug);
+    return this.http.get<{ disponivel: boolean }>(`${this.baseUrl}/onboarding/verificar-slug`, { params });
   }
 }
 

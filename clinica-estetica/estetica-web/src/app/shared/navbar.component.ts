@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
+import { TenantService } from '../core/services/tenant.service';
 
 @Component({
   selector: 'app-navbar',
@@ -11,19 +12,26 @@ import { AuthService } from '../core/services/auth.service';
     <header class="bg-white/90 backdrop-blur-md border-b border-nude-200 sticky top-0 z-40 transition-all shadow-[0_2px_15px_-3px_rgba(0,0,0,0.03)]">
       <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         
-        <!-- 1. Logo e Marca da Clínica -->
+        <!-- 1. Logo e Marca da Clínica (Dinâmica por Lojista / Whitelabel) -->
         <a routerLink="/" class="flex items-center gap-3 group flex-shrink-0">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-400 via-rose-500 to-champagne-400 flex items-center justify-center text-white shadow-md shadow-rose-200 group-hover:scale-105 transition-transform duration-300">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-            </svg>
-          </div>
+          @if (tenantService.logoUrl()) {
+            <div class="w-10 h-10 rounded-2xl overflow-hidden border border-nude-200 shadow-sm flex items-center justify-center bg-white group-hover:scale-105 transition-transform">
+              <img [src]="tenantService.logoUrl()!" [alt]="tenantService.nomeEmpresa()" class="w-full h-full object-contain p-1" />
+            </div>
+          } @else {
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-400 via-rose-500 to-champagne-400 flex items-center justify-center text-white shadow-md shadow-rose-200 group-hover:scale-105 transition-transform duration-300"
+                 [style.background]="tenantService.tenant() ? 'linear-gradient(135deg, ' + tenantService.corPrimaria() + ', ' + tenantService.corSecundaria() + ')' : null">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+              </svg>
+            </div>
+          }
           <div>
             <span class="font-serif text-xl lg:text-2xl font-bold tracking-tight text-stone-900 block leading-none">
-              L'Élégance
+              {{ tenantService.nomeEmpresa() }}
             </span>
             <span class="text-[9px] uppercase tracking-widest text-nude-500 font-semibold block mt-1">
-              Clínica de Estética
+              {{ tenantService.tenant() ? 'Portal Oficial' : 'Clínica de Estética' }}
             </span>
           </div>
         </a>
@@ -189,6 +197,7 @@ import { AuthService } from '../core/services/auth.service';
 })
 export class NavbarComponent {
   authService = inject(AuthService);
+  tenantService = inject(TenantService);
   private router = inject(Router);
 
   menuMobileAberto = signal<boolean>(false);

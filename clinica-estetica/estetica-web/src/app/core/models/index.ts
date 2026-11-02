@@ -114,3 +114,34 @@ export interface DashboardResumo {
   proximosAtendimentos: Agendamento[];
 }
 
+export interface TenantPublicDTO {
+  id: number;
+  nomeEmpresa: string;
+  slug: string;
+  linkPersonalizado: string;
+  logoUrl?: string;
+  corPrimaria: string;
+  corSecundaria: string;
+  telefoneWhatsApp?: string;
+}
+
+export interface CadastroLojistaRequest {
+  nomeEmpresa: string;
+  slug: string;
+  logoUrl?: string;
+  corPrimaria: string;
+  corSecundaria: string;
+  nomeResponsavel: string;
+  email: string;
+  telefoneWhatsApp: string;
+  senha: string;
+}
+
+export interface CadastroLojistaResponse {
+  token: string;
+  linkPersonalizado: string;
+  tenant: TenantPublicDTO;
+  usuario: Usuario;
+}
+
+

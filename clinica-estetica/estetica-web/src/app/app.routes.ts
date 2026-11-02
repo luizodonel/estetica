@@ -49,6 +49,15 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
   },
   {
+    path: 'parceiro/cadastro-lojista',
+    loadComponent: () => import('./features/onboarding-lojista/onboarding-lojista.component').then(m => m.OnboardingLojistaComponent)
+  },
+  {
+    path: 'onboarding-parceiro',
+    redirectTo: 'parceiro/cadastro-lojista',
+    pathMatch: 'full'
+  },
+  {
     path: '**',
     redirectTo: 'catalogo'
   }
