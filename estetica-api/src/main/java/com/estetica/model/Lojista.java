@@ -99,6 +99,21 @@ public class Lojista implements UserDetails {
     @Column(name = "data_pagamento")
     private LocalDateTime dataPagamento;
 
+    @Column(name = "data_vencimento")
+    private LocalDateTime dataVencimento;
+
+    @Column(name = "renovacao_payment_id", length = 100)
+    private String renovacaoPaymentId;
+
+    @Column(name = "renovacao_pix_copia_cola", columnDefinition = "TEXT")
+    private String renovacaoPixCopiaCola;
+
+    @Column(name = "renovacao_pix_qr_code_base64", columnDefinition = "TEXT")
+    private String renovacaoPixQrCodeBase64;
+
+    @Column(name = "renovacao_criada_em")
+    private LocalDateTime renovacaoCriadaEm;
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean ativo = true;

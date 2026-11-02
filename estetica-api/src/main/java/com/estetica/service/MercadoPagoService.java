@@ -31,6 +31,15 @@ public class MercadoPagoService {
     }
 
     public Map<String, Object> criarPagamentoPix(ClinicaTenant tenant, com.estetica.model.Lojista lojista, BigDecimal valor) {
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Clínica");
+        return criarPagamentoPix(tenant, lojista, valor, "Ativação Sistema Lojista Digital - " + nomeEmpresa);
+    }
+
+    public Map<String, Object> criarPagamentoPix(ClinicaTenant tenant, com.estetica.model.Lojista lojista, BigDecimal valor, String descricao) {
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Clínica");
+        String slug = lojista != null ? lojista.getSlug() : (tenant != null ? tenant.getSlug() : "clinica");
+        String externalRef = lojista != null ? "LOJISTA-" + lojista.getId() : (tenant != null ? "TENANT-" + tenant.getId() : "REF-PIX");
+
         if (accessToken == null || accessToken.contains("TEST-XXXXXXXX") || accessToken.contains("placeholder") || accessToken.trim().isEmpty()) {
             log.info("[MercadoPago] Utilizando mock de pagamento PIX para ambiente de teste");
             Map<String, Object> mockResponse = new HashMap<>();
@@ -39,7 +48,7 @@ public class MercadoPagoService {
 
             Map<String, Object> poi = new HashMap<>();
             Map<String, Object> td = new HashMap<>();
-            td.put("qr_code", "00020101021226870014br.gov.bcb.pix2565pix.mercadopago.com/transfer/receiver/f2f/TEST-PIX-MOCK-" + tenant.getSlug());
+            td.put("qr_code", "00020101021226870014br.gov.bcb.pix2565pix.mercadopago.com/transfer/receiver/f2f/TEST-PIX-MOCK-" + slug);
             td.put("qr_code_base64", "iVBORw0KGgoAAAANSUhEUgAAAIIAAACCCAIAAAAFYYeqAAADAUlEQVR4nO2WMWIbMRAD/f9PJ006yTGE7ILDHKa1Z0UAzX19HeXXUc5mB9EZEHQGBJ0BQWdA0Bm+JRl777do7/n7b3UGRPbOgMjeGRDZOwMie2dAZJdmePNPAmdjK3Cymyc2npKHk908sfGUPJzs5omNp+ThZDdPbDwlDye7eWLjKXk42c0TG0/Jw8lunth4Sh5OdvPExlPycLKbJzaekoeT3Tyx8ZQ8nOzmiY2n5OFkN09sPCUPJ7t5YuMpeTjZzRMbT8nDyW6e2HhKHk5288TGU/JwspsnNp6Sh5NdOpGMnYSTvTMgsncGRPbOgMjeGRDZOwMi+5sZknjV7P3PQ+kMCDoDgs6AoDMg6Ax/eH1cydMZEHQGBJ0BQWdA0BkQRGeY+k7z7pCtzoCwOgPC6gwIqzMgrM6AsC74YCXXN2YpwlkuK7QzXGwpwlkuK7QzXGwpwlkuK5Q/g/Lcy+obsjoDwuoMCKszIKzOgLA6A8K64IP1FU59U1ZnQFidAWF1BoTVGRBWZ0BYuA/Wh1qKMMVl1XSGx1mKMMVl1XSGx1mKMMVl1fyvMyhcVt+Q1RkQVmdAWJ0BYXUGhNUZENbrX6MoAcj1TVlDdbookU5Vk7SG6nRRIp2qJmkN1emiRDpVTdIaqtNFiXSqmqQ1VKeLEulUNUlrrJqNxz3N6gwIqzMgrM6AsDoDwuoMCOuHEz8I/3CHVsQpy6xPwQvAqSZpmfUpeAE41SQtsz4FLwCnmqRl1qfgBeBUk7TM+hS8AJxqkpZZn8JUgEwRZy2zPoWpSFN3yJZZn8JUpKk7ZMusT2Eq0tQdsmXWpzAVaeoO2TLrU5iKNHWHbJn1KdxVBMH6uD4FWki+9XF9CrSQfOvj+hRoIfnWx/Up0ELyrY/rU6CF5Fsfn/DoVN9ZnQFhdQaE1RkQVmdAWJ0BYb2ZIYkSgFzflDVUp4sS6VQ1SWuoThcl0qlqktZQnS5KpFPVJK2hOl2USKeqSVpDdbookU5Vk7TGqtl43NOszoCwOgPC6gyHrd8djxjTCJp0UwAAAABJRU5ErkJggg==");
             poi.put("transaction_data", td);
             mockResponse.put("point_of_interaction", poi);
@@ -55,11 +64,13 @@ public class MercadoPagoService {
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("transaction_amount", valor);
-        requestBody.put("description", "Ativação Sistema Lojista Digital - " + tenant.getNomeEmpresa());
+        requestBody.put("description", descricao != null ? descricao : ("Assinatura - " + nomeEmpresa));
         requestBody.put("payment_method_id", "pix");
-        requestBody.put("external_reference", "TENANT-" + tenant.getId());
+        requestBody.put("external_reference", externalRef);
 
-        String nomeCompleto = lojista.getNomeResponsavel() != null ? lojista.getNomeResponsavel().trim() : "Lojista";
+        String nomeCompleto = (lojista != null && lojista.getNomeResponsavel() != null)
+                ? lojista.getNomeResponsavel().trim()
+                : "Lojista";
         String firstName = nomeCompleto;
         String lastName = "Digital";
         int spaceIndex = nomeCompleto.indexOf(" ");
@@ -69,9 +80,9 @@ public class MercadoPagoService {
             lastName = partes[partes.length - 1];
         }
 
-        String emailPagador = (lojista.getEmail() != null && lojista.getEmail().contains("@"))
+        String emailPagador = (lojista != null && lojista.getEmail() != null && lojista.getEmail().contains("@"))
                 ? lojista.getEmail()
-                : "admin." + tenant.getSlug() + "@logistadigital.com.br";
+                : "admin." + slug + "@logistadigital.com.br";
 
         Map<String, Object> payer = new HashMap<>();
         payer.put("email", emailPagador);
@@ -88,7 +99,7 @@ public class MercadoPagoService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
         try {
-            log.info("[MercadoPago] Criando PIX de R$ {} para a loja: {}", valor, tenant.getNomeEmpresa());
+            log.info("[MercadoPago] Criando PIX de R$ {} para a loja: {} (Desc: {})", valor, nomeEmpresa, descricao);
             ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> body = (Map<String, Object>) response.getBody();
@@ -96,7 +107,7 @@ public class MercadoPagoService {
                 return body;
             }
         } catch (Exception ex) {
-            log.error("[MercadoPago] Erro ao criar PIX de adesão: {}", ex.getMessage(), ex);
+            log.error("[MercadoPago] Erro ao criar PIX: {}", ex.getMessage(), ex);
             throw new RuntimeException("Erro ao comunicar com Mercado Pago: " + ex.getMessage(), ex);
         }
 

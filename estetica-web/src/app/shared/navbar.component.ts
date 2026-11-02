@@ -105,6 +105,17 @@ import { TenantService } from '../core/services/tenant.service';
                   <span>⚙️</span>
                   <span>Cadastros</span>
                 </a>
+
+                <a 
+                  routerLink="/admin/assinatura" 
+                  routerLinkActive="bg-white text-rose-600 shadow-sm font-bold" 
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-600 hover:text-rose-600 transition-all whitespace-nowrap flex items-center gap-1.5 relative">
+                  <span>💳</span>
+                  <span>Assinatura</span>
+                  @if (tenantService.tenant()?.diasRestantes !== undefined && tenantService.tenant()!.diasRestantes! <= 5) {
+                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute -top-0.5 -right-0.5"></span>
+                  }
+                </a>
               }
             </div>
           }
@@ -188,6 +199,11 @@ import { TenantService } from '../core/services/tenant.service';
             <a routerLink="/admin/gestao" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-1.5">
               <span>⚙️</span> Cadastros
             </a>
+            @if (authService.isAdmin()) {
+              <a routerLink="/admin/assinatura" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-1.5">
+                <span>💳</span> Assinatura
+              </a>
+            }
           </div>
         </div>
       }

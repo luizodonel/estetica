@@ -19,6 +19,7 @@ import {
   CadastroLojistaRequest,
   CadastroLojistaResponse,
   StatusPagamentoResponse,
+  AssinaturaStatusResponse,
   PrimeiroAcessoRequest,
   VerificarPrimeiroAcessoResponse,
   AuthResponse
@@ -305,5 +306,18 @@ export class ApiService {
 
   atualizarIdentidadeVisual(payload: AtualizarIdentidadeVisualRequest): Observable<TenantPublicDTO> {
     return this.http.put<TenantPublicDTO>(`${this.baseUrl}/onboarding/identidade-visual`, payload);
+  }
+
+  // Assinatura & Renovação Mensal
+  obterStatusAssinatura(slug?: string): Observable<AssinaturaStatusResponse> {
+    let params = new HttpParams();
+    if (slug) params = params.set('slug', slug);
+    return this.http.get<AssinaturaStatusResponse>(`${this.baseUrl}/onboarding/assinatura`, { params });
+  }
+
+  forcarGerarPixRenovacao(slug?: string): Observable<AssinaturaStatusResponse> {
+    let params = new HttpParams();
+    if (slug) params = params.set('slug', slug);
+    return this.http.post<AssinaturaStatusResponse>(`${this.baseUrl}/onboarding/assinatura/gerar-pix`, null, { params });
   }
 }

@@ -91,6 +91,12 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
           class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
           <span>🖼️ Logotipo & Dados</span>
         </button>
+
+        <a
+          routerLink="/admin/assinatura"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 shadow-sm">
+          <span>💳 Minha Assinatura & Renovação</span>
+        </a>
       </div>
 
       <!-- Feedback de Sucesso ou Erro -->

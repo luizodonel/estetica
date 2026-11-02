@@ -174,6 +174,10 @@ export interface TenantPublicDTO {
   bannerTitulo?: string;
   bannerSubtitulo?: string;
   bannerBotaoTexto?: string;
+  statusPagamento?: string;
+  ativo?: boolean;
+  dataVencimento?: string;
+  diasRestantes?: number;
 }
 
 export interface AtualizarBannerRequest {
@@ -224,6 +228,20 @@ export interface StatusPagamentoResponse {
   slug?: string;
   tenant?: TenantPublicDTO;
   usuario?: Usuario;
+}
+
+export interface AssinaturaStatusResponse {
+  nomeEmpresa: string;
+  status: 'ATIVA' | 'VENCENDO' | 'VENCIDA' | 'PENDENTE';
+  dataVencimento?: string;
+  dataPagamento?: string;
+  diasRestantes?: number;
+  podeRenovar: boolean;
+  vencida: boolean;
+  valorMensalidade: number;
+  paymentId?: string;
+  pixCopiaCola?: string;
+  pixQrCodeBase64?: string;
 }
 
 

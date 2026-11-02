@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
-import { DashboardResumo } from '../../../core/models';
+import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -36,6 +36,39 @@ import { DashboardResumo } from '../../../core/models';
           </a>
         </div>
       </div>
+
+      <!-- Alerta de Vencimento / Renovação da Assinatura Mensal (para Administrador) -->
+      @if (resumo()?.isAdmin && assinatura()?.podeRenovar) {
+        <div class="mb-6 p-4 rounded-2xl border transition-all"
+             [class.bg-rose-50]="assinatura()?.vencida"
+             [class.border-rose-200]="assinatura()?.vencida"
+             [class.bg-amber-50]="!assinatura()?.vencida"
+             [class.border-amber-200]="!assinatura()?.vencida">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">{{ assinatura()?.vencida ? '🚨' : '⏳' }}</span>
+              <div>
+                <strong class="text-xs" [class.text-rose-900]="assinatura()?.vencida" [class.text-amber-900]="!assinatura()?.vencida">
+                  {{ assinatura()?.vencida ? 'Assinatura Mensal Vencida!' : 'Renovação da Assinatura Disponível (Vence em ' + (assinatura()?.diasRestantes ?? 0) + ' dia(s))' }}
+                </strong>
+                <p class="text-[11px]" [class.text-rose-700]="assinatura()?.vencida" [class.text-amber-800]="!assinatura()?.vencida">
+                  {{ assinatura()?.vencida 
+                      ? 'Efetue o pagamento Pix para regularizar e restabelecer o acesso completo.' 
+                      : 'Renove antecipadamente via Pix sem perder os dias restantes. Os dias restantes serão somados aos novos 30 dias.' }}
+                </p>
+              </div>
+            </div>
+            <a routerLink="/admin/assinatura"
+               class="px-4 py-2 rounded-xl text-xs font-semibold text-white whitespace-nowrap transition-all shadow-sm shrink-0"
+               [class.bg-rose-600]="assinatura()?.vencida"
+               [class.hover:bg-rose-700]="assinatura()?.vencida"
+               [class.bg-amber-600]="!assinatura()?.vencida"
+               [class.hover:bg-amber-700]="!assinatura()?.vencida">
+              Renovar via Pix →
+            </a>
+          </div>
+        </div>
+      }
 
       <!-- Cards de Métricas do Dia -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -175,6 +208,7 @@ export class AdminDashboardComponent implements OnInit {
   private api = inject(ApiService);
 
   resumo = signal<DashboardResumo | null>(null);
+  assinatura = signal<AssinaturaStatusResponse | null>(null);
   carregando = signal<boolean>(true);
 
   ngOnInit(): void {
@@ -187,6 +221,12 @@ export class AdminDashboardComponent implements OnInit {
       next: (dados) => {
         this.resumo.set(dados);
         this.carregando.set(false);
+        if (dados?.isAdmin) {
+          this.api.obterStatusAssinatura().subscribe({
+            next: (ass) => this.assinatura.set(ass),
+            error: (err) => console.warn('Status assinatura:', err)
+          });
+        }
       },
       error: (err) => {
         console.error(err);

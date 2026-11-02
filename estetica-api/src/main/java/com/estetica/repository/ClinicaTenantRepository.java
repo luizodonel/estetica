@@ -16,5 +16,10 @@ public interface ClinicaTenantRepository extends JpaRepository<ClinicaTenant, Lo
     Optional<ClinicaTenant> findByAdminUsuarioId(Long adminUsuarioId);
 
     Optional<ClinicaTenant> findByMercadoPagoPaymentId(String mercadoPagoPaymentId);
+
+    Optional<ClinicaTenant> findByRenovacaoPaymentId(String renovacaoPaymentId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT t FROM ClinicaTenant t WHERE t.mercadoPagoPaymentId = :paymentId OR t.renovacaoPaymentId = :paymentId")
+    Optional<ClinicaTenant> findByQualquerPaymentId(@org.springframework.data.repository.query.Param("paymentId") String paymentId);
 }
 

@@ -23,6 +23,11 @@ public interface LojistaRepository extends JpaRepository<Lojista, Long> {
 
     Optional<Lojista> findByMercadoPagoPaymentId(String mercadoPagoPaymentId);
 
+    Optional<Lojista> findByRenovacaoPaymentId(String renovacaoPaymentId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT l FROM Lojista l WHERE l.mercadoPagoPaymentId = :paymentId OR l.renovacaoPaymentId = :paymentId")
+    Optional<Lojista> findByQualquerPaymentId(@org.springframework.data.repository.query.Param("paymentId") String paymentId);
+
     boolean existsBySlugIgnoreCase(String slug);
 
     boolean existsByEmailIgnoreCase(String email);

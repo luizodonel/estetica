@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class TenantDTOs {
 
@@ -56,7 +57,9 @@ public class TenantDTOs {
         String bannerSubtitulo,
         String bannerBotaoTexto,
         String statusPagamento,
-        Boolean ativo
+        Boolean ativo,
+        LocalDateTime dataVencimento,
+        Long diasRestantes
     ) {}
 
     public record AtualizarBannerRequest(
@@ -94,5 +97,19 @@ public class TenantDTOs {
         String slug,
         TenantPublicDTO tenant,
         UsuarioDTO usuario
+    ) {}
+
+    public record AssinaturaStatusResponse(
+        String nomeEmpresa,
+        String status, // "ATIVA", "VENCENDO", "VENCIDA", "PENDENTE"
+        LocalDateTime dataVencimento,
+        LocalDateTime dataPagamento,
+        Long diasRestantes,
+        boolean podeRenovar,
+        boolean vencida,
+        BigDecimal valorMensalidade,
+        String paymentId,
+        String pixCopiaCola,
+        String pixQrCodeBase64
     ) {}
 }

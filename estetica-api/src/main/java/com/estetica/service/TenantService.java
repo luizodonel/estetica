@@ -12,11 +12,14 @@ import com.estetica.repository.ClinicaTenantRepository;
 import com.estetica.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
@@ -186,8 +189,8 @@ public class TenantService {
         String status = (String) mpResponse.get("status");
         boolean aprovado = "approved".equalsIgnoreCase(status);
 
-        com.estetica.model.Lojista lojista = lojistaRepository.findByMercadoPagoPaymentId(paymentId).orElse(null);
-        ClinicaTenant tenant = tenantRepository.findByMercadoPagoPaymentId(paymentId).orElse(null);
+        com.estetica.model.Lojista lojista = lojistaRepository.findByQualquerPaymentId(paymentId).orElse(null);
+        ClinicaTenant tenant = tenantRepository.findByQualquerPaymentId(paymentId).orElse(null);
 
         if (tenant == null && lojista != null) {
             tenant = tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
@@ -202,17 +205,47 @@ public class TenantService {
         String slug = tenant != null ? tenant.getSlug() : (lojista != null ? lojista.getSlug() : null);
 
         if (aprovado) {
-            if (tenant != null && (!Boolean.TRUE.equals(tenant.getAtivo()) || !"APROVADO".equalsIgnoreCase(tenant.getStatusPagamento()))) {
-                log.info("[TenantService] Pagamento aprovado para a loja: {}. Ativando tenant e liberando acesso!", tenant.getNomeEmpresa());
+            LocalDateTime agora = LocalDateTime.now();
+            boolean ehRenovacao = (lojista != null && paymentId.equals(lojista.getRenovacaoPaymentId()))
+                    || (tenant != null && paymentId.equals(tenant.getRenovacaoPaymentId()));
+
+            // REGRA DE CÁLCULO DE VENCIMENTO:
+            // "caso o usuario pague antes dos 30 dias EX: faltando 4 dias para acabar e ele fizer o pagamento,
+            // sera contado somente apos acabar os 4 dias restantes"
+            LocalDateTime baseDate = agora;
+            LocalDateTime vencimentoAtual = lojista != null ? lojista.getDataVencimento() : (tenant != null ? tenant.getDataVencimento() : null);
+            if (vencimentoAtual != null && vencimentoAtual.isAfter(agora)) {
+                baseDate = vencimentoAtual; // Soma +30 dias a partir do vencimento futuro restante
+            }
+            LocalDateTime novaDataVencimento = baseDate.plusDays(30);
+
+            if (tenant != null) {
+                log.info("[TenantService] Pagamento aprovado para a loja: {}. Nova data de vencimento: {}", tenant.getNomeEmpresa(), novaDataVencimento);
                 tenant.setAtivo(true);
                 tenant.setStatusPagamento("APROVADO");
+                tenant.setDataPagamento(agora);
+                tenant.setDataVencimento(novaDataVencimento);
+                if (ehRenovacao) {
+                    tenant.setRenovacaoPaymentId(null);
+                    tenant.setRenovacaoPixCopiaCola(null);
+                    tenant.setRenovacaoPixQrCodeBase64(null);
+                    tenant.setRenovacaoCriadaEm(null);
+                }
                 tenant = tenantRepository.save(tenant);
             }
 
-            if (lojista != null && (!Boolean.TRUE.equals(lojista.getAtivo()) || !"APROVADO".equalsIgnoreCase(lojista.getStatusPagamento()))) {
+            if (lojista != null) {
+                log.info("[TenantService] Pagamento aprovado para o lojista: {}. Nova data de vencimento: {}", lojista.getNomeEmpresa(), novaDataVencimento);
                 lojista.setAtivo(true);
                 lojista.setStatusPagamento("APROVADO");
-                lojista.setDataPagamento(java.time.LocalDateTime.now());
+                lojista.setDataPagamento(agora);
+                lojista.setDataVencimento(novaDataVencimento);
+                if (ehRenovacao) {
+                    lojista.setRenovacaoPaymentId(null);
+                    lojista.setRenovacaoPixCopiaCola(null);
+                    lojista.setRenovacaoPixQrCodeBase64(null);
+                    lojista.setRenovacaoCriadaEm(null);
+                }
                 lojista = lojistaRepository.save(lojista);
             }
 
@@ -290,6 +323,10 @@ public class TenantService {
     }
 
     private TenantPublicDTO toPublicDTO(ClinicaTenant t) {
+        Long diasRestantes = null;
+        if (t.getDataVencimento() != null) {
+            diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(LocalDateTime.now().toLocalDate(), t.getDataVencimento().toLocalDate());
+        }
         return new TenantPublicDTO(
                 t.getId(),
                 t.getNomeEmpresa(),
@@ -304,7 +341,9 @@ public class TenantService {
                 t.getBannerSubtitulo() != null ? t.getBannerSubtitulo() : "Protocolos personalizados, equipamentos de última geração e especialistas dedicados ao seu bem-estar e autoestima.",
                 t.getBannerBotaoTexto() != null ? t.getBannerBotaoTexto() : "Agendamento Online",
                 t.getStatusPagamento() != null ? t.getStatusPagamento() : "PENDENTE",
-                t.getAtivo()
+                t.getAtivo(),
+                t.getDataVencimento(),
+                diasRestantes
         );
     }
 
@@ -367,5 +406,195 @@ public class TenantService {
         tenant = tenantRepository.save(tenant);
         log.info("[TenantService] Identidade visual e cores atualizadas para a loja: {}", tenant.getNomeEmpresa());
         return toPublicDTO(tenant);
+    }
+
+    @Transactional
+    public AssinaturaStatusResponse obterStatusAssinatura(String slugParam) {
+        ClinicaTenant tenant = null;
+        com.estetica.model.Lojista lojista = null;
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.estetica.model.Lojista l) {
+            lojista = lojistaRepository.findById(l.getId()).orElse(null);
+        }
+
+        if (lojista == null && auth != null && auth.getPrincipal() instanceof Usuario u && u.getTenant() != null) {
+            tenant = u.getTenant();
+            lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+        }
+
+        if (lojista == null) {
+            tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+            if (tenant != null) {
+                lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+            }
+        }
+
+        if (lojista == null && slugParam != null && !slugParam.isBlank()) {
+            lojista = lojistaRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+            if (tenant == null) {
+                tenant = tenantRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+            }
+        }
+
+        if (lojista == null && tenant == null) {
+            lojista = lojistaRepository.findAll().stream().findFirst().orElse(null);
+            if (lojista != null) {
+                tenant = tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
+            }
+        }
+
+        if (lojista == null && tenant == null) {
+            throw new RegraNegocioException("Nenhuma assinatura de lojista encontrada.");
+        }
+
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : tenant.getNomeEmpresa();
+        LocalDateTime agora = LocalDateTime.now();
+        LocalDateTime vencimento = lojista != null ? lojista.getDataVencimento() : tenant.getDataVencimento();
+
+        // Se ainda não tinha vencimento inicial registrado, inicializa com base no pagamento/criação + 30 dias
+        if (vencimento == null) {
+            LocalDateTime dataBase = agora;
+            if (lojista != null && lojista.getDataPagamento() != null) {
+                dataBase = lojista.getDataPagamento();
+            } else if (tenant != null && tenant.getDataPagamento() != null) {
+                dataBase = tenant.getDataPagamento();
+            } else if (lojista != null && lojista.getDataCriacao() != null) {
+                dataBase = lojista.getDataCriacao();
+            }
+            vencimento = dataBase.plusDays(30);
+
+            if (lojista != null) {
+                lojista.setDataVencimento(vencimento);
+                lojistaRepository.save(lojista);
+            }
+            if (tenant != null) {
+                tenant.setDataVencimento(vencimento);
+                tenantRepository.save(tenant);
+            }
+        }
+
+        long diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(agora.toLocalDate(), vencimento.toLocalDate());
+        boolean vencida = agora.isAfter(vencimento);
+        boolean podeRenovar = diasRestantes <= 5 || vencida;
+        String status = vencida ? "VENCIDA" : (diasRestantes <= 5 ? "VENCENDO" : "ATIVA");
+
+        String paymentId = null;
+        String pixCopiaCola = null;
+        String pixQrCodeBase64 = null;
+
+        // Quando faltar 5 dias para o vencimento (ou se já estiver vencida), gera o PIX automaticamente
+        if (podeRenovar) {
+            boolean reutilizar = lojista != null
+                    && lojista.getRenovacaoPaymentId() != null
+                    && lojista.getRenovacaoCriadaEm() != null
+                    && lojista.getRenovacaoCriadaEm().isAfter(agora.minusMinutes(25))
+                    && lojista.getRenovacaoPixQrCodeBase64() != null;
+
+            if (reutilizar) {
+                paymentId = lojista.getRenovacaoPaymentId();
+                pixCopiaCola = lojista.getRenovacaoPixCopiaCola();
+                pixQrCodeBase64 = lojista.getRenovacaoPixQrCodeBase64();
+            } else {
+                try {
+                    BigDecimal valor = new BigDecimal("149.90");
+                    Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(
+                            tenant,
+                            lojista,
+                            valor,
+                            "Renovação Mensal da Assinatura - " + nomeEmpresa
+                    );
+
+                    if (mp != null) {
+                        paymentId = String.valueOf(mp.get("id"));
+                        Map<String, Object> poi = (Map<String, Object>) mp.get("point_of_interaction");
+                        if (poi != null && poi.get("transaction_data") != null) {
+                            Map<String, Object> td = (Map<String, Object>) poi.get("transaction_data");
+                            pixCopiaCola = (String) td.get("qr_code");
+                            pixQrCodeBase64 = (String) td.get("qr_code_base64");
+                        }
+
+                        if (lojista != null) {
+                            lojista.setRenovacaoPaymentId(paymentId);
+                            lojista.setRenovacaoPixCopiaCola(pixCopiaCola);
+                            lojista.setRenovacaoPixQrCodeBase64(pixQrCodeBase64);
+                            lojista.setRenovacaoCriadaEm(agora);
+                            lojistaRepository.save(lojista);
+                        }
+                        if (tenant != null) {
+                            tenant.setRenovacaoPaymentId(paymentId);
+                            tenant.setRenovacaoPixCopiaCola(pixCopiaCola);
+                            tenant.setRenovacaoPixQrCodeBase64(pixQrCodeBase64);
+                            tenant.setRenovacaoCriadaEm(agora);
+                            tenantRepository.save(tenant);
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.error("[TenantService] Erro ao gerar Pix de renovação automático: {}", ex.getMessage(), ex);
+                }
+            }
+        }
+
+        LocalDateTime dataPagamento = lojista != null ? lojista.getDataPagamento() : (tenant != null ? tenant.getDataPagamento() : null);
+
+        return new AssinaturaStatusResponse(
+                nomeEmpresa,
+                status,
+                vencimento,
+                dataPagamento,
+                diasRestantes,
+                podeRenovar,
+                vencida,
+                new BigDecimal("149.90"),
+                paymentId,
+                pixCopiaCola,
+                pixQrCodeBase64
+        );
+    }
+
+    @Transactional
+    public AssinaturaStatusResponse forcarGerarPixRenovacao(String slugParam) {
+        ClinicaTenant tenant = null;
+        com.estetica.model.Lojista lojista = null;
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.estetica.model.Lojista l) {
+            lojista = lojistaRepository.findById(l.getId()).orElse(null);
+        }
+        if (lojista == null && auth != null && auth.getPrincipal() instanceof Usuario u && u.getTenant() != null) {
+            tenant = u.getTenant();
+            lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+        }
+        if (lojista == null) {
+            tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+            if (tenant != null) {
+                lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+            }
+        }
+        if (lojista == null && slugParam != null && !slugParam.isBlank()) {
+            lojista = lojistaRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+            if (tenant == null) {
+                tenant = tenantRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+            }
+        }
+        if (lojista == null && tenant == null) {
+            lojista = lojistaRepository.findAll().stream().findFirst().orElse(null);
+            if (lojista != null) {
+                tenant = tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
+            }
+        }
+
+        if (lojista != null) {
+            lojista.setRenovacaoPaymentId(null);
+            lojista.setRenovacaoCriadaEm(null);
+            lojistaRepository.save(lojista);
+        }
+        if (tenant != null) {
+            tenant.setRenovacaoPaymentId(null);
+            tenant.setRenovacaoCriadaEm(null);
+            tenantRepository.save(tenant);
+        }
+
+        return obterStatusAssinatura(slugParam);
     }
 }
