@@ -35,9 +35,8 @@ public class UsuarioController {
     @Operation(summary = "Lista todos os pacientes/clientes cadastrados na clínica")
     public ResponseEntity<List<UsuarioDTO>> listarClientes() {
         com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
-        List<Usuario> list = (tenant != null)
-                ? usuarioRepository.findByTenantIdAndRoleOrderByNomeAsc(tenant.getId(), Role.ROLE_CLIENTE)
-                : usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE);
+        Long tenantId = tenant != null ? tenant.getId() : null;
+        List<Usuario> list = usuarioRepository.findClientesPorTenantOuSemTenant(tenantId, Role.ROLE_CLIENTE);
 
         List<UsuarioDTO> clientes = list.stream()
                 .map(this::toDTO)

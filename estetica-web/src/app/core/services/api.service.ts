@@ -14,6 +14,7 @@ import {
   StatusAgendamento,
   Usuario,
   TenantPublicDTO,
+  AtualizarBannerRequest,
   CadastroLojistaRequest,
   CadastroLojistaResponse,
   PrimeiroAcessoRequest,
@@ -285,5 +286,14 @@ export class ApiService {
 
   primeiroAcesso(payload: PrimeiroAcessoRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/primeiro-acesso`, payload);
+  }
+
+  // Tenant & Banner Personalizável da Clínica
+  getMeuTenant(): Observable<TenantPublicDTO> {
+    return this.http.get<TenantPublicDTO>(`${this.baseUrl}/onboarding/meu-tenant`);
+  }
+
+  atualizarBanner(payload: AtualizarBannerRequest): Observable<TenantPublicDTO> {
+    return this.http.put<TenantPublicDTO>(`${this.baseUrl}/onboarding/banner`, payload);
   }
 }

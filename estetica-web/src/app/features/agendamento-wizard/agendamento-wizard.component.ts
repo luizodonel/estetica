@@ -442,8 +442,16 @@ export class AgendamentoWizardComponent implements OnInit {
   clienteIdSelecionado: number | null = null;
   pacienteSelecionado = signal<Usuario | null>(null);
 
-  dataMinima = new Date().toISOString().split('T')[0];
-  dataSelecionada = signal<string>(new Date().toISOString().split('T')[0]);
+  private obterDataLocal(): string {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  dataMinima = this.obterDataLocal();
+  dataSelecionada = signal<string>(this.obterDataLocal());
 
   slots = signal<SlotDisponivel[]>([]);
   slotSelecionado = signal<SlotDisponivel | null>(null);

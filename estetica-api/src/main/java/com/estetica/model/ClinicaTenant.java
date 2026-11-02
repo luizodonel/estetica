@@ -44,6 +44,18 @@ public class ClinicaTenant {
     @Column(name = "telefone_whatsapp", length = 20)
     private String telefoneWhatsApp;
 
+    @Column(name = "banner_tag", length = 100)
+    private String bannerTag;
+
+    @Column(name = "banner_titulo", length = 255)
+    private String bannerTitulo;
+
+    @Column(name = "banner_subtitulo", columnDefinition = "TEXT")
+    private String bannerSubtitulo;
+
+    @Column(name = "banner_botao_texto", length = 80)
+    private String bannerBotaoTexto;
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean ativo = true;

@@ -13,12 +13,15 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class DisponibilidadeService {
+
+    public static final ZoneId ZONE_BRASIL = ZoneId.of("America/Sao_Paulo");
 
     private final ProcedimentoRepository procedimentoRepository;
     private final ProfissionalRepository profissionalRepository;
@@ -27,14 +30,15 @@ public class DisponibilidadeService {
     private final AgendamentoRepository agendamentoRepository;
 
     private static final int STEP_MINUTOS = 30; // Granularidade da grade
-    private static final int ANTECEDENCIA_MINIMA_MINUTOS = 30; // Margem para agendamento no próprio dia
+    private static final int ANTECEDENCIA_MINIMA_MINUTOS = 10; // Margem para agendamento no próprio dia
 
     @Transactional(readOnly = true)
     public DisponibilidadeResponseDTO calcularSlots(Long procedimentoId, Long profissionalId, LocalDate data) {
         Procedimento procedimento = procedimentoRepository.findById(procedimentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Procedimento não encontrado com ID: " + procedimentoId));
 
-        if (data.isBefore(LocalDate.now())) {
+        LocalDate hoje = LocalDate.now(ZONE_BRASIL);
+        if (data.isBefore(hoje)) {
             return new DisponibilidadeResponseDTO(data, procedimentoId, procedimento.getTitulo(), procedimento.getDuracaoMinutos(), List.of());
         }
 
@@ -58,7 +62,7 @@ public class DisponibilidadeService {
         DayOfWeek diaSemana = data.getDayOfWeek();
         LocalDateTime inicioDia = data.atStartOfDay();
         LocalDateTime fimDia = data.atTime(23, 59, 59);
-        LocalDateTime agora = LocalDateTime.now();
+        LocalDateTime agora = LocalDateTime.now(ZONE_BRASIL);
 
         List<SlotDisponivelDTO> slotsDisponiveis = new ArrayList<>();
         int duracao = procedimento.getDuracaoMinutos();
@@ -95,7 +99,7 @@ public class DisponibilidadeService {
                 LocalDateTime slotDataHoraFim = data.atTime(slotFim);
 
                 // Se for hoje, ignora horários passados ou muito próximos
-                if (data.isEqual(LocalDate.now()) && slotDataHoraInicio.isBefore(agora.plusMinutes(ANTECEDENCIA_MINIMA_MINUTOS))) {
+                if (data.isEqual(hoje) && slotDataHoraInicio.isBefore(agora.plusMinutes(ANTECEDENCIA_MINIMA_MINUTOS))) {
                     horaAtual = horaAtual.plusMinutes(STEP_MINUTOS);
                     continue;
                 }

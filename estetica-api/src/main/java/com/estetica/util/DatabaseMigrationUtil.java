@@ -68,6 +68,17 @@ public class DatabaseMigrationUtil {
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_usuario_telefone ON tb_usuario(telefone_whatsapp);");
             System.out.println("Índice de telefone criado com sucesso!");
 
+            // 7. Colunas de Banner Personalizável em tb_clinica_tenant
+            stmt.execute("ALTER TABLE tb_clinica_tenant ADD COLUMN IF NOT EXISTS banner_tag VARCHAR(100);");
+            stmt.execute("ALTER TABLE tb_clinica_tenant ADD COLUMN IF NOT EXISTS banner_titulo VARCHAR(255);");
+            stmt.execute("ALTER TABLE tb_clinica_tenant ADD COLUMN IF NOT EXISTS banner_subtitulo TEXT;");
+            stmt.execute("ALTER TABLE tb_clinica_tenant ADD COLUMN IF NOT EXISTS banner_botao_texto VARCHAR(80);");
+            stmt.execute("UPDATE tb_clinica_tenant SET banner_tag = '✨ Cuidado & Alta Tecnologia' WHERE banner_tag IS NULL;");
+            stmt.execute("UPDATE tb_clinica_tenant SET banner_titulo = 'Realce sua melhor versão com tratamentos exclusivos.' WHERE banner_titulo IS NULL;");
+            stmt.execute("UPDATE tb_clinica_tenant SET banner_subtitulo = 'Protocolos personalizados, equipamentos de última geração e especialistas dedicados ao seu bem-estar e autoestima.' WHERE banner_subtitulo IS NULL;");
+            stmt.execute("UPDATE tb_clinica_tenant SET banner_botao_texto = 'Agendamento Online' WHERE banner_botao_texto IS NULL;");
+            System.out.println("Colunas de Banner personalizável criadas e populadas com sucesso!");
+
             System.out.println("MIGRAÇÃO DE MULTI-TENANCY E TELEFONE CONCLUÍDA COM SUCESSO!");
 
         } catch (Exception e) {
@@ -75,3 +86,4 @@ public class DatabaseMigrationUtil {
         }
     }
 }
+

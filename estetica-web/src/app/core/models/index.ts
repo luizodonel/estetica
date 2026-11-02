@@ -169,6 +169,17 @@ export interface TenantPublicDTO {
   corPrimaria: string;
   corSecundaria: string;
   telefoneWhatsApp?: string;
+  bannerTag?: string;
+  bannerTitulo?: string;
+  bannerSubtitulo?: string;
+  bannerBotaoTexto?: string;
+}
+
+export interface AtualizarBannerRequest {
+  bannerTag: string;
+  bannerTitulo: string;
+  bannerSubtitulo: string;
+  bannerBotaoTexto: string;
 }
 
 export interface CadastroLojistaRequest {

@@ -2,6 +2,7 @@ package com.estetica.repository;
 
 import com.estetica.model.Agendamento;
 import com.estetica.model.StatusAgendamento;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -79,6 +80,19 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     List<Agendamento> findAgendamentosParaLembrete(@Param("status") StatusAgendamento status,
                                                   @Param("de") LocalDateTime de,
                                                   @Param("ate") LocalDateTime ate);
+
+    // Próximos agendamentos gerais (do momento atual em diante)
+    @Query("SELECT a FROM Agendamento a " +
+           "JOIN FETCH a.procedimento " +
+           "JOIN FETCH a.profissional " +
+           "JOIN FETCH a.cliente " +
+           "WHERE (:tenantId IS NULL OR a.tenant.id = :tenantId) " +
+           "AND a.dataHoraFim >= :agora " +
+           "AND a.status != com.estetica.model.StatusAgendamento.CANCELADO " +
+           "ORDER BY a.dataHoraInicio ASC")
+    List<Agendamento> findProximosAgendamentos(@Param("tenantId") Long tenantId,
+                                              @Param("agora") LocalDateTime agora,
+                                              Pageable pageable);
 
     // Contadores para o Dashboard
     long countByStatus(StatusAgendamento status);

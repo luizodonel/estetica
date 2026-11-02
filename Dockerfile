@@ -32,14 +32,18 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN apk add --no-cache tzdata \
+    && cp /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime \
+    && echo "America/Sao_Paulo" > /etc/timezone \
+    && addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
 COPY --from=build-backend /app/backend/target/*.jar app.jar
 
 ENV SPRING_PROFILES_ACTIVE=prod
+ENV TZ=America/Sao_Paulo
 ENV PORT=8080
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=America/Sao_Paulo", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
 

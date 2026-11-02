@@ -8,6 +8,7 @@ import com.estetica.repository.AgendamentoRepository;
 import com.estetica.repository.ProfissionalRepository;
 import com.estetica.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardResumoDTO obterResumoHoje() {
-        LocalDate hoje = LocalDate.now();
+        LocalDate hoje = LocalDate.now(DisponibilidadeService.ZONE_BRASIL);
         LocalDateTime inicioDia = hoje.atStartOfDay();
         LocalDateTime fimDia = hoje.atTime(23, 59, 59);
 
@@ -83,11 +84,24 @@ public class DashboardService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long clientesAtivos = (tenantId != null)
-                ? usuarioRepository.countByTenantIdAndRole(tenantId, Role.ROLE_CLIENTE)
-                : usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE).size();
+                ? usuarioRepository.countClientesPorTenantOuSemTenant(tenantId, Role.ROLE_CLIENTE)
+                : (long) usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE).size();
 
-        List<AgendamentoDTO> proximos = agendamentosFiltrados.stream()
-                .filter(a -> a.getDataHoraFim().isAfter(LocalDateTime.now()) && a.getStatus() != StatusAgendamento.CANCELADO)
+        // Próximos atendimentos a partir de agora (não apenas restritos a hoje, trazendo próximos dias)
+        List<Agendamento> proximosBrutos = agendamentoRepository.findProximosAgendamentos(
+                tenantId,
+                LocalDateTime.now(DisponibilidadeService.ZONE_BRASIL),
+                PageRequest.of(0, 10)
+        );
+
+        if (!isAdmin && profLogado != null) {
+            final Long profId = profLogado.getId();
+            proximosBrutos = proximosBrutos.stream()
+                    .filter(a -> a.getProfissional() != null && a.getProfissional().getId().equals(profId))
+                    .toList();
+        }
+
+        List<AgendamentoDTO> proximos = proximosBrutos.stream()
                 .limit(5)
                 .map(agendamentoService::toDTO)
                 .toList();

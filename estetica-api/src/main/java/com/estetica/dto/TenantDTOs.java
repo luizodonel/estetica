@@ -46,7 +46,18 @@ public class TenantDTOs {
         String logoUrl,
         String corPrimaria,
         String corSecundaria,
-        String telefoneWhatsApp
+        String telefoneWhatsApp,
+        String bannerTag,
+        String bannerTitulo,
+        String bannerSubtitulo,
+        String bannerBotaoTexto
+    ) {}
+
+    public record AtualizarBannerRequest(
+        String bannerTag,
+        String bannerTitulo,
+        String bannerSubtitulo,
+        String bannerBotaoTexto
     ) {}
 
     public record CadastroLojistaResponse(

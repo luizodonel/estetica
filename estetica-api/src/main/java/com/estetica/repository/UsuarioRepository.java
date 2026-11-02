@@ -19,7 +19,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     List<Usuario> findByRoleOrderByNomeAsc(Role role);
     List<Usuario> findByTenantIdAndRoleOrderByNomeAsc(Long tenantId, Role role);
 
+    @org.springframework.data.jpa.repository.Query("SELECT u FROM Usuario u WHERE u.role = :role AND (:tenantId IS NULL OR u.tenant.id = :tenantId OR u.tenant IS NULL) ORDER BY u.nome ASC")
+    List<Usuario> findClientesPorTenantOuSemTenant(@org.springframework.data.repository.query.Param("tenantId") Long tenantId, @org.springframework.data.repository.query.Param("role") Role role);
+
     long countByRole(Role role);
     long countByTenantIdAndRole(Long tenantId, Role role);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM Usuario u WHERE u.role = :role AND (:tenantId IS NULL OR u.tenant.id = :tenantId OR u.tenant IS NULL)")
+    long countClientesPorTenantOuSemTenant(@org.springframework.data.repository.query.Param("tenantId") Long tenantId, @org.springframework.data.repository.query.Param("role") Role role);
 }
 

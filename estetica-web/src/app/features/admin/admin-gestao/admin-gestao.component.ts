@@ -972,7 +972,15 @@ export class AdminGestaoComponent implements OnInit {
   }
 
   salvarProfissional(): void {
-    if (this.formProfissional.invalid) return;
+    if (this.formProfissional.invalid) {
+      this.formProfissional.markAllAsTouched();
+      const faltantes: string[] = [];
+      if (this.formProfissional.get('nome')?.invalid) faltantes.push('Nome Completo');
+      if (this.formProfissional.get('telefoneWhatsApp')?.invalid) faltantes.push('WhatsApp');
+      if (this.formProfissional.get('especialidade')?.invalid) faltantes.push('Especialidade');
+      this.mensagemErro.set('Preencha os campos obrigatórios: ' + faltantes.join(', '));
+      return;
+    }
 
     this.salvando.set(true);
     const dados = {
@@ -1039,7 +1047,14 @@ export class AdminGestaoComponent implements OnInit {
   }
 
   salvarCliente(): void {
-    if (this.formCliente.invalid) return;
+    if (this.formCliente.invalid) {
+      this.formCliente.markAllAsTouched();
+      const faltantes: string[] = [];
+      if (this.formCliente.get('nome')?.invalid) faltantes.push('Nome Completo');
+      if (this.formCliente.get('telefoneWhatsApp')?.invalid) faltantes.push('WhatsApp');
+      this.mensagemErro.set('Preencha os campos obrigatórios: ' + faltantes.join(', '));
+      return;
+    }
 
     this.salvando.set(true);
     const dados = this.formCliente.value;

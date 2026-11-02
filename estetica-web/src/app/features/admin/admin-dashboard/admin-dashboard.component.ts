@@ -138,14 +138,15 @@ import { DashboardResumo } from '../../../core/models';
         @if (carregando()) {
           <div class="py-12 text-center text-stone-400 text-xs animate-pulse">Carregando métricas...</div>
         } @else if (!resumo()?.proximosAtendimentos?.length) {
-          <p class="text-xs text-stone-500 py-6 text-center">Nenhum atendimento pendente para as próximas horas de hoje.</p>
+          <p class="text-xs text-stone-500 py-6 text-center">Nenhum agendamento programado para as próximas horas ou dias.</p>
         } @else {
           <div class="space-y-3">
             @for (item of resumo()?.proximosAtendimentos; track item.id) {
               <div class="p-4 rounded-2xl border border-nude-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-rose-300 transition-all">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold text-xs">
-                    {{ item.dataHoraInicio.substring(11, 16) }}
+                  <div class="min-w-16 h-12 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 flex flex-col items-center justify-center font-bold px-2 py-1">
+                    <span class="text-[9px] uppercase tracking-wider text-rose-600 font-semibold">{{ formatarDataResumo(item.dataHoraInicio) }}</span>
+                    <span class="text-xs text-rose-900">{{ item.dataHoraInicio.substring(11, 16) }}</span>
                   </div>
                   <div>
                     <h4 class="font-serif font-bold text-stone-900 text-sm">{{ item.clienteNome }}</h4>
@@ -196,5 +197,24 @@ export class AdminDashboardComponent implements OnInit {
 
   obterFotoUrl(url?: string): string {
     return this.api.formatarUrlImagem(url);
+  }
+
+  formatarDataResumo(dataStr: string): string {
+    if (!dataStr) return '';
+    try {
+      const data = new Date(dataStr);
+      const hoje = new Date();
+      const amanha = new Date();
+      amanha.setDate(hoje.getDate() + 1);
+
+      if (data.toDateString() === hoje.toDateString()) return 'Hoje';
+      if (data.toDateString() === amanha.toDateString()) return 'Amanhã';
+
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      return `${dia}/${mes}`;
+    } catch {
+      return '';
+    }
   }
 }

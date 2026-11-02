@@ -25,6 +25,7 @@ public class TenantService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final TenantResolverService tenantResolverService;
 
     private static final Set<String> SLUGS_RESERVADOS = Set.of(
             "admin", "api", "www", "app", "dashboard", "mail", "portal", "estetica", "teste"
@@ -132,6 +133,10 @@ public class TenantService {
                 .replaceAll("[^a-z0-9-]", "");
     }
 
+    public TenantPublicDTO toDTO(ClinicaTenant t) {
+        return toPublicDTO(t);
+    }
+
     private TenantPublicDTO toPublicDTO(ClinicaTenant t) {
         return new TenantPublicDTO(
                 t.getId(),
@@ -141,8 +146,28 @@ public class TenantService {
                 t.getLogoUrl(),
                 t.getCorPrimaria(),
                 t.getCorSecundaria(),
-                t.getTelefoneWhatsApp()
+                t.getTelefoneWhatsApp(),
+                t.getBannerTag() != null ? t.getBannerTag() : "✨ Cuidado & Alta Tecnologia",
+                t.getBannerTitulo() != null ? t.getBannerTitulo() : "Realce sua melhor versão com tratamentos exclusivos.",
+                t.getBannerSubtitulo() != null ? t.getBannerSubtitulo() : "Protocolos personalizados, equipamentos de última geração e especialistas dedicados ao seu bem-estar e autoestima.",
+                t.getBannerBotaoTexto() != null ? t.getBannerBotaoTexto() : "Agendamento Online"
         );
+    }
+
+    @Transactional
+    public TenantPublicDTO atualizarBanner(AtualizarBannerRequest req) {
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        if (tenant == null) {
+            tenant = tenantRepository.findAll().stream().findFirst()
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Clínica não encontrada."));
+        }
+        if (req.bannerTag() != null) tenant.setBannerTag(req.bannerTag().trim());
+        if (req.bannerTitulo() != null) tenant.setBannerTitulo(req.bannerTitulo().trim());
+        if (req.bannerSubtitulo() != null) tenant.setBannerSubtitulo(req.bannerSubtitulo().trim());
+        if (req.bannerBotaoTexto() != null) tenant.setBannerBotaoTexto(req.bannerBotaoTexto().trim());
+
+        tenant = tenantRepository.save(tenant);
+        return toPublicDTO(tenant);
     }
 }
 

@@ -21,30 +21,28 @@ public class TenantResolverService {
 
     public ClinicaTenant getTenantDoUsuarioAutenticado() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof Usuario usuario)) {
-            return null;
-        }
+        if (auth != null && auth.getPrincipal() instanceof Usuario usuario) {
+            if (usuario.getTenant() != null) {
+                return usuario.getTenant();
+            }
 
-        if (usuario.getTenant() != null) {
-            return usuario.getTenant();
-        }
+            if (usuario.getRole() == Role.ROLE_ADMIN) {
+                Optional<ClinicaTenant> tenantOpt = tenantRepository.findByAdminUsuarioId(usuario.getId());
+                if (tenantOpt.isPresent()) {
+                    return tenantOpt.get();
+                }
+            }
 
-        if (usuario.getRole() == Role.ROLE_ADMIN) {
-            Optional<ClinicaTenant> tenantOpt = tenantRepository.findByAdminUsuarioId(usuario.getId());
-            if (tenantOpt.isPresent()) {
-                return tenantOpt.get();
+            if (usuario.getRole() == Role.ROLE_PROFISSIONAL) {
+                Optional<ClinicaTenant> tenantOpt = profissionalRepository.findByUsuarioId(usuario.getId())
+                        .map(com.estetica.model.Profissional::getTenant);
+                if (tenantOpt.isPresent()) {
+                    return tenantOpt.get();
+                }
             }
         }
 
-        if (usuario.getRole() == Role.ROLE_PROFISSIONAL) {
-            Optional<ClinicaTenant> tenantOpt = profissionalRepository.findByUsuarioId(usuario.getId())
-                    .map(com.estetica.model.Profissional::getTenant);
-            if (tenantOpt.isPresent()) {
-                return tenantOpt.get();
-            }
-        }
-
-        // Fallback: se houver apenas um tenant cadastrado no sistema
+        // Fallback: se houver apenas um tenant cadastrado no sistema (ou acesso público)
         return tenantRepository.findAll().stream().findFirst().orElse(null);
     }
 
@@ -58,3 +56,4 @@ public class TenantResolverService {
         return getTenantDoUsuarioAutenticado();
     }
 }
+

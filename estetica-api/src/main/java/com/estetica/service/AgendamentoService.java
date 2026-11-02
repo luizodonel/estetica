@@ -75,7 +75,8 @@ public class AgendamentoService {
         LocalDateTime inicio = request.dataHoraInicio();
         LocalDateTime fim = inicio.plusMinutes(procedimento.getDuracaoMinutos());
 
-        if (inicio.isBefore(LocalDateTime.now())) {
+        LocalDateTime agoraBrasil = LocalDateTime.now(DisponibilidadeService.ZONE_BRASIL);
+        if (inicio.isBefore(agoraBrasil.minusMinutes(5))) {
             throw new RegraNegocioException("Não é permitido agendar em datas/horários passados.");
         }
 
@@ -220,7 +221,7 @@ public class AgendamentoService {
         LocalDateTime novoInicio = request.novaDataHoraInicio();
         LocalDateTime novoFim = novoInicio.plusMinutes(agendamento.getProcedimento().getDuracaoMinutos());
 
-        if (novoInicio.isBefore(LocalDateTime.now())) {
+        if (novoInicio.isBefore(LocalDateTime.now(DisponibilidadeService.ZONE_BRASIL).minusMinutes(5))) {
             throw new RegraNegocioException("Não é permitido remarcar para horários passados.");
         }
 
