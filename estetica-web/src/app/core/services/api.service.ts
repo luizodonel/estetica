@@ -231,5 +231,23 @@ export class ApiService {
     const params = new HttpParams().set('slug', slug);
     return this.http.get<{ disponivel: boolean }>(`${this.baseUrl}/onboarding/verificar-slug`, { params });
   }
+
+  // Upload de Imagens (Logotipos, Fotos de Especialistas e Capas de Procedimentos)
+  uploadImagem(file: File): Observable<{ url: string; filename: string; size: number }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string; filename: string; size: number }>(`${this.baseUrl}/uploads`, formData);
+  }
+
+  formatarUrlImagem(url?: string): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    const host = (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
+      ? ''
+      : 'http://localhost:8080';
+    return `${host}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
 }
 

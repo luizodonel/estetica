@@ -135,7 +135,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
                     <!-- Imagem do Procedimento -->
                     <div class="h-44 w-full bg-nude-100 relative overflow-hidden">
                       <img
-                        [src]="proc.imagemUrl || 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80'"
+                        [src]="obterImagemUrl(proc.imagemUrl) || 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80'"
                         [alt]="proc.titulo"
                         class="w-full h-full object-cover" />
                       <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 backdrop-blur-md text-stone-800 shadow-sm">
@@ -221,7 +221,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
                     <div class="flex items-start gap-4 mb-4">
                       <div class="w-14 h-14 rounded-2xl overflow-hidden bg-rose-50 border-2 flex-shrink-0" [style.borderColor]="prof.corIdentificacao || '#e11d48'">
                         <img
-                          [src]="prof.fotoUrl || 'https://images.unsplash.com/photo-1594824813587-0b1a03a74577?auto=format&fit=crop&w=300&q=80'"
+                          [src]="obterImagemUrl(prof.fotoUrl) || 'https://images.unsplash.com/photo-1594824813587-0b1a03a74577?auto=format&fit=crop&w=300&q=80'"
                           [alt]="prof.nome"
                           class="w-full h-full object-cover" />
                       </div>
@@ -404,9 +404,56 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
                 </div>
               </div>
 
+              <!-- Upload da Imagem de Capa do Procedimento -->
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">URL da Imagem de Capa</label>
-                <input type="url" formControlName="imagemUrl" placeholder="https://images.unsplash.com/..." class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <label class="block text-xs font-semibold text-stone-700 mb-1">
+                  Foto / Imagem de Capa do Procedimento
+                </label>
+
+                @if (!formProcedimento.get('imagemUrl')?.value) {
+                  <div
+                    (click)="fileInputProcedimento.click()"
+                    class="border-2 border-dashed border-nude-300 hover:border-rose-400 bg-stone-50 hover:bg-rose-50/20 rounded-2xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 group">
+                    <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                      📸
+                    </div>
+                    <div>
+                      <span class="text-xs font-semibold text-stone-800 block">Clique para fazer upload da foto de capa</span>
+                      <span class="text-[10px] text-stone-400">PNG, JPG, WEBP ou SVG (até 15MB)</span>
+                    </div>
+                    @if (fazendoUploadProcedimento()) {
+                      <span class="text-xs font-bold text-rose-600 animate-pulse">Enviando imagem...</span>
+                    }
+                  </div>
+                } @else {
+                  <div class="p-3 rounded-2xl bg-stone-50 border border-nude-200 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-16 h-12 rounded-xl overflow-hidden border border-nude-300 bg-white shadow-sm flex items-center justify-center">
+                        <img [src]="obterImagemUrl(formProcedimento.get('imagemUrl')?.value)" alt="Capa" class="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <span class="text-xs font-semibold text-stone-800 block">Foto selecionada</span>
+                        <span class="text-[10px] text-emerald-600 font-medium">✓ Imagem anexada com sucesso</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        (click)="fileInputProcedimento.click()"
+                        class="px-2.5 py-1.5 rounded-lg border border-nude-300 bg-white text-[11px] font-semibold text-stone-700 hover:bg-stone-100">
+                        Trocar Foto
+                      </button>
+                      <button
+                        type="button"
+                        (click)="removerFotoProcedimento()"
+                        class="px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 text-[11px] font-semibold">
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <input #fileInputProcedimento type="file" accept="image/*" (change)="aoSelecionarFotoProcedimento($event)" class="hidden" />
               </div>
 
               <div class="pt-4 flex items-center justify-end gap-3">
@@ -471,9 +518,56 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
                 <textarea formControlName="bio" rows="2" placeholder="Especialista em tratamentos faciais e laser..." class="w-full text-xs px-3.5 py-2 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50"></textarea>
               </div>
 
+              <!-- Upload da Foto de Perfil do Profissional -->
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">URL da Foto de Perfil</label>
-                <input type="url" formControlName="fotoUrl" placeholder="https://images.unsplash.com/..." class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <label class="block text-xs font-semibold text-stone-700 mb-1">
+                  Foto de Perfil do Especialista
+                </label>
+
+                @if (!formProfissional.get('fotoUrl')?.value) {
+                  <div
+                    (click)="fileInputProfissional.click()"
+                    class="border-2 border-dashed border-nude-300 hover:border-rose-400 bg-stone-50 hover:bg-rose-50/20 rounded-2xl p-4 text-center cursor-pointer transition-all flex items-center justify-center gap-3 group">
+                    <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                      👤
+                    </div>
+                    <div class="text-left">
+                      <span class="text-xs font-semibold text-stone-800 block">Clique para fazer upload da foto</span>
+                      <span class="text-[10px] text-stone-400">JPG, PNG, WEBP (foto de rosto recomendada)</span>
+                    </div>
+                    @if (fazendoUploadProfissional()) {
+                      <span class="text-xs font-bold text-rose-600 animate-pulse ml-auto">Enviando...</span>
+                    }
+                  </div>
+                } @else {
+                  <div class="p-3 rounded-2xl bg-stone-50 border border-nude-200 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-rose-300 bg-white shadow-sm flex items-center justify-center">
+                        <img [src]="obterImagemUrl(formProfissional.get('fotoUrl')?.value)" alt="Perfil" class="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <span class="text-xs font-semibold text-stone-800 block">Foto de perfil definida</span>
+                        <span class="text-[10px] text-emerald-600 font-medium">✓ Exibida aos clientes no catálogo</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        (click)="fileInputProfissional.click()"
+                        class="px-2.5 py-1.5 rounded-lg border border-nude-300 bg-white text-[11px] font-semibold text-stone-700 hover:bg-stone-100">
+                        Trocar Foto
+                      </button>
+                      <button
+                        type="button"
+                        (click)="removerFotoProfissional()"
+                        class="px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 text-[11px] font-semibold">
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <input #fileInputProfissional type="file" accept="image/*" (change)="aoSelecionarFotoProfissional($event)" class="hidden" />
               </div>
 
               <div>
@@ -599,6 +693,9 @@ export class AdminGestaoComponent implements OnInit {
 
   modalClienteAberto = signal<boolean>(false);
   clienteEmEdicao = signal<Usuario | null>(null);
+
+  fazendoUploadProcedimento = signal<boolean>(false);
+  fazendoUploadProfissional = signal<boolean>(false);
 
   // Formulários
   formProcedimento!: FormGroup;
@@ -915,5 +1012,72 @@ export class AdminGestaoComponent implements OnInit {
       },
       error: () => this.mensagemErro.set('Erro ao alternar status do paciente.')
     });
+  }
+
+  // ===================== UPLOAD DE FOTOS E IMAGENS =====================
+  aoSelecionarFotoProcedimento(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.fazendoUploadProcedimento.set(true);
+
+    // Prévia instantânea
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.formProcedimento.patchValue({ imagemUrl: e.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+
+    this.api.uploadImagem(file).subscribe({
+      next: (res) => {
+        if (res && res.url) {
+          this.formProcedimento.patchValue({ imagemUrl: res.url });
+        }
+        this.fazendoUploadProcedimento.set(false);
+      },
+      error: () => {
+        this.fazendoUploadProcedimento.set(false);
+      }
+    });
+  }
+
+  removerFotoProcedimento(): void {
+    this.formProcedimento.patchValue({ imagemUrl: '' });
+  }
+
+  aoSelecionarFotoProfissional(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.fazendoUploadProfissional.set(true);
+
+    // Prévia instantânea
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.formProfissional.patchValue({ fotoUrl: e.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+
+    this.api.uploadImagem(file).subscribe({
+      next: (res) => {
+        if (res && res.url) {
+          this.formProfissional.patchValue({ fotoUrl: res.url });
+        }
+        this.fazendoUploadProfissional.set(false);
+      },
+      error: () => {
+        this.fazendoUploadProfissional.set(false);
+      }
+    });
+  }
+
+  removerFotoProfissional(): void {
+    this.formProfissional.patchValue({ fotoUrl: '' });
+  }
+
+  obterImagemUrl(url?: string): string {
+    return this.api.formatarUrlImagem(url);
   }
 }

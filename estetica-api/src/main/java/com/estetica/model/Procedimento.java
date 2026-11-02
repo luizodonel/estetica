@@ -34,7 +34,7 @@ public class Procedimento {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal preco;
 
-    @Column(name = "imagem_url", length = 500)
+    @Column(name = "imagem_url", columnDefinition = "TEXT")
     private String imagemUrl;
 
     @Builder.Default

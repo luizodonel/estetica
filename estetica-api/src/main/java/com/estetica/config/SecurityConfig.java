@@ -39,6 +39,7 @@ public class SecurityConfig {
                 // Endpoints Públicos
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/onboarding/**").permitAll()
+                .requestMatchers("/api/v1/uploads/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/procedimentos/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/disponibilidade/**").permitAll()
@@ -49,7 +50,8 @@ public class SecurityConfig {
                 // H2 Console (se habilitado em dev)
                 .requestMatchers("/h2-console/**").permitAll()
 
-                // Recursos estáticos Frontend e SPA
+                // Recursos estáticos Frontend, SPA e Arquivos Enviados (Uploads)
+                .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.jpg", "/*.svg", "/assets/**", "/media/**").permitAll()
                 .requestMatchers("/catalogo/**", "/agendar/**", "/meus-agendamentos/**", "/admin/**", "/login/**", "/registrar/**", "/parceiro/**").permitAll()
 

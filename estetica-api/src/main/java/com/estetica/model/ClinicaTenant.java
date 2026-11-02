@@ -28,7 +28,7 @@ public class ClinicaTenant {
     @Column(name = "link_personalizado", length = 255)
     private String linkPersonalizado;
 
-    @Column(name = "logo_url", length = 500)
+    @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 
     @Column(name = "cor_primaria", length = 30)

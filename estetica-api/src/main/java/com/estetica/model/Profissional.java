@@ -32,7 +32,7 @@ public class Profissional {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
-    @Column(name = "foto_url", length = 500)
+    @Column(name = "foto_url", columnDefinition = "TEXT")
     private String fotoUrl;
 
     @Column(name = "cor_identificacao", length = 20)

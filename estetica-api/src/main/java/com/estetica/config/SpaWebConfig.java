@@ -13,6 +13,12 @@ public class SpaWebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Servir imagens e arquivos enviados pelo usuário (/uploads/**)
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:./uploads/", "file:/app/uploads/")
+                .setCachePeriod(3600);
+
+        // Servir aplicação SPA Angular
         registry.addResourceHandler("/**")
                 .addResourceLocations("classpath:/static/")
                 .resourceChain(true)

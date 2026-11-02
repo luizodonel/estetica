@@ -87,7 +87,7 @@ import { FormsModule } from '@angular/forms';
               <!-- Imagem com badge de categoria -->
               <div class="relative h-48 overflow-hidden bg-nude-100">
                 <img 
-                  [src]="proc.imagemUrl || 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=600'" 
+                  [src]="formatarUrl(proc.imagemUrl) || 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=600'" 
                   [alt]="proc.titulo"
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 <span class="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-stone-900 text-[11px] font-semibold tracking-wide shadow-sm">
@@ -182,6 +182,10 @@ export class CatalogoComponent implements OnInit {
 
   agendarProcedimento(procedimentoId: number): void {
     this.router.navigate(['/agendar'], { queryParams: { procedimentoId } });
+  }
+
+  formatarUrl(url?: string): string {
+    return this.api.formatarUrlImagem(url);
   }
 }
 

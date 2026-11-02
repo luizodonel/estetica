@@ -12,7 +12,10 @@ export class TenantService {
   carregando = signal<boolean>(false);
 
   nomeEmpresa = computed(() => this.tenant()?.nomeEmpresa || "L'Élégance");
-  logoUrl = computed(() => this.tenant()?.logoUrl || null);
+  logoUrl = computed(() => {
+    const raw = this.tenant()?.logoUrl;
+    return raw ? this.api.formatarUrlImagem(raw) : null;
+  });
   corPrimaria = computed(() => this.tenant()?.corPrimaria || '#e11d48');
   corSecundaria = computed(() => this.tenant()?.corSecundaria || '#f43f5e');
   linkPersonalizado = computed(() => this.tenant()?.linkPersonalizado || '');

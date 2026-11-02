@@ -1,0 +1,11 @@
+{
+  "name": "estetica",
+  "version": "1.0.0",
+  "description": "Sistema de Agendamento e Gestão para Clínicas de Estética",
+  "scripts": {
+    "start": "npm --prefix estetica-web start",
+    "web": "npm --prefix estetica-web start",
+    "api": "mvn --file estetica-api/pom.xml spring-boot:run",
+    "build": "npm --prefix estetica-web run build"
+  }
+}

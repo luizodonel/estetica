@@ -139,31 +139,60 @@ import { TenantPublicDTO } from '../../core/models';
                   </div>
                 </div>
 
-                <!-- Logotipo da Loja -->
+                <!-- Logotipo da Loja (Upload de Imagem) -->
                 <div>
                   <label class="block text-xs font-semibold text-stone-700 mb-1.5">
-                    URL da Logomarca (opcional)
+                    Logomarca da sua Empresa (Upload de Foto)
                   </label>
-                  <input
-                    type="url"
-                    formControlName="logoUrl"
-                    placeholder="https://exemplo.com/minha-logo.png"
-                    class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                  <p class="text-[11px] text-stone-400 mt-1">Cole o link da imagem da sua marca (PNG com fundo transparente recomendado).</p>
-                </div>
 
-                <!-- Preview da Logotipo -->
-                @if (formLojista.get('logoUrl')?.value) {
-                  <div class="p-4 rounded-2xl bg-stone-50 border border-nude-200 flex items-center gap-4">
-                    <div class="w-16 h-16 rounded-xl overflow-hidden border border-nude-300 bg-white flex items-center justify-center p-1">
-                      <img [src]="formLojista.get('logoUrl')?.value" alt="Preview da Logo" class="max-h-full max-w-full object-contain" />
+                  @if (!formLojista.get('logoUrl')?.value) {
+                    <div
+                      (click)="fileInputLogo.click()"
+                      class="border-2 border-dashed border-nude-300 hover:border-rose-400 bg-stone-50 hover:bg-rose-50/30 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group">
+                      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                        📁
+                      </div>
+                      <div>
+                        <span class="text-xs font-semibold text-stone-800 block">Clique para fazer upload da sua Logomarca</span>
+                        <span class="text-[11px] text-stone-400">Formatos aceitos: PNG, JPG, WEBP ou SVG</span>
+                      </div>
+                      @if (fazendoUploadLogo()) {
+                        <span class="text-xs font-bold text-rose-600 animate-pulse">Enviando imagem... aguarde</span>
+                      }
+                      @if (erroUploadLogo()) {
+                        <span class="text-xs text-rose-600 font-semibold mt-1">{{ erroUploadLogo() }}</span>
+                      }
                     </div>
-                    <div>
-                      <span class="text-xs font-semibold text-stone-800 block">Prévia da sua Logo</span>
-                      <span class="text-[11px] text-emerald-600 font-medium">Imagem carregada com sucesso</span>
+                  } @else {
+                    <div class="p-4 rounded-2xl bg-stone-50 border border-nude-200 flex items-center justify-between gap-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-16 h-16 rounded-xl overflow-hidden border border-nude-300 bg-white flex items-center justify-center p-1 shadow-sm">
+                          <img [src]="obterPreviewUrl(formLojista.get('logoUrl')?.value)" alt="Preview da Logo" class="max-h-full max-w-full object-contain" />
+                        </div>
+                        <div>
+                          <span class="text-xs font-semibold text-stone-800 block">Logo carregada com sucesso</span>
+                          <span class="text-[11px] text-emerald-600 font-medium">✓ Personalização aplicada</span>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          (click)="fileInputLogo.click()"
+                          class="px-3 py-1.5 rounded-xl border border-nude-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-semibold transition-all">
+                          Trocar Foto
+                        </button>
+                        <button
+                          type="button"
+                          (click)="removerLogo()"
+                          class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-all">
+                          Remover
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                }
+                  }
+
+                  <input #fileInputLogo type="file" accept="image/*" (change)="aoSelecionarArquivoLogo($event)" class="hidden" />
+                </div>
 
                 <div class="pt-4 flex justify-end">
                   <button
@@ -480,6 +509,8 @@ export class OnboardingLojistaComponent implements OnInit {
   mensagemErro = signal<string | null>(null);
   linkCopiado = signal<boolean>(false);
   tenantCriado = signal<TenantPublicDTO | null>(null);
+  fazendoUploadLogo = signal<boolean>(false);
+  erroUploadLogo = signal<string | null>(null);
 
   formLojista!: FormGroup;
 
@@ -546,6 +577,52 @@ export class OnboardingLojistaComponent implements OnInit {
   avancarParaPasso2(): void {
     if (this.slugDisponivel() === false) return;
     this.passoAtual.set(2);
+  }
+
+  aoSelecionarArquivoLogo(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    if (file.size > 15 * 1024 * 1024) {
+      this.erroUploadLogo.set('O arquivo selecionado deve ter no máximo 15MB.');
+      return;
+    }
+
+    this.fazendoUploadLogo.set(true);
+    this.erroUploadLogo.set(null);
+
+    // Pré-visualização instantânea via Data URL para UX veloz
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      this.formLojista.patchValue({ logoUrl: dataUrl });
+    };
+    reader.readAsDataURL(file);
+
+    // Envio seguro ao backend para persistência oficial
+    this.api.uploadImagem(file).subscribe({
+      next: (res) => {
+        if (res && res.url) {
+          this.formLojista.patchValue({ logoUrl: res.url });
+        }
+        this.fazendoUploadLogo.set(false);
+      },
+      error: (err) => {
+        // Fallback: se o backend falhar por algum motivo de rede, o dataUrl gerado continua ativo
+        this.fazendoUploadLogo.set(false);
+        console.warn('Upload de imagem via API utilizou fallback local Base64:', err);
+      }
+    });
+  }
+
+  removerLogo(): void {
+    this.formLojista.patchValue({ logoUrl: '' });
+    this.erroUploadLogo.set(null);
+  }
+
+  obterPreviewUrl(url?: string): string {
+    return this.api.formatarUrlImagem(url);
   }
 
   aplicarPaleta(corPrimaria: string, corSecundaria: string): void {
