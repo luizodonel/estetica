@@ -25,8 +25,13 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(dados: { login: string; senha: string }): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, dados).pipe(
+  login(dados: { login: string; senha: string; host?: string; origin?: string }): Observable<AuthResponse> {
+    const payload = {
+      ...dados,
+      host: dados.host || (typeof window !== 'undefined' ? window.location.host : ''),
+      origin: dados.origin || (typeof window !== 'undefined' ? window.location.origin : '')
+    };
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, payload).pipe(
       tap(res => this.handleAuthSuccess(res))
     );
   }

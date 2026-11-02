@@ -49,6 +49,23 @@ public class JwtService {
                 .compact();
     }
 
+    public String gerarToken(com.estetica.model.Lojista lojista) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("id", lojista.getId());
+        extraClaims.put("nome", lojista.getNomeResponsavel());
+        extraClaims.put("role", com.estetica.model.Role.ROLE_ADMIN.name());
+        extraClaims.put("whatsapp", lojista.getTelefoneWhatsApp());
+        extraClaims.put("slug", lojista.getSlug());
+
+        return Jwts.builder()
+                .claims(extraClaims)
+                .subject(lojista.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(obterChaveAssinatura())
+                .compact();
+    }
+
     public boolean isTokenValido(String token, UserDetails userDetails) {
         final String username = extrairUsername(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpirado(token);

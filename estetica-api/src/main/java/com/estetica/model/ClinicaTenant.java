@@ -41,6 +41,10 @@ public class ClinicaTenant {
     @JoinColumn(name = "admin_usuario_id")
     private Usuario adminUsuario;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lojista_id")
+    private Lojista lojista;
+
     @Column(name = "telefone_whatsapp", length = 20)
     private String telefoneWhatsApp;
 

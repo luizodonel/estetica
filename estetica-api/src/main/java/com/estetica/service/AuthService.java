@@ -2,24 +2,39 @@ package com.estetica.service;
 
 import com.estetica.config.JwtService;
 import com.estetica.dto.AuthDTOs.*;
+import com.estetica.exception.PagamentoPendenteException;
 import com.estetica.exception.RegraNegocioException;
+import com.estetica.model.ClinicaTenant;
+import com.estetica.model.Lojista;
 import com.estetica.model.Role;
 import com.estetica.model.Usuario;
+import com.estetica.repository.ClinicaTenantRepository;
+import com.estetica.repository.LojistaRepository;
 import com.estetica.repository.UsuarioRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
+    private final LojistaRepository lojistaRepository;
+    private final ClinicaTenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final TenantResolverService tenantResolverService;
+    private final MercadoPagoService mercadoPagoService;
+    private final HttpServletRequest httpServletRequest;
 
     @Transactional
     public AuthResponse registrarCliente(RegisterRequest request) {
@@ -106,24 +121,43 @@ public class AuthService {
             throw new BadCredentialsException("Informe seu login, WhatsApp ou e-mail para acessar.");
         }
 
-        Usuario usuario = null;
+        String slugAmbiente = extrairSlugDoAmbiente(request);
 
-        // 1. Tenta buscar por login (campo livre case-insensitive, ex: admin, judite, luiz)
-        usuario = usuarioRepository.findByLoginIgnoreCase(iden).orElse(null);
+        // =========================================================================
+        // 1. TENTA AUTENTICAR COMO LOJISTA (TABELA DEDICADA tb_lojista)
+        // =========================================================================
+        Lojista lojista = lojistaRepository.findByLoginIgnoreCase(iden)
+                .or(() -> lojistaRepository.findByEmailIgnoreCase(iden))
+                .orElse(null);
 
-        // 2. Tenta buscar por e-mail caso não tenha encontrado pelo login
+        if (lojista == null) {
+            String digits = iden.replaceAll("[^0-9]", "");
+            if (digits.length() >= 8) {
+                lojista = lojistaRepository.findByTelefoneWhatsApp(digits)
+                        .or(() -> lojistaRepository.findByTelefoneWhatsApp(iden))
+                        .orElse(null);
+            }
+        }
+
+        if (lojista != null) {
+            return autenticarLojista(lojista, request, slugAmbiente);
+        }
+
+        // =========================================================================
+        // 2. TENTA AUTENTICAR COMO USUÁRIO COMUM (tb_usuario: ADMIN MASTER, ESPECIALISTA, CLIENTE)
+        // =========================================================================
+        Usuario usuario = usuarioRepository.findByLoginIgnoreCase(iden).orElse(null);
+
         if (usuario == null) {
             usuario = usuarioRepository.findByEmail(iden.toLowerCase().trim()).orElse(null);
         }
 
-        // 3. Tenta buscar pelo número de WhatsApp (dígitos limpos)
         if (usuario == null) {
             String digits = iden.replaceAll("[^0-9]", "");
             if (digits.length() >= 8) {
-                usuario = usuarioRepository.findByTelefoneWhatsApp(digits).orElse(null);
-                if (usuario == null) {
-                    usuario = usuarioRepository.findByTelefoneWhatsApp(iden).orElse(null);
-                }
+                usuario = usuarioRepository.findByTelefoneWhatsApp(digits)
+                        .or(() -> usuarioRepository.findByTelefoneWhatsApp(iden))
+                        .orElse(null);
             }
         }
 
@@ -131,23 +165,106 @@ public class AuthService {
             throw new BadCredentialsException("Credenciais inválidas: usuário ou telefone não encontrado.");
         }
 
-        // REGRA DE ACESSO:
-        // Clientes: login exclusivo via Telefone / WhatsApp
-        // Especialistas e Administradores: campo livre (login de usuário, e-mail ou WhatsApp)
-        if (usuario.getRole() == Role.ROLE_CLIENTE) {
-            String digits = iden.replaceAll("[^0-9]", "");
-            String userDigits = usuario.getTelefoneWhatsApp() != null ? usuario.getTelefoneWhatsApp().replaceAll("[^0-9]", "") : "";
-            if (digits.length() < 8 || !userDigits.endsWith(digits.substring(Math.max(0, digits.length() - 8)))) {
-                throw new BadCredentialsException("Para clientes/pacientes, o acesso é realizado exclusivamente pelo número do WhatsApp.");
+        return autenticarUsuario(usuario, request, slugAmbiente);
+    }
+
+    private AuthResponse autenticarLojista(Lojista lojista, LoginRequest request, String slugAmbiente) {
+        String lojistaSlug = lojista.getSlug();
+        String linkPersonalizado = (lojista.getLinkLogin() != null && !lojista.getLinkLogin().isBlank())
+                ? lojista.getLinkLogin()
+                : (lojista.getLinkPersonalizado() != null ? lojista.getLinkPersonalizado() + "login" : "https://" + lojistaSlug + ".logistadigital.com.br/login");
+
+        // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO:
+        // O link principal (estetica.logistadigital.com.br) é exclusivo do Administrador Master.
+        // O lojista só pode fazer login no seu próprio link/subdomínio!
+        if (slugAmbiente != null) {
+            if ("estetica".equalsIgnoreCase(slugAmbiente)) {
+                throw new RegraNegocioException("Este usuário não pertence ao link https://estetica.logistadigital.com.br/login. Cada usuário só pode fazer login no seu respectivo link: " + linkPersonalizado);
+            }
+            if (!slugAmbiente.equalsIgnoreCase(lojistaSlug)) {
+                throw new RegraNegocioException("Este usuário não pertence a este endereço. Por favor, acesse pelo seu respectivo link: " + linkPersonalizado);
             }
         }
 
-        // Validação de Tenant ativo e pagamento PIX do lojista
-        if (usuario.getTenant() != null && Boolean.FALSE.equals(usuario.getTenant().getAtivo())) {
-            if ("PENDENTE".equalsIgnoreCase(usuario.getTenant().getStatusPagamento())) {
-                throw new RegraNegocioException("O acesso da clínica está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).");
-            } else {
-                throw new RegraNegocioException("Esta clínica está temporariamente desativada. Entre em contato com o suporte.");
+        if (!passwordEncoder.matches(request.senha(), lojista.getSenhaHash())) {
+            throw new BadCredentialsException("Senha incorreta. Tente novamente.");
+        }
+
+        // Validação de Pagamento PIX do Lojista
+        if (!"APROVADO".equalsIgnoreCase(lojista.getStatusPagamento()) || Boolean.FALSE.equals(lojista.getAtivo())) {
+            // Se o PIX não estava gerado, gera sob demanda
+            if (lojista.getPixQrCodeBase64() == null || lojista.getPixCopiaCola() == null) {
+                try {
+                    ClinicaTenant tenant = tenantRepository.findBySlugIgnoreCase(lojistaSlug).orElse(null);
+                    if (tenant != null) {
+                        Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(tenant, lojista, lojista.getValorAdesao() != null ? lojista.getValorAdesao() : new BigDecimal("149.90"));
+                        if (mp != null) {
+                            lojista.setMercadoPagoPaymentId(String.valueOf(mp.get("id")));
+                            Map<String, Object> poi = (Map<String, Object>) mp.get("point_of_interaction");
+                            if (poi != null && poi.get("transaction_data") != null) {
+                                Map<String, Object> td = (Map<String, Object>) poi.get("transaction_data");
+                                lojista.setPixCopiaCola((String) td.get("qr_code"));
+                                lojista.setPixQrCodeBase64((String) td.get("qr_code_base64"));
+                                lojista = lojistaRepository.save(lojista);
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            throw new PagamentoPendenteException(
+                    "O acesso da clínica está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).",
+                    lojista.getMercadoPagoPaymentId(),
+                    lojista.getPixCopiaCola(),
+                    lojista.getPixQrCodeBase64(),
+                    lojista.getValorAdesao() != null ? lojista.getValorAdesao() : new BigDecimal("149.90")
+            );
+        }
+
+        String token = jwtService.gerarToken(lojista);
+
+        return new AuthResponse(
+                token,
+                lojista.getId(),
+                lojista.getNomeResponsavel(),
+                lojista.getEmail(),
+                lojista.getTelefoneWhatsApp(),
+                Role.ROLE_ADMIN,
+                false
+        );
+    }
+
+    private AuthResponse autenticarUsuario(Usuario usuario, LoginRequest request, String slugAmbiente) {
+        boolean isMasterAdmin = "admin@logistadigital.com.br".equalsIgnoreCase(usuario.getEmail()) || usuario.getTenant() == null && usuario.getRole() == Role.ROLE_ADMIN;
+
+        // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO PARA USUÁRIO COMUM:
+        if (isMasterAdmin) {
+            // Administrador Master: só acessa pelo link principal (estetica)
+            if (slugAmbiente != null && !"estetica".equalsIgnoreCase(slugAmbiente)) {
+                throw new RegraNegocioException("O Administrador Master deve acessar exclusivamente pelo link principal: https://estetica.logistadigital.com.br/login");
+            }
+        } else {
+            // Especialista ou Cliente de uma clínica:
+            ClinicaTenant tenant = usuario.getTenant();
+            String userSlug = tenant != null ? tenant.getSlug() : null;
+            String userLink = userSlug != null ? "https://" + userSlug + ".logistadigital.com.br/login" : "https://estetica.logistadigital.com.br/login";
+
+            if (slugAmbiente != null) {
+                if ("estetica".equalsIgnoreCase(slugAmbiente)) {
+                    throw new RegraNegocioException("Este usuário não pertence ao link https://estetica.logistadigital.com.br/login. Cada usuário só pode fazer login no seu respectivo link: " + userLink);
+                }
+                if (userSlug != null && !slugAmbiente.equalsIgnoreCase(userSlug)) {
+                    throw new RegraNegocioException("Este usuário não pertence a esta clínica. Por favor, acesse pelo seu respectivo link: " + userLink);
+                }
+            }
+        }
+
+        // Clientes: login exclusivo via Telefone / WhatsApp
+        if (usuario.getRole() == Role.ROLE_CLIENTE) {
+            String digits = request.getIdentificador().replaceAll("[^0-9]", "");
+            String userDigits = usuario.getTelefoneWhatsApp() != null ? usuario.getTelefoneWhatsApp().replaceAll("[^0-9]", "") : "";
+            if (digits.length() < 8 || !userDigits.endsWith(digits.substring(Math.max(0, digits.length() - 8)))) {
+                throw new BadCredentialsException("Para clientes/pacientes, o acesso é realizado exclusivamente pelo número do WhatsApp.");
             }
         }
 
@@ -158,6 +275,11 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.senha(), usuario.getSenhaHash())) {
             throw new BadCredentialsException("Senha incorreta. Tente novamente.");
+        }
+
+        ClinicaTenant tenant = usuario.getTenant();
+        if (tenant != null && Boolean.FALSE.equals(tenant.getAtivo())) {
+            throw new RegraNegocioException("Esta clínica está temporariamente desativada. Entre em contato com o suporte.");
         }
 
         if (!usuario.isEnabled()) {
@@ -175,6 +297,49 @@ public class AuthService {
                 usuario.getRole(),
                 usuario.getPrimeiroAcesso()
         );
+    }
+
+    private String extrairSlugDoAmbiente(LoginRequest request) {
+        String host = request.host();
+        if (host == null || host.isBlank()) {
+            host = request.origin();
+        }
+        if ((host == null || host.isBlank()) && httpServletRequest != null) {
+            host = httpServletRequest.getHeader("X-Forwarded-Host");
+            if (host == null || host.isBlank()) {
+                host = httpServletRequest.getHeader("Host");
+            }
+            if (host == null || host.isBlank()) {
+                host = httpServletRequest.getHeader("Origin");
+            }
+        }
+        if (host == null) return null;
+
+        host = host.toLowerCase().trim()
+                .replace("https://", "")
+                .replace("http://", "");
+
+        int slashIdx = host.indexOf('/');
+        if (slashIdx >= 0) host = host.substring(0, slashIdx);
+
+        int colonIdx = host.indexOf(':');
+        if (colonIdx >= 0) host = host.substring(0, colonIdx);
+
+        if (host.endsWith(".logistadigital.com.br")) {
+            String sub = host.substring(0, host.indexOf(".logistadigital.com.br"));
+            return sub.isBlank() ? "estetica" : sub;
+        }
+
+        if (host.equals("logistadigital.com.br") || host.equals("estetica.local")) {
+            return "estetica";
+        }
+
+        // Se for localhost ou IP de desenvolvimento direto, não restringe ou assume estetica
+        if (host.equals("localhost") || host.equals("127.0.0.1") || host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
+            return null; // Em ambiente local sem subdomínio, não bloqueia por domínio
+        }
+
+        return host;
     }
 
     // =========================================================================

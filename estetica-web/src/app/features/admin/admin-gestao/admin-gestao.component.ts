@@ -8,7 +8,8 @@ import { PhoneMaskDirective } from '../../../shared/directives/phone-mask.direct
 import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
 import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trava-agenda.component';
 
-type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
+import { TenantService } from '../../../core/services/tenant.service';
+type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
 
 @Component({
   selector: 'app-admin-gestao',
@@ -79,6 +80,17 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
             {{ clientes().length }}
           </span>
         </button>
+
+        <button
+          (click)="abaAtiva.set('identidade')"
+          [class.bg-rose-500]="abaAtiva() === 'identidade'"
+          [class.text-white]="abaAtiva() === 'identidade'"
+          [class.shadow-md]="abaAtiva() === 'identidade'"
+          [class.bg-white]="abaAtiva() !== 'identidade'"
+          [class.text-stone-700]="abaAtiva() !== 'identidade'"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
+          <span>🎨 Identidade & Cores</span>
+        </button>
       </div>
 
       <!-- Feedback de Sucesso ou Erro -->
@@ -99,6 +111,236 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
             <span>{{ mensagemErro() }}</span>
           </div>
           <button (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold">✕</button>
+        </div>
+      }
+
+      <!-- ========================================================================================= -->
+      <!-- ABA 4: IDENTIDADE VISUAL & CORES DA CLÍNICA -->
+      <!-- ========================================================================================= -->
+      @if (abaAtiva() === 'identidade') {
+        <div class="space-y-6 max-w-4xl animate-fade-in">
+          <div class="bg-white p-6 sm:p-8 rounded-3xl border border-nude-200 shadow-sm space-y-6">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
+                Personalização Visual Whitelabel
+              </span>
+              <h2 class="font-serif text-2xl font-bold text-stone-900">
+                Logotipo & Cores do Sistema
+              </h2>
+              <p class="text-xs text-stone-500 mt-1">
+                Altere a logomarca da clínica e a paleta de cores a qualquer momento. Suas alterações são aplicadas instantaneamente em toda a plataforma.
+              </p>
+            </div>
+
+            <form [formGroup]="formIdentidade" (ngSubmit)="salvarIdentidadeVisual()" class="space-y-6">
+              
+              <!-- Nome e WhatsApp da Clínica -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">Nome da Clínica / Estética *</label>
+                  <input
+                    type="text"
+                    formControlName="nomeEmpresa"
+                    placeholder="Ex: Clínica L'Élégance"
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">WhatsApp Principal de Contato</label>
+                  <input
+                    type="text"
+                    appPhoneMask
+                    formControlName="telefoneWhatsApp"
+                    placeholder="(61) 98226-1155"
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                </div>
+              </div>
+
+              <!-- Upload de Logomarca Oficial -->
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1.5">
+                  Logomarca Oficial da Clínica (Exibida no topo e cabeçalho)
+                </label>
+
+                @if (!formIdentidade.get('logoUrl')?.value) {
+                  <div
+                    (click)="fileInputLogoClinica.click()"
+                    class="border-2 border-dashed border-nude-300 hover:border-rose-400 bg-stone-50 hover:bg-rose-50/20 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group">
+                    <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                      📁
+                    </div>
+                    <div>
+                      <span class="text-xs font-semibold text-stone-800 block">Clique para enviar a Logomarca da clínica</span>
+                      <span class="text-[10px] text-stone-400">Formatos aceitos: PNG, JPG, WEBP ou SVG (até 15MB)</span>
+                    </div>
+                    @if (fazendoUploadLogo()) {
+                      <span class="text-xs font-bold text-rose-600 animate-pulse">Enviando imagem... aguarde</span>
+                    }
+                  </div>
+                } @else {
+                  <div class="p-4 rounded-2xl bg-stone-50 border border-nude-200 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-16 h-16 rounded-xl overflow-hidden border border-nude-300 bg-white flex items-center justify-center p-1.5 shadow-sm">
+                        <img [src]="obterImagemUrl(formIdentidade.get('logoUrl')?.value)" alt="Logomarca" class="max-h-full max-w-full object-contain" />
+                      </div>
+                      <div>
+                        <span class="text-xs font-semibold text-stone-800 block">Logomarca ativa</span>
+                        <span class="text-[10px] text-emerald-600 font-medium">✓ Exibida em todas as páginas</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        (click)="fileInputLogoClinica.click()"
+                        class="px-3 py-1.5 rounded-xl border border-nude-300 bg-white text-xs font-semibold text-stone-700 hover:bg-stone-100 transition-all">
+                        Trocar Logo
+                      </button>
+                      <button
+                        type="button"
+                        (click)="removerLogoClinica()"
+                        class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-all">
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <input #fileInputLogoClinica type="file" accept="image/*" (change)="aoSelecionarLogoClinica($event)" class="hidden" />
+              </div>
+
+              <!-- Paleta de Cores e Temas -->
+              <div class="space-y-4 pt-2 border-t border-nude-200">
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">
+                    Sugestões de Paletas Elegantes:
+                  </label>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      (click)="aplicarPaletaClinica('#e11d48', '#f43f5e')"
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-rose-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#e11d48] to-[#f43f5e] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Rose Luxury</span>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="aplicarPaletaClinica('#0f766e', '#14b8a6')"
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-teal-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#0f766e] to-[#14b8a6] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Teal Spa</span>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="aplicarPaletaClinica('#7c2d12', '#c2410c')"
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-amber-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#7c2d12] to-[#c2410c] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Terracota</span>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="aplicarPaletaClinica('#1e293b', '#475569')"
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-slate-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#1e293b] to-[#475569] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Graphite Minimal</span>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="aplicarPaletaClinica('#b45309', '#d97706')"
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-amber-500 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#b45309] to-[#d97706] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Ouro Imperial</span>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="aplicarPaletaClinica('#047857', '#10b981')"
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-emerald-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#047857] to-[#10b981] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Esmeralda Nobre</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Seletores de Cores Personalizadas -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="p-4 rounded-2xl border border-nude-200 bg-stone-50">
+                    <label class="block text-xs font-semibold text-stone-700 mb-2">Cor Primária (Principal)</label>
+                    <div class="flex items-center gap-3">
+                      <input
+                        type="color"
+                        formControlName="corPrimaria"
+                        class="w-12 h-12 rounded-xl border border-nude-300 p-1 cursor-pointer bg-white" />
+                      <div>
+                        <span class="font-mono font-bold text-xs text-stone-800 uppercase block">
+                          {{ formIdentidade.get('corPrimaria')?.value }}
+                        </span>
+                        <span class="text-[10px] text-stone-400">Botões, cabeçalho e destaques</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="p-4 rounded-2xl border border-nude-200 bg-stone-50">
+                    <label class="block text-xs font-semibold text-stone-700 mb-2">Cor Secundária (Destaques)</label>
+                    <div class="flex items-center gap-3">
+                      <input
+                        type="color"
+                        formControlName="corSecundaria"
+                        class="w-12 h-12 rounded-xl border border-nude-300 p-1 cursor-pointer bg-white" />
+                      <div>
+                        <span class="font-mono font-bold text-xs text-stone-800 uppercase block">
+                          {{ formIdentidade.get('corSecundaria')?.value }}
+                        </span>
+                        <span class="text-[10px] text-stone-400">Gradientes e badges</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Prévia em Tempo Real -->
+                <div class="p-5 rounded-3xl border border-nude-200 bg-stone-50/60 space-y-3">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Prévia da Barra do Seu Sistema</span>
+                  <div class="p-3.5 rounded-2xl border border-nude-200 flex items-center justify-between bg-white shadow-sm">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                           [style.background]="'linear-gradient(135deg, ' + formIdentidade.get('corPrimaria')?.value + ', ' + formIdentidade.get('corSecundaria')?.value + ')'">
+                        @if (formIdentidade.get('logoUrl')?.value) {
+                          <img [src]="obterImagemUrl(formIdentidade.get('logoUrl')?.value)" class="w-full h-full object-contain p-1" />
+                        } @else {
+                          ★
+                        }
+                      </div>
+                      <div>
+                        <span class="font-serif font-bold text-xs text-stone-900 block leading-tight">
+                          {{ formIdentidade.get('nomeEmpresa')?.value || 'Sua Clínica' }}
+                        </span>
+                        <span class="text-[9px] uppercase tracking-wider text-stone-400 font-semibold">Portal Oficial</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="px-4 py-2 rounded-xl text-white font-semibold text-xs shadow-sm"
+                      [style.backgroundColor]="formIdentidade.get('corPrimaria')?.value">
+                      Agendar Consulta
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  [disabled]="salvandoIdentidade() || formIdentidade.invalid"
+                  class="px-7 py-3 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs shadow-md transition-all flex items-center gap-2 disabled:opacity-50">
+                  @if (salvandoIdentidade()) {
+                    <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span>Salvando Alterações...</span>
+                  } @else {
+                    <span>💾 Salvar Logotipo & Cores</span>
+                  }
+                </button>
+              </div>
+
+            </form>
+          </div>
         </div>
       }
 
@@ -720,6 +962,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
 })
 export class AdminGestaoComponent implements OnInit {
   private api = inject(ApiService);
+  private tenantService = inject(TenantService);
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
 
@@ -761,6 +1004,10 @@ export class AdminGestaoComponent implements OnInit {
   formProcedimento!: FormGroup;
   formProfissional!: FormGroup;
   formCliente!: FormGroup;
+  formIdentidade!: FormGroup;
+  fazendoUploadLogo = signal<boolean>(false);
+  salvandoIdentidade = signal<boolean>(false);
+  erroUploadLogo = signal<string | null>(null);
 
   // Filtros calculados
   procedimentosFiltrados = computed(() => {
@@ -797,7 +1044,7 @@ export class AdminGestaoComponent implements OnInit {
 
     // Permite abrir em uma aba específica via queryParam: /admin/gestao?tab=clientes
     this.route.queryParams.subscribe(params => {
-      if (params['tab'] && ['procedimentos', 'profissionais', 'clientes'].includes(params['tab'])) {
+      if (params['tab'] && ['procedimentos', 'profissionais', 'clientes', 'identidade'].includes(params['tab'])) {
         this.abaAtiva.set(params['tab'] as TabTipo);
       }
     });
@@ -832,6 +1079,14 @@ export class AdminGestaoComponent implements OnInit {
       telefoneWhatsApp: ['', Validators.required],
       senha: ['']
     });
+
+    this.formIdentidade = this.fb.group({
+      nomeEmpresa: ['', [Validators.required, Validators.minLength(2)]],
+      logoUrl: [''],
+      corPrimaria: ['#e11d48', Validators.required],
+      corSecundaria: ['#f43f5e', Validators.required],
+      telefoneWhatsApp: ['']
+    });
   }
 
   carregarDados(): void {
@@ -853,6 +1108,20 @@ export class AdminGestaoComponent implements OnInit {
       next: (profs) => this.profissionais.set(profs),
       error: () => {
         this.api.getProfissionais().subscribe(p => this.profissionais.set(p));
+      }
+    });
+
+    this.api.getMeuTenant().subscribe({
+      next: (t) => {
+        if (t) {
+          this.formIdentidade.patchValue({
+            nomeEmpresa: t.nomeEmpresa || '',
+            logoUrl: t.logoUrl || '',
+            corPrimaria: t.corPrimaria || '#e11d48',
+            corSecundaria: t.corSecundaria || '#f43f5e',
+            telefoneWhatsApp: t.telefoneWhatsApp || ''
+          });
+        }
       }
     });
 
@@ -1162,5 +1431,71 @@ export class AdminGestaoComponent implements OnInit {
 
   obterImagemUrl(url?: string): string {
     return this.api.formatarUrlImagem(url);
+  }
+
+  // ===================== IDENTIDADE VISUAL & CORES =====================
+  aoSelecionarLogoClinica(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    if (file.size > 15 * 1024 * 1024) {
+      this.erroUploadLogo.set('O arquivo selecionado deve ter no máximo 15MB.');
+      return;
+    }
+
+    this.fazendoUploadLogo.set(true);
+    this.erroUploadLogo.set(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.formIdentidade.patchValue({ logoUrl: e.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+
+    this.api.uploadImagem(file).subscribe({
+      next: (res) => {
+        if (res && res.url) {
+          this.formIdentidade.patchValue({ logoUrl: res.url });
+        }
+        this.fazendoUploadLogo.set(false);
+      },
+      error: () => {
+        this.fazendoUploadLogo.set(false);
+      }
+    });
+  }
+
+  removerLogoClinica(): void {
+    this.formIdentidade.patchValue({ logoUrl: '' });
+  }
+
+  aplicarPaletaClinica(corPrimaria: string, corSecundaria: string): void {
+    this.formIdentidade.patchValue({ corPrimaria, corSecundaria });
+  }
+
+  salvarIdentidadeVisual(): void {
+    if (this.formIdentidade.invalid) {
+      this.mensagemErro.set('Preencha os campos obrigatórios da clínica.');
+      return;
+    }
+
+    this.salvandoIdentidade.set(true);
+    this.mensagemErro.set(null);
+    this.mensagemSucesso.set(null);
+
+    const dados = this.formIdentidade.value;
+
+    this.api.atualizarIdentidadeVisual(dados).subscribe({
+      next: (res) => {
+        this.salvandoIdentidade.set(false);
+        this.tenantService.setTenantManual(res);
+        this.mensagemSucesso.set('✓ Logotipo, cores e dados da clínica atualizados com sucesso!');
+      },
+      error: (err) => {
+        this.salvandoIdentidade.set(false);
+        this.mensagemErro.set(err.error?.detail || err.error?.message || 'Erro ao salvar identidade visual.');
+      }
+    });
   }
 }

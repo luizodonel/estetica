@@ -27,6 +27,7 @@ public class TenantService {
 
     private final ClinicaTenantRepository tenantRepository;
     private final UsuarioRepository usuarioRepository;
+    private final com.estetica.repository.LojistaRepository lojistaRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final TenantResolverService tenantResolverService;
@@ -50,12 +51,12 @@ public class TenantService {
             throw new RegraNegocioException("Este link exclusivo é reservado pelo sistema. Por favor, escolha outro.");
         }
 
-        if (tenantRepository.existsBySlugIgnoreCase(cleanSlug)) {
+        if (tenantRepository.existsBySlugIgnoreCase(cleanSlug) || lojistaRepository.existsBySlugIgnoreCase(cleanSlug)) {
             throw new RegraNegocioException("O link https://" + cleanSlug + ".logistadigital.com.br/ já está em uso por outro parceiro.");
         }
 
         String email = request.email().toLowerCase().trim();
-        if (usuarioRepository.existsByEmail(email)) {
+        if (usuarioRepository.existsByEmail(email) || lojistaRepository.existsByEmailIgnoreCase(email)) {
             throw new RegraNegocioException("Já existe um cadastro com o e-mail: " + email);
         }
 
@@ -65,32 +66,39 @@ public class TenantService {
                 : null;
 
         if (customLogin != null) {
-            if (usuarioRepository.existsByLoginIgnoreCase(customLogin)) {
+            if (usuarioRepository.existsByLoginIgnoreCase(customLogin) || lojistaRepository.existsByLoginIgnoreCase(customLogin)) {
                 throw new RegraNegocioException("O nome de usuário '" + customLogin + "' já está em uso. Por favor, escolha outro.");
             }
         }
 
-        // 1. Cria o Usuário Administrador do Lojista (Inativo até confirmação do pagamento)
-        Usuario adminLojista = Usuario.builder()
-                .nome(request.nomeResponsavel().trim())
-                .login(customLogin)
-                .email(email)
-                .telefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""))
-                .senhaHash(passwordEncoder.encode(request.senha()))
-                .role(Role.ROLE_ADMIN)
-                .ativo(false) // Liberado após aprovação do PIX
-                .primeiroAcesso(false)
-                .build();
-        adminLojista = usuarioRepository.save(adminLojista);
-
-        // 2. Define cores e link
         String corPrimaria = (request.corPrimaria() != null && !request.corPrimaria().isBlank())
                 ? request.corPrimaria().trim() : "#e11d48";
         String corSecundaria = (request.corSecundaria() != null && !request.corSecundaria().isBlank())
                 ? request.corSecundaria().trim() : "#f43f5e";
         String linkPersonalizado = "https://" + cleanSlug + ".logistadigital.com.br/";
+        String linkLogin = "https://" + cleanSlug + ".logistadigital.com.br/login";
 
-        // 3. Salva a Clínica / Loja do Parceiro (com status de pagamento PENDENTE e inativa)
+        // 1. Salva o Lojista na tabela dedicada tb_lojista (separado de usuários comuns)
+        com.estetica.model.Lojista lojista = com.estetica.model.Lojista.builder()
+                .nomeEmpresa(request.nomeEmpresa().trim())
+                .slug(cleanSlug)
+                .linkPersonalizado(linkPersonalizado)
+                .linkLogin(linkLogin)
+                .nomeResponsavel(request.nomeResponsavel().trim())
+                .login(customLogin)
+                .email(email)
+                .telefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""))
+                .senhaHash(passwordEncoder.encode(request.senha()))
+                .logoUrl(request.logoUrl() != null && !request.logoUrl().isBlank() ? request.logoUrl().trim() : null)
+                .corPrimaria(corPrimaria)
+                .corSecundaria(corSecundaria)
+                .statusPagamento("PENDENTE")
+                .valorAdesao(VALOR_ADESAO_PIX)
+                .ativo(false) // Liberado após confirmação do PIX
+                .build();
+        lojista = lojistaRepository.save(lojista);
+
+        // 2. Salva a Clínica / Tenant da Loja vinculada ao Lojista
         ClinicaTenant tenant = ClinicaTenant.builder()
                 .nomeEmpresa(request.nomeEmpresa().trim())
                 .slug(cleanSlug)
@@ -98,7 +106,7 @@ public class TenantService {
                 .logoUrl(request.logoUrl() != null && !request.logoUrl().isBlank() ? request.logoUrl().trim() : null)
                 .corPrimaria(corPrimaria)
                 .corSecundaria(corSecundaria)
-                .adminUsuario(adminLojista)
+                .lojista(lojista)
                 .telefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""))
                 .statusPagamento("PENDENTE")
                 .valorAdesao(VALOR_ADESAO_PIX)
@@ -106,20 +114,17 @@ public class TenantService {
                 .build();
         tenant = tenantRepository.save(tenant);
 
-        // Associa o tenant ao usuário admin do lojista
-        adminLojista.setTenant(tenant);
-        usuarioRepository.save(adminLojista);
-
-        // 4. Integração com Mercado Pago para Gerar Cobrança Pix de R$ 149,90
+        // 3. Integração com Mercado Pago para Gerar Cobrança Pix de R$ 149,90
         String paymentId = null;
         String qrCode = null;
         String qrCodeBase64 = null;
 
         try {
-            Map<String, Object> mpResponse = mercadoPagoService.criarPagamentoPix(tenant, adminLojista, VALOR_ADESAO_PIX);
+            Map<String, Object> mpResponse = mercadoPagoService.criarPagamentoPix(tenant, lojista, VALOR_ADESAO_PIX);
             if (mpResponse != null) {
                 paymentId = String.valueOf(mpResponse.get("id"));
                 tenant.setMercadoPagoPaymentId(paymentId);
+                lojista.setMercadoPagoPaymentId(paymentId);
 
                 Map<String, Object> poi = (Map<String, Object>) mpResponse.get("point_of_interaction");
                 if (poi != null && poi.get("transaction_data") != null) {
@@ -128,15 +133,26 @@ public class TenantService {
                     qrCodeBase64 = (String) td.get("qr_code_base64");
                     tenant.setPixCopiaCola(qrCode);
                     tenant.setPixQrCodeBase64(qrCodeBase64);
+                    lojista.setPixCopiaCola(qrCode);
+                    lojista.setPixQrCodeBase64(qrCodeBase64);
                 }
                 tenant = tenantRepository.save(tenant);
+                lojista = lojistaRepository.save(lojista);
             }
         } catch (Exception ex) {
             log.error("[TenantService] Erro ao gerar PIX de adesão no Mercado Pago: {}", ex.getMessage(), ex);
             throw new RegraNegocioException("Erro ao gerar QR Code PIX de adesão no Mercado Pago: " + ex.getMessage());
         }
 
-        UsuarioDTO usuarioDTO = toUsuarioDTO(adminLojista);
+        UsuarioDTO lojistaDTO = new UsuarioDTO(
+                lojista.getId(),
+                lojista.getNomeResponsavel(),
+                lojista.getEmail(),
+                lojista.getTelefoneWhatsApp(),
+                Role.ROLE_ADMIN,
+                lojista.getAtivo(),
+                false
+        );
         TenantPublicDTO tenantDTO = toPublicDTO(tenant);
 
         return new CadastroLojistaResponse(
@@ -147,7 +163,7 @@ public class TenantService {
                 "PENDENTE",
                 linkPersonalizado,
                 tenantDTO,
-                usuarioDTO,
+                lojistaDTO,
                 null // Token só é emitido após aprovação do pagamento!
         );
     }
@@ -166,50 +182,76 @@ public class TenantService {
         String status = (String) mpResponse.get("status");
         boolean aprovado = "approved".equalsIgnoreCase(status);
 
-        ClinicaTenant tenant = tenantRepository.findByMercadoPagoPaymentId(paymentId)
-                .orElse(null);
+        com.estetica.model.Lojista lojista = lojistaRepository.findByMercadoPagoPaymentId(paymentId).orElse(null);
+        ClinicaTenant tenant = tenantRepository.findByMercadoPagoPaymentId(paymentId).orElse(null);
 
-        if (tenant == null) {
-            log.warn("[TenantService] Tenant não localizado para o pagamento {}", paymentId);
+        if (tenant == null && lojista != null) {
+            tenant = tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
+        }
+
+        if (tenant == null && lojista == null) {
+            log.warn("[TenantService] Lojista e Tenant não localizados para o pagamento {}", paymentId);
             return new StatusPagamentoResponse(status != null ? status : "pending", false, null, null, null, null, null);
         }
 
+        String link = tenant != null ? tenant.getLinkPersonalizado() : (lojista != null ? lojista.getLinkPersonalizado() : null);
+        String slug = tenant != null ? tenant.getSlug() : (lojista != null ? lojista.getSlug() : null);
+
         if (aprovado) {
-            if (!Boolean.TRUE.equals(tenant.getAtivo()) || !"APROVADO".equalsIgnoreCase(tenant.getStatusPagamento())) {
+            if (tenant != null && (!Boolean.TRUE.equals(tenant.getAtivo()) || !"APROVADO".equalsIgnoreCase(tenant.getStatusPagamento()))) {
                 log.info("[TenantService] Pagamento aprovado para a loja: {}. Ativando tenant e liberando acesso!", tenant.getNomeEmpresa());
                 tenant.setAtivo(true);
                 tenant.setStatusPagamento("APROVADO");
                 tenant = tenantRepository.save(tenant);
-
-                Usuario admin = tenant.getAdminUsuario();
-                if (admin != null) {
-                    admin.setAtivo(true);
-                    usuarioRepository.save(admin);
-                }
             }
 
-            Usuario admin = tenant.getAdminUsuario();
-            String token = (admin != null) ? jwtService.gerarToken(admin) : null;
+            if (lojista != null && (!Boolean.TRUE.equals(lojista.getAtivo()) || !"APROVADO".equalsIgnoreCase(lojista.getStatusPagamento()))) {
+                lojista.setAtivo(true);
+                lojista.setStatusPagamento("APROVADO");
+                lojista.setDataPagamento(java.time.LocalDateTime.now());
+                lojista = lojistaRepository.save(lojista);
+            }
+
+            String token = null;
+            if (lojista != null) {
+                token = jwtService.gerarToken(lojista);
+            } else if (tenant != null && tenant.getAdminUsuario() != null) {
+                token = jwtService.gerarToken(tenant.getAdminUsuario());
+            }
+
+            UsuarioDTO adminDTO = null;
+            if (lojista != null) {
+                adminDTO = new UsuarioDTO(lojista.getId(), lojista.getNomeResponsavel(), lojista.getEmail(), lojista.getTelefoneWhatsApp(), Role.ROLE_ADMIN, true, false);
+            } else if (tenant != null && tenant.getAdminUsuario() != null) {
+                adminDTO = toUsuarioDTO(tenant.getAdminUsuario());
+            }
 
             return new StatusPagamentoResponse(
                     "approved",
                     true,
                     token,
-                    tenant.getLinkPersonalizado(),
-                    tenant.getSlug(),
-                    toPublicDTO(tenant),
-                    admin != null ? toUsuarioDTO(admin) : null
+                    link,
+                    slug,
+                    tenant != null ? toPublicDTO(tenant) : null,
+                    adminDTO
             );
+        }
+
+        UsuarioDTO adminDTO = null;
+        if (lojista != null) {
+            adminDTO = new UsuarioDTO(lojista.getId(), lojista.getNomeResponsavel(), lojista.getEmail(), lojista.getTelefoneWhatsApp(), Role.ROLE_ADMIN, lojista.getAtivo(), false);
+        } else if (tenant != null && tenant.getAdminUsuario() != null) {
+            adminDTO = toUsuarioDTO(tenant.getAdminUsuario());
         }
 
         return new StatusPagamentoResponse(
                 status != null ? status : "pending",
                 false,
                 null,
-                tenant.getLinkPersonalizado(),
-                tenant.getSlug(),
-                toPublicDTO(tenant),
-                tenant.getAdminUsuario() != null ? toUsuarioDTO(tenant.getAdminUsuario()) : null
+                link,
+                slug,
+                tenant != null ? toPublicDTO(tenant) : null,
+                adminDTO
         );
     }
 
@@ -287,6 +329,39 @@ public class TenantService {
         if (req.bannerBotaoTexto() != null) tenant.setBannerBotaoTexto(req.bannerBotaoTexto().trim());
 
         tenant = tenantRepository.save(tenant);
+        return toPublicDTO(tenant);
+    }
+
+    @Transactional
+    public TenantPublicDTO atualizarIdentidadeVisual(AtualizarIdentidadeVisualRequest req) {
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        if (tenant == null) {
+            tenant = tenantRepository.findAll().stream().findFirst()
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Clínica não encontrada."));
+        }
+
+        if (req.nomeEmpresa() != null && !req.nomeEmpresa().isBlank()) {
+            tenant.setNomeEmpresa(req.nomeEmpresa().trim());
+        }
+
+        if (req.logoUrl() != null) {
+            tenant.setLogoUrl(req.logoUrl().isBlank() ? null : req.logoUrl().trim());
+        }
+
+        if (req.corPrimaria() != null && !req.corPrimaria().isBlank()) {
+            tenant.setCorPrimaria(req.corPrimaria().trim());
+        }
+
+        if (req.corSecundaria() != null && !req.corSecundaria().isBlank()) {
+            tenant.setCorSecundaria(req.corSecundaria().trim());
+        }
+
+        if (req.telefoneWhatsApp() != null && !req.telefoneWhatsApp().isBlank()) {
+            tenant.setTelefoneWhatsApp(req.telefoneWhatsApp().replaceAll("[^0-9]", ""));
+        }
+
+        tenant = tenantRepository.save(tenant);
+        log.info("[TenantService] Identidade visual e cores atualizadas para a loja: {}", tenant.getNomeEmpresa());
         return toPublicDTO(tenant);
     }
 }

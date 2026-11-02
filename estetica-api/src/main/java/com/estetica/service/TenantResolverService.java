@@ -21,23 +21,29 @@ public class TenantResolverService {
 
     public ClinicaTenant getTenantDoUsuarioAutenticado() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof Usuario usuario) {
-            if (usuario.getTenant() != null) {
-                return usuario.getTenant();
+        if (auth != null) {
+            if (auth.getPrincipal() instanceof com.estetica.model.Lojista lojista) {
+                return tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
             }
 
-            if (usuario.getRole() == Role.ROLE_ADMIN) {
-                Optional<ClinicaTenant> tenantOpt = tenantRepository.findByAdminUsuarioId(usuario.getId());
-                if (tenantOpt.isPresent()) {
-                    return tenantOpt.get();
+            if (auth.getPrincipal() instanceof Usuario usuario) {
+                if (usuario.getTenant() != null) {
+                    return usuario.getTenant();
                 }
-            }
 
-            if (usuario.getRole() == Role.ROLE_PROFISSIONAL) {
-                Optional<ClinicaTenant> tenantOpt = profissionalRepository.findByUsuarioId(usuario.getId())
-                        .map(com.estetica.model.Profissional::getTenant);
-                if (tenantOpt.isPresent()) {
-                    return tenantOpt.get();
+                if (usuario.getRole() == Role.ROLE_ADMIN) {
+                    Optional<ClinicaTenant> tenantOpt = tenantRepository.findByAdminUsuarioId(usuario.getId());
+                    if (tenantOpt.isPresent()) {
+                        return tenantOpt.get();
+                    }
+                }
+
+                if (usuario.getRole() == Role.ROLE_PROFISSIONAL) {
+                    Optional<ClinicaTenant> tenantOpt = profissionalRepository.findByUsuarioId(usuario.getId())
+                            .map(com.estetica.model.Profissional::getTenant);
+                    if (tenantOpt.isPresent()) {
+                        return tenantOpt.get();
+                    }
                 }
             }
         }

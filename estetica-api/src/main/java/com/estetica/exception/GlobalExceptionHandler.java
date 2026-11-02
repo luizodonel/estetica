@@ -44,6 +44,19 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(PagamentoPendenteException.class)
+    public ProblemDetail handlePagamentoPendente(PagamentoPendenteException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.PAYMENT_REQUIRED, ex.getMessage());
+        problem.setTitle("Pagamento PIX Pendente");
+        problem.setType(URI.create("https://clinicaestetica.com/erros/pagamento-pendente"));
+        problem.setProperty("paymentId", ex.getPaymentId());
+        problem.setProperty("pixCopiaCola", ex.getPixCopiaCola());
+        problem.setProperty("pixQrCodeBase64", ex.getPixQrCodeBase64());
+        problem.setProperty("valor", ex.getValor());
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Credenciais inválidas: e-mail ou senha incorretos.");

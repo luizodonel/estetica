@@ -15,6 +15,7 @@ import {
   Usuario,
   TenantPublicDTO,
   AtualizarBannerRequest,
+  AtualizarIdentidadeVisualRequest,
   CadastroLojistaRequest,
   CadastroLojistaResponse,
   StatusPagamentoResponse,
@@ -300,5 +301,9 @@ export class ApiService {
 
   atualizarBanner(payload: AtualizarBannerRequest): Observable<TenantPublicDTO> {
     return this.http.put<TenantPublicDTO>(`${this.baseUrl}/onboarding/banner`, payload);
+  }
+
+  atualizarIdentidadeVisual(payload: AtualizarIdentidadeVisualRequest): Observable<TenantPublicDTO> {
+    return this.http.put<TenantPublicDTO>(`${this.baseUrl}/onboarding/identidade-visual`, payload);
   }
 }

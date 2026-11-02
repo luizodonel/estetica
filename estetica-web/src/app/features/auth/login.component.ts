@@ -1,9 +1,18 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiService } from '../../core/services/api.service';
 import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive';
+
+interface PixPendenteInfo {
+  paymentId?: string;
+  pixCopiaCola?: string;
+  pixQrCodeBase64?: string;
+  valor: number;
+  mensagem: string;
+}
 
 @Component({
   selector: 'app-login',
@@ -61,10 +70,79 @@ import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive
           </div>
         }
 
-        @if (erro()) {
-          <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs mb-5 flex items-center justify-between">
-            <span>{{ erro() }}</span>
-            <button (click)="erro.set(null)" class="text-rose-700 font-bold ml-2">✕</button>
+        <!-- Card Especial com QR Code do PIX Pendente -->
+        @if (pixPendente()) {
+          <div class="p-4 rounded-3xl bg-rose-50/90 border-2 border-rose-300 text-stone-800 text-xs mb-6 shadow-md animate-scale-up text-center space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold text-[10px] uppercase tracking-wider">
+                💳 Ativação PIX • R$ {{ pixPendente()!.valor.toFixed(2).replace('.', ',') }}
+              </span>
+              <button (click)="fecharPixPendente()" class="text-stone-400 hover:text-stone-700 font-bold text-sm">✕</button>
+            </div>
+
+            <p class="text-xs text-rose-900 font-medium leading-relaxed">
+              {{ pixPendente()!.mensagem }}
+            </p>
+
+            <!-- Imagem QR Code PIX -->
+            @if (pixPendente()!.pixQrCodeBase64) {
+              <div class="p-3 bg-white rounded-2xl border border-nude-200 inline-block shadow-inner">
+                <img
+                  [src]="'data:image/png;base64,' + pixPendente()!.pixQrCodeBase64"
+                  alt="QR Code PIX"
+                  class="w-48 h-48 object-contain rounded-xl mx-auto" />
+                <span class="text-[10px] text-stone-400 block mt-1.5">Abra o app do seu banco e aponte a câmera</span>
+              </div>
+            }
+
+            <!-- Campo PIX Copia e Cola -->
+            @if (pixPendente()!.pixCopiaCola) {
+              <div class="text-left space-y-1">
+                <label class="block text-[11px] font-semibold text-stone-700">PIX Copia e Cola:</label>
+                <div class="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    readonly
+                    [value]="pixPendente()!.pixCopiaCola"
+                    class="w-full text-[10px] font-mono p-2.5 rounded-xl border border-nude-300 bg-white select-all focus:outline-none" />
+                  <button
+                    type="button"
+                    (click)="copiarPix()"
+                    class="px-3 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-semibold text-[11px] whitespace-nowrap shadow-sm transition-all">
+                    {{ pixCopiado() ? '✓ Copiado!' : 'Copiar' }}
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- Status de Verificação Automática -->
+            <div class="flex items-center justify-center gap-2 text-[11px] font-medium text-amber-800 bg-amber-100/60 py-2 px-3 rounded-xl">
+              <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+              <span>Aguardando pagamento... Verificando a cada 3s</span>
+            </div>
+
+            <button
+              type="button"
+              (click)="verificarPagamentoManual()"
+              class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
+              <span>🔄 Já realizei o pagamento • Liberar Acesso</span>
+            </button>
+          </div>
+        }
+
+        @if (erro() && !pixPendente()) {
+          <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs mb-5 space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <span class="leading-relaxed font-medium">{{ extrairMensagemSemLink(erro()!) }}</span>
+              <button (click)="erro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold text-sm">✕</button>
+            </div>
+            @if (extrairLinkDaMensagem(erro()!)) {
+              <a [href]="extrairLinkDaMensagem(erro()!)"
+                 class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-sm transition-all">
+                <span>🚀 Acessar Meu Link Exclusivo</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+              </a>
+            }
           </div>
         }
 
@@ -171,8 +249,9 @@ import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive
     </div>
   `
 })
-export class LoginComponent {
+export class LoginComponent implements OnDestroy {
   private auth = inject(AuthService);
+  private api = inject(ApiService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -188,10 +267,44 @@ export class LoginComponent {
   erro = signal<string | null>(null);
   mensagemSucesso = signal<string | null>(null);
 
+  // PIX Pendente Signals
+  pixPendente = signal<PixPendenteInfo | null>(null);
+  pixCopiado = signal<boolean>(false);
+  private pollingTimer: any = null;
+
+  ngOnDestroy(): void {
+    this.limparPolling();
+  }
+
+  limparPolling(): void {
+    if (this.pollingTimer) {
+      clearInterval(this.pollingTimer);
+      this.pollingTimer = null;
+    }
+  }
+
+  extrairLinkDaMensagem(msg: string): string | null {
+    if (!msg) return null;
+    const match = msg.match(/https?:\/\/[^\s]+/);
+    return match ? match[0] : null;
+  }
+
+  extrairMensagemSemLink(msg: string): string {
+    if (!msg) return '';
+    return msg;
+  }
+
   setModo(novoModo: 'login' | 'primeiro-acesso'): void {
     this.modo.set(novoModo);
     this.erro.set(null);
     this.mensagemSucesso.set(null);
+    this.pixPendente.set(null);
+    this.limparPolling();
+  }
+
+  fecharPixPendente(): void {
+    this.pixPendente.set(null);
+    this.limparPolling();
   }
 
   entrar(): void {
@@ -199,24 +312,106 @@ export class LoginComponent {
     this.carregando.set(true);
     this.erro.set(null);
     this.mensagemSucesso.set(null);
+    this.pixPendente.set(null);
+    this.limparPolling();
 
-    this.auth.login({ login: this.loginIdentificador, senha: this.senha }).subscribe({
+    this.auth.login({
+      login: this.loginIdentificador,
+      senha: this.senha,
+      host: typeof window !== 'undefined' ? window.location.host : '',
+      origin: typeof window !== 'undefined' ? window.location.origin : ''
+    }).subscribe({
       next: (res) => {
         this.carregando.set(false);
         this.redirecionarAposAuth(res.role);
       },
       error: (err) => {
         this.carregando.set(false);
-        const msg = err?.error?.message || err?.error?.detail;
+        const errData = err?.error;
+        const msg = errData?.detail || errData?.message || (typeof errData === 'string' ? errData : null);
+
+        // Se for pendência de pagamento PIX (com dados retornados pelo backend)
+        if (err.status === 402 || errData?.pixQrCodeBase64 || errData?.pixCopiaCola || (msg && msg.includes('PIX de ativação'))) {
+          this.pixPendente.set({
+            paymentId: errData?.paymentId,
+            pixQrCodeBase64: errData?.pixQrCodeBase64,
+            pixCopiaCola: errData?.pixCopiaCola,
+            valor: errData?.valor || 149.90,
+            mensagem: msg || 'O acesso da clínica está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).'
+          });
+
+          if (errData?.paymentId) {
+            this.iniciarPollingPagamento(errData.paymentId);
+          }
+          return;
+        }
+
         if (msg && msg.toLowerCase().includes('primeiro acesso')) {
           this.telefonePrimeiroAcesso = this.loginIdentificador;
           this.setModo('primeiro-acesso');
           this.erro.set(msg);
         } else {
-          this.erro.set(msg || 'WhatsApp ou senha incorretos. Verifique suas credenciais.');
+          this.erro.set(msg || 'Credenciais incorretas. Verifique seu login e senha.');
         }
       }
     });
+  }
+
+  iniciarPollingPagamento(paymentId: string): void {
+    this.limparPolling();
+    this.pollingTimer = setInterval(() => {
+      this.consultarStatus(paymentId, false);
+    }, 3000);
+  }
+
+  verificarPagamentoManual(): void {
+    const id = this.pixPendente()?.paymentId;
+    if (id) {
+      this.consultarStatus(id, true);
+    } else {
+      // Tenta reenviar o login
+      this.entrar();
+    }
+  }
+
+  private consultarStatus(paymentId: string, manual: boolean): void {
+    this.api.consultarStatusPagamento(paymentId).subscribe({
+      next: (res) => {
+        if (res.pago || res.status === 'approved') {
+          this.limparPolling();
+          this.pixPendente.set(null);
+          this.mensagemSucesso.set('🎉 Pagamento PIX aprovado com sucesso! Acesso liberado!');
+
+          if (res.token) {
+            localStorage.setItem('auth_token', res.token);
+            if (res.usuario) {
+              this.auth.currentUser.set(res.usuario);
+            }
+          }
+
+          setTimeout(() => {
+            this.redirecionarAposAuth(res.usuario?.role);
+          }, 1200);
+        } else if (manual) {
+          alert('O pagamento ainda não foi identificado pelo banco. Por favor, aguarde alguns instantes enquanto o PIX é processado.');
+        }
+      },
+      error: () => {
+        if (manual) {
+          this.entrar();
+        }
+      }
+    });
+  }
+
+  copiarPix(): void {
+    const pix = this.pixPendente()?.pixCopiaCola;
+    if (pix && navigator.clipboard) {
+      navigator.clipboard.writeText(pix).then(() => {
+        this.pixCopiado.set(true);
+        setTimeout(() => this.pixCopiado.set(false), 3000);
+      });
+    }
   }
 
   confirmarPrimeiroAcesso(): void {

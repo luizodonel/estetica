@@ -183,6 +183,14 @@ export interface AtualizarBannerRequest {
   bannerBotaoTexto: string;
 }
 
+export interface AtualizarIdentidadeVisualRequest {
+  nomeEmpresa?: string;
+  logoUrl?: string;
+  corPrimaria?: string;
+  corSecundaria?: string;
+  telefoneWhatsApp?: string;
+}
+
 export interface CadastroLojistaRequest {
   nomeEmpresa: string;
   slug: string;

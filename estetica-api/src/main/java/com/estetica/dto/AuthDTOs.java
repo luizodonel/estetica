@@ -12,7 +12,10 @@ public class AuthDTOs {
         String telefone,
 
         @NotBlank(message = "A senha é obrigatória")
-        String senha
+        String senha,
+
+        String host,
+        String origin
     ) {
         public String getIdentificador() {
             if (login != null && !login.isBlank()) return login.trim();

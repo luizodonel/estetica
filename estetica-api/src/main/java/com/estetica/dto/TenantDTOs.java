@@ -66,6 +66,14 @@ public class TenantDTOs {
         String bannerBotaoTexto
     ) {}
 
+    public record AtualizarIdentidadeVisualRequest(
+        String nomeEmpresa,
+        String logoUrl,
+        String corPrimaria,
+        String corSecundaria,
+        String telefoneWhatsApp
+    ) {}
+
     public record CadastroLojistaResponse(
         String paymentId,
         String pixCopiaCola,

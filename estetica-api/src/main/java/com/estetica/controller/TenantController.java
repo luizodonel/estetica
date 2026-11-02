@@ -52,6 +52,13 @@ public class TenantController {
         return ResponseEntity.ok(tenantService.atualizarBanner(request));
     }
 
+    @PutMapping("/identidade-visual")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Atualiza nome, logotipo e cores do sistema pelo administrador")
+    public ResponseEntity<TenantPublicDTO> atualizarIdentidadeVisual(@RequestBody AtualizarIdentidadeVisualRequest request) {
+        return ResponseEntity.ok(tenantService.atualizarIdentidadeVisual(request));
+    }
+
     @GetMapping("/tenant/{slug}")
     @Operation(summary = "Recupera dados públicos de personalização (logo, cores, nome) pelo subdomínio / slug")
     public ResponseEntity<TenantPublicDTO> buscarPorSlug(@PathVariable String slug) {

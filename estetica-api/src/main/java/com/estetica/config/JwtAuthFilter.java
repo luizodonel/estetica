@@ -22,6 +22,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
+    private final com.estetica.repository.LojistaRepository lojistaRepository;
 
     @Override
     protected void doFilterInternal(
@@ -44,7 +45,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 UserDetails userDetails = usuarioRepository.findByEmail(userEmail)
                         .or(() -> usuarioRepository.findByLoginIgnoreCase(userEmail))
                         .or(() -> usuarioRepository.findByTelefoneWhatsApp(userEmail))
+                        .map(u -> (UserDetails) u)
                         .orElse(null);
+
+                if (userDetails == null) {
+                    userDetails = lojistaRepository.findByEmail(userEmail)
+                            .or(() -> lojistaRepository.findByLoginIgnoreCase(userEmail))
+                            .or(() -> lojistaRepository.findByTelefoneWhatsApp(userEmail))
+                            .map(l -> (UserDetails) l)
+                            .orElse(null);
+                }
 
                 if (userDetails != null && jwtService.isTokenValido(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
