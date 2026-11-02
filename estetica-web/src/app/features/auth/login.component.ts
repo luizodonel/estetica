@@ -51,19 +51,6 @@ import { AuthService } from '../../core/services/auth.service';
               class="w-full p-3 rounded-xl border border-nude-300 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none" />
           </div>
 
-          <!-- Credenciais de Teste Rápidas -->
-          <div class="p-3 rounded-xl bg-nude-50 border border-nude-200 text-[11px] text-stone-500 space-y-1">
-            <span class="font-bold text-stone-700 block">Acessos de demonstração:</span>
-            <div class="flex justify-between items-center">
-              <span>Admin: admin&#64;clinicaestetica.com / admin123</span>
-              <button type="button" (click)="preencher('admin@clinicaestetica.com', 'admin123')" class="text-rose-600 font-bold hover:underline">Usar</button>
-            </div>
-            <div class="flex justify-between items-center">
-              <span>Cliente: cliente&#64;exemplo.com / cliente123</span>
-              <button type="button" (click)="preencher('cliente@exemplo.com', 'cliente123')" class="text-rose-600 font-bold hover:underline">Usar</button>
-            </div>
-          </div>
-
           <button 
             type="submit" 
             [disabled]="carregando()"
@@ -94,11 +81,6 @@ export class LoginComponent {
   senha = '';
   carregando = signal<boolean>(false);
   erro = signal<string | null>(null);
-
-  preencher(e: string, s: string): void {
-    this.email = e;
-    this.senha = s;
-  }
 
   entrar(): void {
     if (!this.email || !this.senha) return;
