@@ -32,34 +32,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Endpoints Públicos
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/onboarding/**").permitAll()
-                .requestMatchers("/api/v1/uploads/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/procedimentos/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/disponibilidade/**").permitAll()
-                
-                // Swagger / OpenAPI
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                
-                // H2 Console (se habilitado em dev)
-                .requestMatchers("/h2-console/**").permitAll()
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Endpoints Públicos'
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/onboarding/**").permitAll()
+                        .requestMatchers("/api/v1/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/procedimentos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/disponibilidade/**").permitAll()
 
-                // Recursos estáticos Frontend, SPA e Arquivos Enviados (Uploads)
-                .requestMatchers("/uploads/**").permitAll()
-                .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.jpg", "/*.svg", "/assets/**", "/media/**").permitAll()
-                .requestMatchers("/catalogo/**", "/agendar/**", "/meus-agendamentos/**", "/admin/**", "/login/**", "/registrar/**", "/parceiro/**").permitAll()
+                        // Swagger / OpenAPI
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                // Endpoints protegidos da API
-                .requestMatchers("/api/**").authenticated()
-                .anyRequest().permitAll()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                        // H2 Console (se habilitado em dev)
+                        .requestMatchers("/h2-console/**").permitAll()
+
+                        // Recursos estáticos Frontend, SPA e Arquivos Enviados (Uploads)
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.jpg", "/*.svg",
+                                "/assets/**", "/media/**")
+                        .permitAll()
+                        .requestMatchers("/catalogo/**", "/agendar/**", "/meus-agendamentos/**", "/admin/**",
+                                "/login/**", "/registrar/**", "/parceiro/**")
+                        .permitAll()
+
+                        // Endpoints protegidos da API
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         // Habilita frames para console H2 se necessário
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
@@ -91,4 +94,3 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
-

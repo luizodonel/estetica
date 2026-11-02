@@ -9,3 +9,4 @@
     "build": "npm --prefix estetica-web run build"
   }
 }
+
