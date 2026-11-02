@@ -15,18 +15,22 @@ import { DashboardResumo } from '../../../core/models';
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
-            Gestão Operacional
+            {{ resumo()?.isAdmin ? 'Gestão Operacional da Clínica' : 'Meu Painel de Especialista' }}
           </span>
           <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-            Painel Geral da Clínica
+            {{ resumo()?.isAdmin ? 'Painel Geral & Faturamento' : 'Meus Atendimentos & Faturamento' }}
           </h1>
-          <p class="text-xs text-stone-500 mt-1">Métricas em tempo real para o dia de hoje.</p>
+          <p class="text-xs text-stone-500 mt-1">
+            {{ resumo()?.isAdmin ? 'Métricas da clínica e faturamento de todos os especialistas em tempo real.' : 'Consulte seus agendamentos e faturamento das suas sessões realizadas.' }}
+          </p>
         </div>
 
         <div class="flex items-center gap-2">
-          <a routerLink="/admin/gestao" class="px-4 py-2 rounded-xl bg-white border border-nude-300 text-stone-700 font-semibold text-xs hover:bg-stone-50 transition-all shadow-sm">
-            ⚙️ Cadastros & Gestão
-          </a>
+          @if (resumo()?.isAdmin) {
+            <a routerLink="/admin/gestao" class="px-4 py-2 rounded-xl bg-white border border-nude-300 text-stone-700 font-semibold text-xs hover:bg-stone-50 transition-all shadow-sm">
+              ⚙️ Cadastros & Gestão
+            </a>
+          }
           <a routerLink="/admin/agenda" class="px-4 py-2 rounded-xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-sm">
             Ver Agenda Completa →
           </a>
@@ -38,7 +42,9 @@ import { DashboardResumo } from '../../../core/models';
         
         <!-- Card 1: Total Hoje -->
         <div class="bg-white rounded-3xl p-5 border border-nude-200 shadow-sm">
-          <span class="text-[10px] uppercase tracking-wider font-bold text-stone-400 block mb-1">Agendamentos Hoje</span>
+          <span class="text-[10px] uppercase tracking-wider font-bold text-stone-400 block mb-1">
+            {{ resumo()?.isAdmin ? 'Agendamentos Totais Hoje' : 'Meus Atendimentos Hoje' }}
+          </span>
           <div class="flex items-baseline gap-2">
             <span class="text-2xl sm:text-3xl font-serif font-black text-stone-900">{{ resumo()?.agendamentosHoje || 0 }}</span>
             <span class="text-xs text-stone-500">sessões</span>
@@ -63,21 +69,71 @@ import { DashboardResumo } from '../../../core/models';
           </div>
         </div>
 
-        <!-- Card 4: Faturamento Estimado Hoje -->
+        <!-- Card 4: Faturamento (Geral para Admin ou Individual para Especialista) -->
         <div class="bg-gradient-to-br from-rose-50 to-champagne-50 rounded-3xl p-5 border border-rose-200 shadow-sm">
-          <span class="text-[10px] uppercase tracking-wider font-bold text-rose-700 block mb-1">Faturamento Previsto Hoje</span>
+          <span class="text-[10px] uppercase tracking-wider font-bold text-rose-700 block mb-1">
+            {{ resumo()?.isAdmin ? 'Faturamento Total da Clínica' : 'Meu Faturamento Hoje' }}
+          </span>
           <div class="flex items-baseline gap-2">
             <span class="text-xl sm:text-2xl font-serif font-black text-rose-900">
-              {{ (resumo()?.faturamentoEstimadoHoje || 0) | currency:'BRL':'symbol':'1.0-0':'pt-BR' }}
+              {{ (resumo()?.faturamentoEstimadoHoje || 0) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
             </span>
           </div>
         </div>
 
       </div>
 
-      <!-- Próximos Atendimentos de Hoje -->
+      <!-- SEÇÃO EXCLUSIVA DO ADMINISTRADOR: FATURAMENTO POR ESPECIALISTA -->
+      @if (resumo()?.isAdmin && resumo()?.faturamentoPorEspecialista?.length) {
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-nude-200 shadow-sm mb-8">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+            <div>
+              <span class="text-[10px] uppercase tracking-wider font-bold text-rose-600">Acesso Restrito ao Administrador</span>
+              <h2 class="font-serif text-lg sm:text-xl font-bold text-stone-900">
+                Faturamento Discriminado por Especialista
+              </h2>
+            </div>
+            <span class="text-xs text-stone-400">Total de {{ resumo()?.faturamentoPorEspecialista?.length }} especialistas ativos</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @for (esp of resumo()?.faturamentoPorEspecialista; track esp.profissionalId) {
+              <div class="p-4 rounded-2xl border border-nude-200 hover:border-rose-300 hover:shadow-md transition-all flex flex-col justify-between bg-stone-50/50">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-12 h-12 rounded-2xl overflow-hidden bg-rose-50 border-2 flex-shrink-0 flex items-center justify-center shadow-sm"
+                       [style.borderColor]="esp.corIdentificacao || '#e11d48'">
+                    @if (esp.fotoUrl) {
+                      <img [src]="obterFotoUrl(esp.fotoUrl)" [alt]="esp.profissionalNome" class="w-full h-full object-cover" />
+                    } @else {
+                      <span class="font-serif font-bold text-sm text-rose-700">{{ esp.profissionalNome.substring(0, 2).toUpperCase() }}</span>
+                    }
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <h4 class="font-serif font-bold text-stone-900 text-sm truncate">{{ esp.profissionalNome }}</h4>
+                    <p class="text-[11px] text-stone-500 truncate">{{ esp.especialidade }}</p>
+                  </div>
+                </div>
+
+                <div class="pt-3 border-t border-nude-200 flex items-center justify-between">
+                  <span class="text-xs text-stone-500">{{ esp.totalAtendimentos }} sessões hoje</span>
+                  <div class="text-right">
+                    <span class="text-[10px] uppercase font-bold text-stone-400 block">Faturamento</span>
+                    <span class="text-sm font-bold text-emerald-700">
+                      {{ esp.totalFaturado | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Próximos Atendimentos Programados -->
       <div class="bg-white rounded-3xl p-6 sm:p-8 border border-nude-200 shadow-sm">
-        <h2 class="font-serif text-lg font-bold text-stone-900 mb-4">Próximos Atendimentos Programados</h2>
+        <h2 class="font-serif text-lg font-bold text-stone-900 mb-4">
+          {{ resumo()?.isAdmin ? 'Próximos Atendimentos da Clínica' : 'Minhas Próximas Sessões' }}
+        </h2>
 
         @if (carregando()) {
           <div class="py-12 text-center text-stone-400 text-xs animate-pulse">Carregando métricas...</div>
@@ -102,7 +158,7 @@ import { DashboardResumo } from '../../../core/models';
                     {{ item.valorCobrado | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
                   </span>
                   <a routerLink="/admin/agenda" class="text-xs font-semibold text-rose-600 hover:text-rose-700">
-                    Gerenciar →
+                    Gerenciar na Agenda →
                   </a>
                 </div>
               </div>
@@ -137,5 +193,8 @@ export class AdminDashboardComponent implements OnInit {
       }
     });
   }
-}
 
+  obterFotoUrl(url?: string): string {
+    return this.api.formatarUrlImagem(url);
+  }
+}

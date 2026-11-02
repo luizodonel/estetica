@@ -4,6 +4,7 @@ import com.estetica.dto.ProfissionalDTOs.*;
 import com.estetica.exception.RecursoNaoEncontradoException;
 import com.estetica.exception.RegraNegocioException;
 import com.estetica.model.*;
+import com.estetica.repository.BloqueioAgendaRepository;
 import com.estetica.repository.HorarioTrabalhoRepository;
 import com.estetica.repository.ProcedimentoRepository;
 import com.estetica.repository.ProfissionalRepository;
@@ -25,6 +26,7 @@ public class ProfissionalService {
 
     private final ProfissionalRepository profissionalRepository;
     private final HorarioTrabalhoRepository horarioTrabalhoRepository;
+    private final BloqueioAgendaRepository bloqueioAgendaRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProcedimentoRepository procedimentoRepository;
     private final PasswordEncoder passwordEncoder;
@@ -55,10 +57,17 @@ public class ProfissionalService {
 
     @Transactional(readOnly = true)
     public List<HorarioTrabalhoDTO> listarJornada(Long profissionalId) {
-        return horarioTrabalhoRepository.findByProfissionalIdAndAtivoTrue(profissionalId)
+        return horarioTrabalhoRepository.findByProfissionalId(profissionalId)
                 .stream()
                 .map(this::toHorarioDTO)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ProfissionalDTO obterMeuPerfil(Usuario usuario) {
+        Profissional prof = profissionalRepository.findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Perfil de especialista não encontrado para o usuário logado."));
+        return toDTO(prof);
     }
 
     @Transactional
@@ -206,5 +215,91 @@ public class ProfissionalService {
                 h.getInicioIntervalo(),
                 h.getFimIntervalo(),
                 h.getAtivo());
+    }
+
+    // =========================================================================
+    // BLOQUEIOS DE AGENDA (TRAVAR HORÁRIOS / FOLGAS)
+    // =========================================================================
+    @Transactional(readOnly = true)
+    public List<BloqueioAgendaDTO> listarBloqueios(Long profissionalId) {
+        return bloqueioAgendaRepository.findByProfissionalIdOrderByDataInicioDesc(profissionalId)
+                .stream()
+                .map(b -> new BloqueioAgendaDTO(
+                        b.getId(),
+                        b.getProfissional().getId(),
+                        b.getDataInicio(),
+                        b.getDataFim(),
+                        b.getMotivo()
+                ))
+                .toList();
+    }
+
+    @Transactional
+    public BloqueioAgendaDTO criarBloqueio(Long profissionalId, CriarBloqueioRequest request) {
+        Profissional prof = profissionalRepository.findById(profissionalId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + profissionalId));
+
+        if (request.dataInicio() == null || request.dataFim() == null) {
+            throw new RegraNegocioException("Data de início e data de término são obrigatórias para travar a agenda.");
+        }
+        if (request.dataFim().isBefore(request.dataInicio())) {
+            throw new RegraNegocioException("A data de término não pode ser anterior à data de início.");
+        }
+
+        BloqueioAgenda bloqueio = BloqueioAgenda.builder()
+                .profissional(prof)
+                .dataInicio(request.dataInicio())
+                .dataFim(request.dataFim())
+                .motivo(request.motivo() != null && !request.motivo().isBlank() ? request.motivo().trim() : "Agenda travada / Indisponível")
+                .build();
+
+        bloqueio = bloqueioAgendaRepository.save(bloqueio);
+        return new BloqueioAgendaDTO(
+                bloqueio.getId(),
+                prof.getId(),
+                bloqueio.getDataInicio(),
+                bloqueio.getDataFim(),
+                bloqueio.getMotivo()
+        );
+    }
+
+    @Transactional
+    public void removerBloqueio(Long bloqueioId) {
+        if (!bloqueioAgendaRepository.existsById(bloqueioId)) {
+            throw new RecursoNaoEncontradoException("Bloqueio de agenda não encontrado com ID: " + bloqueioId);
+        }
+        bloqueioAgendaRepository.deleteById(bloqueioId);
+    }
+
+    // =========================================================================
+    // CONFIGURAÇÃO DE DIAS E HORÁRIOS DE ATENDIMENTO (JORNADA)
+    // =========================================================================
+    @Transactional
+    public List<HorarioTrabalhoDTO> salvarJornada(Long profissionalId, List<SalvarJornadaItemRequest> itens) {
+        Profissional prof = profissionalRepository.findById(profissionalId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + profissionalId));
+
+        if (itens != null) {
+            for (SalvarJornadaItemRequest item : itens) {
+                HorarioTrabalho jornada = horarioTrabalhoRepository
+                        .findByProfissionalIdAndDiaSemana(profissionalId, item.diaSemana())
+                        .orElse(HorarioTrabalho.builder()
+                                .profissional(prof)
+                                .diaSemana(item.diaSemana())
+                                .build());
+
+                jornada.setHoraInicio(item.horaInicio());
+                jornada.setHoraFim(item.horaFim());
+                jornada.setInicioIntervalo(item.inicioIntervalo());
+                jornada.setFimIntervalo(item.fimIntervalo());
+                jornada.setAtivo(Boolean.TRUE.equals(item.ativo()));
+                horarioTrabalhoRepository.save(jornada);
+            }
+        }
+
+        return horarioTrabalhoRepository.findByProfissionalId(profissionalId)
+                .stream()
+                .map(this::toHorarioDTO)
+                .toList();
     }
 }

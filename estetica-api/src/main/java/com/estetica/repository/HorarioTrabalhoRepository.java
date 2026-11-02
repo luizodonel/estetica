@@ -11,6 +11,8 @@ import java.util.Optional;
 @Repository
 public interface HorarioTrabalhoRepository extends JpaRepository<HorarioTrabalho, Long> {
     List<HorarioTrabalho> findByProfissionalIdAndAtivoTrue(Long profissionalId);
+    List<HorarioTrabalho> findByProfissionalId(Long profissionalId);
     Optional<HorarioTrabalho> findByProfissionalIdAndDiaSemanaAndAtivoTrue(Long profissionalId, DayOfWeek diaSemana);
+    Optional<HorarioTrabalho> findByProfissionalIdAndDiaSemana(Long profissionalId, DayOfWeek diaSemana);
 }
 

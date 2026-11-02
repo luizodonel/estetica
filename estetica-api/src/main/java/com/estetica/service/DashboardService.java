@@ -2,19 +2,23 @@ package com.estetica.service;
 
 import com.estetica.dto.AgendamentoDTOs.AgendamentoDTO;
 import com.estetica.dto.DashboardDTOs.DashboardResumoDTO;
-import com.estetica.model.Agendamento;
-import com.estetica.model.Role;
-import com.estetica.model.StatusAgendamento;
+import com.estetica.dto.DashboardDTOs.FaturamentoEspecialistaDTO;
+import com.estetica.model.*;
 import com.estetica.repository.AgendamentoRepository;
+import com.estetica.repository.ProfissionalRepository;
 import com.estetica.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ public class DashboardService {
 
     private final AgendamentoRepository agendamentoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ProfissionalRepository profissionalRepository;
     private final AgendamentoService agendamentoService;
 
     @Transactional(readOnly = true)
@@ -30,28 +35,84 @@ public class DashboardService {
         LocalDateTime inicioDia = hoje.atStartOfDay();
         LocalDateTime fimDia = hoje.atTime(23, 59, 59);
 
-        List<Agendamento> agendamentosHojeList = agendamentoRepository.findAgendamentosCalendario(inicioDia, fimDia);
+        // Identifica o usuário logado e seu perfil de acesso
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Usuario usuarioLogado = null;
+        if (auth != null && auth.getPrincipal() instanceof Usuario u) {
+            usuarioLogado = u;
+        }
 
-        long totalHoje = agendamentosHojeList.size();
-        long confirmadosHoje = agendamentosHojeList.stream()
+        boolean isAdmin = usuarioLogado == null || usuarioLogado.getRole() == Role.ROLE_ADMIN;
+        Profissional profLogado = null;
+
+        if (usuarioLogado != null && usuarioLogado.getRole() == Role.ROLE_PROFISSIONAL) {
+            profLogado = profissionalRepository.findByUsuarioId(usuarioLogado.getId()).orElse(null);
+        }
+
+        List<Agendamento> todosAgendamentosHoje = agendamentoRepository.findAgendamentosCalendario(inicioDia, fimDia);
+
+        // Se for um especialista, ele SÓ pode visualizar os atendimentos e o faturamento DELE
+        List<Agendamento> agendamentosFiltrados;
+        if (!isAdmin && profLogado != null) {
+            final Long profId = profLogado.getId();
+            agendamentosFiltrados = todosAgendamentosHoje.stream()
+                    .filter(a -> a.getProfissional() != null && a.getProfissional().getId().equals(profId))
+                    .toList();
+        } else {
+            agendamentosFiltrados = todosAgendamentosHoje;
+        }
+
+        long totalHoje = agendamentosFiltrados.size();
+        long confirmadosHoje = agendamentosFiltrados.stream()
                 .filter(a -> a.getStatus() == StatusAgendamento.CONFIRMADO || a.getStatus() == StatusAgendamento.CONCLUIDO)
                 .count();
-        long pendentesHoje = agendamentosHojeList.stream()
+        long pendentesHoje = agendamentosFiltrados.stream()
                 .filter(a -> a.getStatus() == StatusAgendamento.PENDENTE)
                 .count();
 
-        BigDecimal faturamentoHoje = agendamentosHojeList.stream()
+        // Faturamento: se for especialista, soma apenas o que ele atendeu. Se for admin, soma o total.
+        BigDecimal faturamentoHoje = agendamentosFiltrados.stream()
                 .filter(a -> a.getStatus() != StatusAgendamento.CANCELADO && a.getStatus() != StatusAgendamento.NO_SHOW)
                 .map(Agendamento::getValorCobrado)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long clientesAtivos = usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE).size();
 
-        List<AgendamentoDTO> proximos = agendamentosHojeList.stream()
+        List<AgendamentoDTO> proximos = agendamentosFiltrados.stream()
                 .filter(a -> a.getDataHoraFim().isAfter(LocalDateTime.now()) && a.getStatus() != StatusAgendamento.CANCELADO)
                 .limit(5)
                 .map(agendamentoService::toDTO)
                 .toList();
+
+        // Faturamento detalhado por especialista (Apenas visível para ROLE_ADMIN)
+        List<FaturamentoEspecialistaDTO> faturamentoPorEspecialista = new ArrayList<>();
+        if (isAdmin) {
+            List<Profissional> todosProfissionais = profissionalRepository.findByAtivoTrueOrderByNomeAsc();
+            for (Profissional prof : todosProfissionais) {
+                List<Agendamento> agendsProf = todosAgendamentosHoje.stream()
+                        .filter(a -> a.getProfissional() != null && a.getProfissional().getId().equals(prof.getId()))
+                        .toList();
+
+                long qtdAtendimentos = agendsProf.stream()
+                        .filter(a -> a.getStatus() != StatusAgendamento.CANCELADO)
+                        .count();
+
+                BigDecimal totalProf = agendsProf.stream()
+                        .filter(a -> a.getStatus() != StatusAgendamento.CANCELADO && a.getStatus() != StatusAgendamento.NO_SHOW)
+                        .map(Agendamento::getValorCobrado)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                faturamentoPorEspecialista.add(new FaturamentoEspecialistaDTO(
+                        prof.getId(),
+                        prof.getNome(),
+                        prof.getFotoUrl(),
+                        prof.getEspecialidade(),
+                        prof.getCorIdentificacao(),
+                        qtdAtendimentos,
+                        totalProf
+                ));
+            }
+        }
 
         return new DashboardResumoDTO(
                 totalHoje,
@@ -59,7 +120,9 @@ public class DashboardService {
                 pendentesHoje,
                 clientesAtivos,
                 faturamentoHoje,
-                proximos
+                proximos,
+                faturamentoPorEspecialista,
+                isAdmin
         );
     }
 }

@@ -65,5 +65,45 @@ public class ProfissionalController {
         profissionalService.alternarStatus(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}/jornada")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFISSIONAL')")
+    @Operation(summary = "Configura os dias da semana e horários de atendimento do especialista")
+    public ResponseEntity<List<HorarioTrabalhoDTO>> salvarJornada(
+            @PathVariable Long id,
+            @RequestBody List<SalvarJornadaItemRequest> itens) {
+        return ResponseEntity.ok(profissionalService.salvarJornada(id, itens));
+    }
+
+    @GetMapping("/{id}/bloqueios")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFISSIONAL')")
+    @Operation(summary = "Lista os períodos e horários bloqueados na agenda do especialista")
+    public ResponseEntity<List<BloqueioAgendaDTO>> listarBloqueios(@PathVariable Long id) {
+        return ResponseEntity.ok(profissionalService.listarBloqueios(id));
+    }
+
+    @PostMapping("/{id}/bloqueios")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFISSIONAL')")
+    @Operation(summary = "Trava a agenda do especialista em uma data/horário específico")
+    public ResponseEntity<BloqueioAgendaDTO> criarBloqueio(
+            @PathVariable Long id,
+            @RequestBody CriarBloqueioRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(profissionalService.criarBloqueio(id, request));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('PROFISSIONAL')")
+    @Operation(summary = "Retorna o perfil do especialista autenticado")
+    public ResponseEntity<ProfissionalDTO> meuPerfil(@org.springframework.security.core.annotation.AuthenticationPrincipal com.estetica.model.Usuario usuario) {
+        return ResponseEntity.ok(profissionalService.obterMeuPerfil(usuario));
+    }
+
+    @DeleteMapping("/bloqueios/{bloqueioId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFISSIONAL')")
+    @Operation(summary = "Destrava a agenda removendo o bloqueio de horário")
+    public ResponseEntity<Void> removerBloqueio(@PathVariable Long bloqueioId) {
+        profissionalService.removerBloqueio(bloqueioId);
+        return ResponseEntity.noContent().build();
+    }
 }
 

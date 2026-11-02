@@ -26,6 +26,7 @@ public class AgendamentoService {
     private final AgendamentoRepository agendamentoRepository;
     private final ProcedimentoRepository procedimentoRepository;
     private final ProfissionalRepository profissionalRepository;
+    private final BloqueioAgendaRepository bloqueioAgendaRepository;
     private final UsuarioRepository usuarioRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -77,6 +78,12 @@ public class AgendamentoService {
             throw new RegraNegocioException("Não é permitido agendar em datas/horários passados.");
         }
 
+        // Validação Estrita de Bloqueio de Agenda (Trava feita pelo especialista ou admin)
+        boolean bloqueado = bloqueioAgendaRepository.existsConflitoBloqueio(profissional.getId(), inicio, fim);
+        if (bloqueado) {
+            throw new HorarioIndisponivelException("A agenda deste especialista está travada/bloqueada neste horário.");
+        }
+
         // Validação Estrita de Concorrência e Double-Booking
         boolean conflito = agendamentoRepository.existsConflitoHorario(
                 profissional.getId(),
@@ -121,9 +128,16 @@ public class AgendamentoService {
     }
 
     @Transactional(readOnly = true)
-    public List<AgendamentoDTO> listarCalendarioGeral(LocalDateTime inicio, LocalDateTime fim) {
-        return agendamentoRepository.findAgendamentosCalendario(inicio, fim)
-                .stream()
+    public List<AgendamentoDTO> listarCalendarioGeral(LocalDateTime inicio, LocalDateTime fim, Usuario usuario) {
+        List<Agendamento> agendamentos = agendamentoRepository.findAgendamentosCalendario(inicio, fim);
+        if (usuario != null && usuario.getRole() == Role.ROLE_PROFISSIONAL) {
+            return agendamentos.stream()
+                    .filter(a -> a.getProfissional() != null && a.getProfissional().getUsuario() != null
+                            && a.getProfissional().getUsuario().getId().equals(usuario.getId()))
+                    .map(this::toDTO)
+                    .toList();
+        }
+        return agendamentos.stream()
                 .map(this::toDTO)
                 .toList();
     }
@@ -198,6 +212,11 @@ public class AgendamentoService {
 
         if (novoInicio.isBefore(LocalDateTime.now())) {
             throw new RegraNegocioException("Não é permitido remarcar para horários passados.");
+        }
+
+        boolean bloqueado = bloqueioAgendaRepository.existsConflitoBloqueio(profissional.getId(), novoInicio, novoFim);
+        if (bloqueado) {
+            throw new HorarioIndisponivelException("A agenda deste especialista está travada/bloqueada neste novo horário.");
         }
 
         boolean conflito = agendamentoRepository.existsConflitoHorario(

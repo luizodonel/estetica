@@ -114,6 +114,37 @@ export interface DashboardResumo {
   totalClientesAtivos: number;
   faturamentoEstimadoHoje: number;
   proximosAtendimentos: Agendamento[];
+  faturamentoPorEspecialista?: FaturamentoEspecialista[];
+  isAdmin?: boolean;
+}
+
+export interface FaturamentoEspecialista {
+  profissionalId: number;
+  profissionalNome: string;
+  fotoUrl?: string;
+  especialidade: string;
+  corIdentificacao?: string;
+  totalAtendimentos: number;
+  totalFaturado: number;
+}
+
+export interface HorarioTrabalho {
+  id?: number;
+  profissionalId?: number;
+  diaSemana: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+  horaInicio: string;
+  horaFim: string;
+  inicioIntervalo?: string;
+  fimIntervalo?: string;
+  ativo: boolean;
+}
+
+export interface BloqueioAgenda {
+  id: number;
+  profissionalId: number;
+  dataInicio: string;
+  dataFim: string;
+  motivo: string;
 }
 
 export interface TenantPublicDTO {

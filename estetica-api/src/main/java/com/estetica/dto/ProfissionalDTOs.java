@@ -62,5 +62,20 @@ public class ProfissionalDTOs {
         java.time.LocalDateTime dataFim,
         String motivo
     ) {}
+
+    public record CriarBloqueioRequest(
+        java.time.LocalDateTime dataInicio,
+        java.time.LocalDateTime dataFim,
+        String motivo
+    ) {}
+
+    public record SalvarJornadaItemRequest(
+        DayOfWeek diaSemana,
+        LocalTime horaInicio,
+        LocalTime horaFim,
+        LocalTime inicioIntervalo,
+        LocalTime fimIntervalo,
+        Boolean ativo
+    ) {}
 }
 

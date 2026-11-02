@@ -6,13 +6,14 @@ import { ApiService } from '../../../core/services/api.service';
 import { Procedimento, Profissional, Usuario, Categoria } from '../../../core/models';
 import { PhoneMaskDirective } from '../../../shared/directives/phone-mask.directive';
 import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
+import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trava-agenda.component';
 
 type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
 
 @Component({
   selector: 'app-admin-gestao',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, PhoneMaskDirective, TelefonePipe],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, PhoneMaskDirective, TelefonePipe, ModalTravaAgendaComponent],
   template: `
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12">
       
@@ -269,11 +270,18 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
                       class="text-xs font-semibold text-stone-500 hover:text-stone-800">
                       {{ prof.ativo ? 'Desativar' : 'Reativar' }}
                     </button>
-                    <button
-                      (click)="abrirModalProfissional(prof)"
-                      class="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition-all">
-                      Editar Dados
-                    </button>
+                    <div class="flex items-center gap-2">
+                      <button
+                        (click)="abrirModalAgenda(prof.id)"
+                        class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-all">
+                        🔒 Horários & Trava
+                      </button>
+                      <button
+                        (click)="abrirModalProfissional(prof)"
+                        class="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition-all">
+                        Editar Dados
+                      </button>
+                    </div>
                   </div>
                 </div>
               }
@@ -382,6 +390,13 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
               </div>
               <button (click)="fecharModalProcedimento()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
             </div>
+
+            @if (mensagemErro()) {
+              <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                <span>{{ mensagemErro() }}</span>
+                <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
+              </div>
+            }
 
             <form [formGroup]="formProcedimento" (ngSubmit)="salvarProcedimento()" class="space-y-4">
               <div>
@@ -495,6 +510,13 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
               </div>
               <button (click)="fecharModalProfissional()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
             </div>
+
+            @if (mensagemErro()) {
+              <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                <span>{{ mensagemErro() }}</span>
+                <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
+              </div>
+            }
 
             <form [formGroup]="formProfissional" (ngSubmit)="salvarProfissional()" class="space-y-4">
               <div>
@@ -633,6 +655,13 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
               <button (click)="fecharModalCliente()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
             </div>
 
+            @if (mensagemErro()) {
+              <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                <span>{{ mensagemErro() }}</span>
+                <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
+              </div>
+            }
+
             <form [formGroup]="formCliente" (ngSubmit)="salvarCliente()" class="space-y-4">
               <div>
                 <label class="block text-xs font-semibold text-stone-700 mb-1">Nome Completo do Paciente *</label>
@@ -669,6 +698,14 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
         </div>
       }
 
+      <!-- Modal Travar Agenda / Horários -->
+      <app-modal-trava-agenda
+        [aberto]="modalAgendaAberto()"
+        [profissionalIdInicial]="profissionalParaAgenda()"
+        (fechar)="modalAgendaAberto.set(false)"
+        (atualizado)="carregarDados()">
+      </app-modal-trava-agenda>
+
     </div>
   `
 })
@@ -682,6 +719,9 @@ export class AdminGestaoComponent implements OnInit {
   salvando = signal<boolean>(false);
   mensagemSucesso = signal<string | null>(null);
   mensagemErro = signal<string | null>(null);
+
+  modalAgendaAberto = signal<boolean>(false);
+  profissionalParaAgenda = signal<number | null>(null);
 
   // Dados
   categorias = signal<Categoria[]>([]);
@@ -879,6 +919,11 @@ export class AdminGestaoComponent implements OnInit {
   }
 
   // ===================== PROFISSIONAIS =====================
+  abrirModalAgenda(profId: number): void {
+    this.profissionalParaAgenda.set(profId);
+    this.modalAgendaAberto.set(true);
+  }
+
   abrirModalProfissional(prof?: Profissional): void {
     if (prof) {
       this.profissionalEmEdicao.set(prof);

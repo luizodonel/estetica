@@ -45,9 +45,10 @@ public class AgendamentoController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFISSIONAL')")
     @Operation(summary = "Visão geral de agendamentos por período para o calendário administrativo")
     public ResponseEntity<List<AgendamentoDTO>> calendario(
+            @AuthenticationPrincipal Usuario usuario,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
-        return ResponseEntity.ok(agendamentoService.listarCalendarioGeral(inicio, fim));
+        return ResponseEntity.ok(agendamentoService.listarCalendarioGeral(inicio, fim, usuario));
     }
 
     @PostMapping("/{id}/cancelar")

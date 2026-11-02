@@ -2,12 +2,14 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Agendamento, Profissional, StatusAgendamento } from '../../../core/models';
+import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trava-agenda.component';
 
 @Component({
   selector: 'app-admin-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalTravaAgendaComponent],
   template: `
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12">
       
@@ -22,8 +24,8 @@ import { Agendamento, Profissional, StatusAgendamento } from '../../../core/mode
           </h1>
         </div>
 
-        <!-- Filtro Rápido de Data -->
-        <div class="flex items-center gap-2">
+        <!-- Filtro Rápido de Data & Ação de Travar Agenda -->
+        <div class="flex flex-wrap items-center gap-2">
           <input 
             type="date" 
             [ngModel]="dataFiltro()"
@@ -32,33 +34,48 @@ import { Agendamento, Profissional, StatusAgendamento } from '../../../core/mode
           <button (click)="irParaHoje()" class="px-3.5 py-2 rounded-xl bg-nude-200 hover:bg-nude-300 text-stone-800 text-xs font-semibold transition-colors">
             Hoje
           </button>
+          <button 
+            (click)="abrirModalAgenda()"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white text-xs font-semibold shadow-md shadow-rose-200 transition-all">
+            <span>🔒 Travar Agenda / Horários</span>
+          </button>
         </div>
       </div>
 
-      <!-- Filtros por Profissional e Status -->
-      <div class="flex flex-wrap items-center gap-2 mb-6">
-        <button 
-          (click)="filtroProfissional.set(null)"
-          [class.bg-stone-900]="filtroProfissional() === null"
-          [class.text-white]="filtroProfissional() === null"
-          [class.bg-white]="filtroProfissional() !== null"
-          [class.text-stone-700]="filtroProfissional() !== null"
-          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-nude-200 shadow-sm transition-all">
-          Todos os Profissionais
-        </button>
-
-        @for (prof of profissionais(); track prof.id) {
+      <!-- Filtros por Profissional (Apenas se Admin; se especialista, exibe identificador fixo) -->
+      @if (auth.isAdmin()) {
+        <div class="flex flex-wrap items-center gap-2 mb-6">
           <button 
-            (click)="filtroProfissional.set(prof.id)"
-            [class.bg-stone-900]="filtroProfissional() === prof.id"
-            [class.text-white]="filtroProfissional() === prof.id"
-            [class.bg-white]="filtroProfissional() !== prof.id"
-            [class.text-stone-700]="filtroProfissional() !== prof.id"
+            (click)="filtroProfissional.set(null)"
+            [class.bg-stone-900]="filtroProfissional() === null"
+            [class.text-white]="filtroProfissional() === null"
+            [class.bg-white]="filtroProfissional() !== null"
+            [class.text-stone-700]="filtroProfissional() !== null"
             class="px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-nude-200 shadow-sm transition-all">
-            {{ prof.nome }}
+            Todos os Profissionais
           </button>
-        }
-      </div>
+
+          @for (prof of profissionais(); track prof.id) {
+            <button 
+              (click)="filtroProfissional.set(prof.id)"
+              [class.bg-stone-900]="filtroProfissional() === prof.id"
+              [class.text-white]="filtroProfissional() === prof.id"
+              [class.bg-white]="filtroProfissional() !== prof.id"
+              [class.text-stone-700]="filtroProfissional() !== prof.id"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-nude-200 shadow-sm transition-all">
+              {{ prof.nome }}
+            </button>
+          }
+        </div>
+      } @else if (auth.isProfissional()) {
+        <div class="mb-6 p-3 rounded-2xl bg-rose-50/60 border border-rose-200 text-xs text-rose-900 font-semibold flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span>👩‍⚕️</span>
+            <span>Exibindo sua agenda exclusiva de atendimentos</span>
+          </div>
+          <span class="text-[11px] text-rose-700 font-normal">Apenas seus pacientes e agendamentos</span>
+        </div>
+      }
 
       <!-- Lista / Grade de Agendamentos da Data -->
       @if (carregando()) {
@@ -139,11 +156,20 @@ import { Agendamento, Profissional, StatusAgendamento } from '../../../core/mode
         </div>
       }
 
+      <!-- Modal de Travar Agenda e Horários -->
+      <app-modal-trava-agenda 
+        [aberto]="modalAgendaAberto()" 
+        [profissionalIdInicial]="filtroProfissional()" 
+        (fechar)="modalAgendaAberto.set(false)" 
+        (atualizado)="carregarAgendamentos()">
+      </app-modal-trava-agenda>
+
     </div>
   `
 })
 export class AdminAgendaComponent implements OnInit {
   private api = inject(ApiService);
+  auth = inject(AuthService);
 
   dataFiltro = signal<string>(new Date().toISOString().split('T')[0]);
   profissionais = signal<Profissional[]>([]);
@@ -151,15 +177,31 @@ export class AdminAgendaComponent implements OnInit {
 
   agendamentos = signal<Agendamento[]>([]);
   carregando = signal<boolean>(true);
+  modalAgendaAberto = signal<boolean>(false);
 
   ngOnInit(): void {
     this.carregarProfissionais();
     this.carregarAgendamentos();
   }
 
+  abrirModalAgenda(): void {
+    this.modalAgendaAberto.set(true);
+  }
+
   carregarProfissionais(): void {
     this.api.getProfissionais().subscribe({
-      next: (dados) => this.profissionais.set(dados)
+      next: (dados) => {
+        this.profissionais.set(dados);
+
+        // Se for especialista autenticado, auto-seleciona a agenda dele
+        if (this.auth.isProfissional()) {
+          const userEmail = this.auth.currentUser()?.email;
+          const meuProf = dados.find(p => p.email === userEmail);
+          if (meuProf) {
+            this.filtroProfissional.set(meuProf.id);
+          }
+        }
+      }
     });
   }
 

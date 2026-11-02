@@ -17,5 +17,13 @@ public interface BloqueioAgendaRepository extends JpaRepository<BloqueioAgenda, 
     List<BloqueioAgenda> findBloqueiosNoIntervalo(@Param("profissionalId") Long profissionalId,
                                                 @Param("inicio") LocalDateTime inicio,
                                                 @Param("fim") LocalDateTime fim);
+
+    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM BloqueioAgenda b WHERE b.profissional.id = :profissionalId " +
+           "AND b.dataInicio < :fim AND b.dataFim > :inicio")
+    boolean existsConflitoBloqueio(@Param("profissionalId") Long profissionalId,
+                                  @Param("inicio") LocalDateTime inicio,
+                                  @Param("fim") LocalDateTime fim);
+
+    List<BloqueioAgenda> findByProfissionalIdOrderByDataInicioDesc(Long profissionalId);
 }
 

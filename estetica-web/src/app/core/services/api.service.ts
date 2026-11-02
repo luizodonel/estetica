@@ -9,6 +9,8 @@ import {
   HistoricoAtendimento,
   Procedimento,
   Profissional,
+  HorarioTrabalho,
+  BloqueioAgenda,
   StatusAgendamento,
   Usuario,
   TenantPublicDTO,
@@ -249,5 +251,26 @@ export class ApiService {
       : 'http://localhost:8080';
     return `${host}${url.startsWith('/') ? '' : '/'}${url}`;
   }
-}
 
+  // Jornada e Horários de Atendimento do Especialista
+  getJornadaProfissional(profissionalId: number): Observable<HorarioTrabalho[]> {
+    return this.http.get<HorarioTrabalho[]>(`${this.baseUrl}/profissionais/${profissionalId}/jornada`);
+  }
+
+  salvarJornada(profissionalId: number, itens: HorarioTrabalho[]): Observable<HorarioTrabalho[]> {
+    return this.http.put<HorarioTrabalho[]>(`${this.baseUrl}/profissionais/${profissionalId}/jornada`, itens);
+  }
+
+  // Bloqueios de Agenda (Travar Horários / Folgas)
+  getBloqueiosProfissional(profissionalId: number): Observable<BloqueioAgenda[]> {
+    return this.http.get<BloqueioAgenda[]>(`${this.baseUrl}/profissionais/${profissionalId}/bloqueios`);
+  }
+
+  criarBloqueio(profissionalId: number, payload: { dataInicio: string; dataFim: string; motivo: string }): Observable<BloqueioAgenda> {
+    return this.http.post<BloqueioAgenda>(`${this.baseUrl}/profissionais/${profissionalId}/bloqueios`, payload);
+  }
+
+  removerBloqueio(bloqueioId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/profissionais/bloqueios/${bloqueioId}`);
+  }
+}
