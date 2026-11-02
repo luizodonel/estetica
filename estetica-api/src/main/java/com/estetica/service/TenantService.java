@@ -413,27 +413,27 @@ public class TenantService {
         ClinicaTenant tenant = null;
         com.estetica.model.Lojista lojista = null;
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof com.estetica.model.Lojista l) {
-            lojista = lojistaRepository.findById(l.getId()).orElse(null);
-        }
-
-        if (lojista == null && auth != null && auth.getPrincipal() instanceof Usuario u && u.getTenant() != null) {
-            tenant = u.getTenant();
-            lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+        if (slugParam != null && !slugParam.isBlank()) {
+            lojista = lojistaRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+            tenant = tenantRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
         }
 
         if (lojista == null) {
-            tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
-            if (tenant != null) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof com.estetica.model.Lojista l) {
+                lojista = lojistaRepository.findById(l.getId()).orElse(null);
+            }
+
+            if (lojista == null && auth != null && auth.getPrincipal() instanceof Usuario u && u.getTenant() != null) {
+                tenant = u.getTenant();
                 lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
             }
         }
 
-        if (lojista == null && slugParam != null && !slugParam.isBlank()) {
-            lojista = lojistaRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
-            if (tenant == null) {
-                tenant = tenantRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+        if (lojista == null && tenant == null) {
+            tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+            if (tenant != null) {
+                lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
             }
         }
 
@@ -557,26 +557,29 @@ public class TenantService {
         ClinicaTenant tenant = null;
         com.estetica.model.Lojista lojista = null;
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof com.estetica.model.Lojista l) {
-            lojista = lojistaRepository.findById(l.getId()).orElse(null);
+        if (slugParam != null && !slugParam.isBlank()) {
+            lojista = lojistaRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+            tenant = tenantRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
         }
-        if (lojista == null && auth != null && auth.getPrincipal() instanceof Usuario u && u.getTenant() != null) {
-            tenant = u.getTenant();
-            lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
-        }
+
         if (lojista == null) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof com.estetica.model.Lojista l) {
+                lojista = lojistaRepository.findById(l.getId()).orElse(null);
+            }
+            if (lojista == null && auth != null && auth.getPrincipal() instanceof Usuario u && u.getTenant() != null) {
+                tenant = u.getTenant();
+                lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+            }
+        }
+
+        if (lojista == null && tenant == null) {
             tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
             if (tenant != null) {
                 lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
             }
         }
-        if (lojista == null && slugParam != null && !slugParam.isBlank()) {
-            lojista = lojistaRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
-            if (tenant == null) {
-                tenant = tenantRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
-            }
-        }
+
         if (lojista == null && tenant == null) {
             lojista = lojistaRepository.findAll().stream().findFirst().orElse(null);
             if (lojista != null) {
@@ -584,15 +587,65 @@ public class TenantService {
             }
         }
 
-        if (lojista != null) {
-            lojista.setRenovacaoPaymentId(null);
-            lojista.setRenovacaoCriadaEm(null);
-            lojistaRepository.save(lojista);
-        }
-        if (tenant != null) {
-            tenant.setRenovacaoPaymentId(null);
-            tenant.setRenovacaoCriadaEm(null);
-            tenantRepository.save(tenant);
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Clínica");
+        LocalDateTime agora = LocalDateTime.now();
+
+        // Força a geração imediata do Pix no Mercado Pago
+        try {
+            BigDecimal valor = new BigDecimal("149.90");
+            Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(
+                    tenant,
+                    lojista,
+                    valor,
+                    "Renovação Mensal da Assinatura - " + nomeEmpresa
+            );
+
+            if (mp != null) {
+                String paymentId = String.valueOf(mp.get("id"));
+                String pixCopiaCola = null;
+                String pixQrCodeBase64 = null;
+                Map<String, Object> poi = (Map<String, Object>) mp.get("point_of_interaction");
+                if (poi != null && poi.get("transaction_data") != null) {
+                    Map<String, Object> td = (Map<String, Object>) poi.get("transaction_data");
+                    pixCopiaCola = (String) td.get("qr_code");
+                    pixQrCodeBase64 = (String) td.get("qr_code_base64");
+                }
+
+                if (lojista != null) {
+                    lojista.setRenovacaoPaymentId(paymentId);
+                    lojista.setRenovacaoPixCopiaCola(pixCopiaCola);
+                    lojista.setRenovacaoPixQrCodeBase64(pixQrCodeBase64);
+                    lojista.setRenovacaoCriadaEm(agora);
+                    lojistaRepository.save(lojista);
+                }
+                if (tenant != null) {
+                    tenant.setRenovacaoPaymentId(paymentId);
+                    tenant.setRenovacaoPixCopiaCola(pixCopiaCola);
+                    tenant.setRenovacaoPixQrCodeBase64(pixQrCodeBase64);
+                    tenant.setRenovacaoCriadaEm(agora);
+                    tenantRepository.save(tenant);
+                }
+
+                LocalDateTime vencimento = lojista != null ? lojista.getDataVencimento() : (tenant != null ? tenant.getDataVencimento() : agora.plusDays(30));
+                long diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(agora.toLocalDate(), vencimento.toLocalDate());
+                boolean vencida = agora.isAfter(vencimento);
+
+                return new AssinaturaStatusResponse(
+                        nomeEmpresa,
+                        vencida ? "VENCIDA" : "VENCENDO",
+                        vencimento,
+                        lojista != null ? lojista.getDataPagamento() : null,
+                        diasRestantes,
+                        true,
+                        vencida,
+                        valor,
+                        paymentId,
+                        pixCopiaCola,
+                        pixQrCodeBase64
+                );
+            }
+        } catch (Exception ex) {
+            log.error("[TenantService] Erro ao forçar geração de Pix de renovação: {}", ex.getMessage(), ex);
         }
 
         return obterStatusAssinatura(slugParam);
