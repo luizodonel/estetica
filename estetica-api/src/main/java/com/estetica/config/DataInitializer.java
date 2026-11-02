@@ -1,0 +1,119 @@
+package com.estetica.config;
+
+import com.estetica.model.Categoria;
+import com.estetica.model.Procedimento;
+import com.estetica.repository.CategoriaRepository;
+import com.estetica.repository.ProcedimentoRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class DataInitializer implements CommandLineRunner {
+
+    private final CategoriaRepository categoriaRepository;
+    private final ProcedimentoRepository procedimentoRepository;
+
+    @Override
+    @Transactional
+    public void run(String... args) {
+        if (categoriaRepository.count() > 0) {
+            log.info("Base de dados já possui categorias e procedimentos cadastrados.");
+            return;
+        }
+
+        log.info("Inicializando catálogo base de procedimentos e categorias...");
+
+        // 1. Categorias Oficiais de Estética
+        Categoria catFacial = categoriaRepository.save(Categoria.builder()
+                .nome("Facial")
+                .descricao("Rejuvenescimento, hidratação profunda, limpeza e renovação celular")
+                .icone("sparkles")
+                .ordemExibicao(1)
+                .ativo(true)
+                .build());
+
+        Categoria catCorporal = categoriaRepository.save(Categoria.builder()
+                .nome("Corporal")
+                .descricao("Contorno corporal, tratamento de celulite, gordura localizada e flacidez")
+                .icone("sparkles")
+                .ordemExibicao(2)
+                .ativo(true)
+                .build());
+
+        Categoria catMassagens = categoriaRepository.save(Categoria.builder()
+                .nome("Massagens & Spa")
+                .descricao("Massagens relaxantes, drenagem linfática e alívio do estresse diário")
+                .icone("heart")
+                .ordemExibicao(3)
+                .ativo(true)
+                .build());
+
+        Categoria catLaser = categoriaRepository.save(Categoria.builder()
+                .nome("Depilação a Laser")
+                .descricao("Tecnologia de ponta indolor e definitiva com laser de diodo de última geração")
+                .icone("zap")
+                .ordemExibicao(4)
+                .ativo(true)
+                .build());
+
+        // 2. Procedimentos Base
+        procedimentoRepository.save(Procedimento.builder()
+                .categoria(catFacial)
+                .titulo("Limpeza de Pele Profunda com Fototerapia")
+                .descricao("Higienização minuciosa, extração de cravos sem dor, esfoliação ultrassônica e máscara de LED regeneradora.")
+                .duracaoMinutos(60)
+                .preco(new BigDecimal("180.00"))
+                .imagemUrl("https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=600")
+                .ativo(true)
+                .build());
+
+        procedimentoRepository.save(Procedimento.builder()
+                .categoria(catFacial)
+                .titulo("Peeling Químico Renovador de Colágeno")
+                .descricao("Aplicação de ácidos selecionados para atenuação de manchas solares, melasma e renovação da textura cutânea.")
+                .duracaoMinutos(45)
+                .preco(new BigDecimal("250.00"))
+                .imagemUrl("https://images.unsplash.com/photo-1512290900672-1f55b0a3c20c?auto=format&fit=crop&q=80&w=600")
+                .ativo(true)
+                .build());
+
+        procedimentoRepository.save(Procedimento.builder()
+                .categoria(catCorporal)
+                .titulo("Criomodelagem e Drenagem Escultural")
+                .descricao("Combinação de resfriamento controlado para quebra de adipócitos com manobras drenantes ativadoras da circulação.")
+                .duracaoMinutos(60)
+                .preco(new BigDecimal("320.00"))
+                .imagemUrl("https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&q=80&w=600")
+                .ativo(true)
+                .build());
+
+        procedimentoRepository.save(Procedimento.builder()
+                .categoria(catMassagens)
+                .titulo("Massagem Relaxante com Pedras Quentes e Aromaterapia")
+                .descricao("Sessão revigorante com óleos essenciais nobres, pedras vulcânicas aquecidas e alívio das tensões acumuladas.")
+                .duracaoMinutos(50)
+                .preco(new BigDecimal("160.00"))
+                .imagemUrl("https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=600")
+                .ativo(true)
+                .build());
+
+        procedimentoRepository.save(Procedimento.builder()
+                .categoria(catLaser)
+                .titulo("Depilação a Laser - Sessão Axilas & Pernas")
+                .descricao("Remoção definitiva e suave com tecnologia de resfriamento na ponteira que garante conforto total.")
+                .duracaoMinutos(30)
+                .preco(new BigDecimal("190.00"))
+                .imagemUrl("https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&q=80&w=600")
+                .ativo(true)
+                .build());
+
+        log.info("Catálogo base inicializado com sucesso! (Nenhum usuário ou credencial inserido automaticamente)");
+    }
+}
