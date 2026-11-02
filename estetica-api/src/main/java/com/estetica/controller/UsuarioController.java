@@ -28,13 +28,18 @@ public class UsuarioController {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.estetica.service.TenantResolverService tenantResolverService;
 
     @GetMapping("/clientes")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFISSIONAL')")
     @Operation(summary = "Lista todos os pacientes/clientes cadastrados na clínica")
     public ResponseEntity<List<UsuarioDTO>> listarClientes() {
-        List<UsuarioDTO> clientes = usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE)
-                .stream()
+        com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        List<Usuario> list = (tenant != null)
+                ? usuarioRepository.findByTenantIdAndRoleOrderByNomeAsc(tenant.getId(), Role.ROLE_CLIENTE)
+                : usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE);
+
+        List<UsuarioDTO> clientes = list.stream()
                 .map(this::toDTO)
                 .toList();
         return ResponseEntity.ok(clientes);
@@ -45,19 +50,36 @@ public class UsuarioController {
     @Operation(summary = "Cadastra um novo paciente/cliente diretamente pela clínica")
     @Transactional
     public ResponseEntity<UsuarioDTO> cadastrarCliente(@Valid @RequestBody CriarClienteRequest request) {
-        String email = request.email().toLowerCase().trim();
-        if (usuarioRepository.existsByEmail(email)) {
+        String cleanPhone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
+        if (cleanPhone.length() < 8) {
+            throw new RegraNegocioException("Número de WhatsApp inválido.");
+        }
+
+        if (usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+            throw new RegraNegocioException("Já existe um cliente cadastrado com este WhatsApp: " + cleanPhone);
+        }
+
+        String email = (request.email() != null && !request.email().isBlank())
+                ? request.email().toLowerCase().trim()
+                : "tel" + cleanPhone + "@cliente.local";
+
+        if (request.email() != null && !request.email().isBlank() && usuarioRepository.existsByEmail(email)) {
             throw new RegraNegocioException("Já existe um cliente cadastrado com o e-mail: " + email);
         }
 
-        String senha = (request.senha() != null && !request.senha().isBlank()) ? request.senha() : "Cliente@123";
+        com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        String senha = (request.senha() != null && !request.senha().isBlank())
+                ? request.senha()
+                : java.util.UUID.randomUUID().toString();
 
         Usuario cliente = Usuario.builder()
                 .nome(request.nome().trim())
                 .email(email)
-                .telefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""))
+                .telefoneWhatsApp(cleanPhone)
                 .senhaHash(passwordEncoder.encode(senha))
                 .role(Role.ROLE_CLIENTE)
+                .tenant(tenant)
+                .primeiroAcesso(request.senha() == null || request.senha().isBlank())
                 .ativo(true)
                 .build();
 
@@ -73,12 +95,30 @@ public class UsuarioController {
         Usuario cliente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado com ID: " + id));
 
+        com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        if (tenant != null && cliente.getTenant() != null && !cliente.getTenant().getId().equals(tenant.getId())) {
+            throw new RegraNegocioException("Acesso negado: Este cliente pertence a outra clínica parceira.");
+        }
+
         cliente.setNome(request.nome().trim());
-        cliente.setEmail(request.email().toLowerCase().trim());
-        cliente.setTelefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""));
+
+        if (request.email() != null && !request.email().isBlank()) {
+            String novoEmail = request.email().toLowerCase().trim();
+            if (!novoEmail.equalsIgnoreCase(cliente.getEmail()) && usuarioRepository.existsByEmail(novoEmail)) {
+                throw new RegraNegocioException("Já existe um cliente cadastrado com o e-mail: " + novoEmail);
+            }
+            cliente.setEmail(novoEmail);
+        }
+
+        String cleanPhone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
+        if (!cleanPhone.equals(cliente.getTelefoneWhatsApp()) && usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+            throw new RegraNegocioException("Já existe um cliente cadastrado com este WhatsApp: " + cleanPhone);
+        }
+        cliente.setTelefoneWhatsApp(cleanPhone);
 
         if (request.senha() != null && !request.senha().isBlank()) {
             cliente.setSenhaHash(passwordEncoder.encode(request.senha()));
+            cliente.setPrimeiroAcesso(false);
         }
 
         cliente = usuarioRepository.save(cliente);
@@ -93,6 +133,11 @@ public class UsuarioController {
         Usuario cliente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado com ID: " + id));
 
+        com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        if (tenant != null && cliente.getTenant() != null && !cliente.getTenant().getId().equals(tenant.getId())) {
+            throw new RegraNegocioException("Acesso negado: Este cliente pertence a outra clínica parceira.");
+        }
+
         cliente.setAtivo(!Boolean.TRUE.equals(cliente.getAtivo()));
         usuarioRepository.save(cliente);
         return ResponseEntity.noContent().build();
@@ -105,7 +150,8 @@ public class UsuarioController {
                 u.getEmail(),
                 u.getTelefoneWhatsApp(),
                 u.getRole(),
-                u.getAtivo()
+                u.getAtivo(),
+                u.getPrimeiroAcesso()
         );
     }
 }

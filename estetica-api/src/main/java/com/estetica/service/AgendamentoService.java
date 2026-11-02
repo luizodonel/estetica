@@ -29,6 +29,7 @@ public class AgendamentoService {
     private final BloqueioAgendaRepository bloqueioAgendaRepository;
     private final UsuarioRepository usuarioRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final TenantResolverService tenantResolverService;
 
     private static final int HORAS_MINIMAS_CANCELAMENTO = 2;
 
@@ -99,10 +100,15 @@ public class AgendamentoService {
             throw new HorarioIndisponivelException("O horário selecionado acabou de ser reservado por outro cliente. Por favor, escolha outro slot.");
         }
 
+        com.estetica.model.ClinicaTenant tenant = profissional.getTenant() != null
+                ? profissional.getTenant()
+                : tenantResolverService.getTenantDoUsuarioAutenticado();
+
         Agendamento agendamento = Agendamento.builder()
                 .cliente(cliente)
                 .profissional(profissional)
                 .procedimento(procedimento)
+                .tenant(tenant)
                 .dataHoraInicio(inicio)
                 .dataHoraFim(fim)
                 .status(StatusAgendamento.CONFIRMADO) // ou PENDENTE se exigisse pré-aprovação
@@ -129,7 +135,11 @@ public class AgendamentoService {
 
     @Transactional(readOnly = true)
     public List<AgendamentoDTO> listarCalendarioGeral(LocalDateTime inicio, LocalDateTime fim, Usuario usuario) {
-        List<Agendamento> agendamentos = agendamentoRepository.findAgendamentosCalendario(inicio, fim);
+        com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        List<Agendamento> agendamentos = (tenant != null)
+                ? agendamentoRepository.findAgendamentosCalendarioTenant(tenant.getId(), inicio, fim)
+                : agendamentoRepository.findAgendamentosCalendario(inicio, fim);
+
         if (usuario != null && usuario.getRole() == Role.ROLE_PROFISSIONAL) {
             return agendamentos.stream()
                     .filter(a -> a.getProfissional() != null && a.getProfissional().getUsuario() != null

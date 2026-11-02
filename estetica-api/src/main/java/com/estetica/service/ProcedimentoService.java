@@ -3,6 +3,7 @@ package com.estetica.service;
 import com.estetica.dto.ProcedimentoDTOs.*;
 import com.estetica.exception.RecursoNaoEncontradoException;
 import com.estetica.model.Categoria;
+import com.estetica.model.ClinicaTenant;
 import com.estetica.model.Procedimento;
 import com.estetica.repository.CategoriaRepository;
 import com.estetica.repository.ProcedimentoRepository;
@@ -18,6 +19,7 @@ public class ProcedimentoService {
 
     private final ProcedimentoRepository procedimentoRepository;
     private final CategoriaRepository categoriaRepository;
+    private final TenantResolverService tenantResolverService;
 
     @Transactional(readOnly = true)
     public List<CategoriaDTO> listarCategorias() {
@@ -29,11 +31,18 @@ public class ProcedimentoService {
 
     @Transactional(readOnly = true)
     public List<ProcedimentoDTO> listarProcedimentos(Long categoriaId) {
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        Long tenantId = tenant != null ? tenant.getId() : null;
+
         List<Procedimento> list;
-        if (categoriaId != null && categoriaId > 0) {
-            list = procedimentoRepository.findByCategoriaIdAndAtivoTrueOrderByTituloAsc(categoriaId);
+        if (tenantId != null) {
+            list = (categoriaId != null && categoriaId > 0)
+                    ? procedimentoRepository.findByTenantIdAndCategoriaIdAndAtivoTrueOrderByTituloAsc(tenantId, categoriaId)
+                    : procedimentoRepository.findByTenantIdAndAtivoTrueOrderByTituloAsc(tenantId);
         } else {
-            list = procedimentoRepository.findByAtivoTrueOrderByTituloAsc();
+            list = (categoriaId != null && categoriaId > 0)
+                    ? procedimentoRepository.findByCategoriaIdAndAtivoTrueOrderByTituloAsc(categoriaId)
+                    : procedimentoRepository.findByAtivoTrueOrderByTituloAsc();
         }
 
         return list.stream().map(this::toDTO).toList();
@@ -41,7 +50,12 @@ public class ProcedimentoService {
 
     @Transactional(readOnly = true)
     public List<ProcedimentoDTO> listarTodosAdmin() {
-        return procedimentoRepository.findAll().stream().map(this::toDTO).toList();
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        List<Procedimento> list = (tenant != null)
+                ? procedimentoRepository.findByTenantIdOrderByTituloAsc(tenant.getId())
+                : procedimentoRepository.findAll();
+
+        return list.stream().map(this::toDTO).toList();
     }
 
     @Transactional(readOnly = true)
@@ -56,8 +70,11 @@ public class ProcedimentoService {
         Categoria cat = categoriaRepository.findById(request.categoriaId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria não encontrada com ID: " + request.categoriaId()));
 
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+
         Procedimento p = Procedimento.builder()
                 .categoria(cat)
+                .tenant(tenant)
                 .titulo(request.titulo().trim())
                 .descricao(request.descricao())
                 .duracaoMinutos(request.duracaoMinutos())
@@ -74,6 +91,11 @@ public class ProcedimentoService {
     public ProcedimentoDTO atualizarProcedimento(Long id, CriarProcedimentoRequest request) {
         Procedimento p = procedimentoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Procedimento não encontrado com ID: " + id));
+
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        if (tenant != null && p.getTenant() != null && !p.getTenant().getId().equals(tenant.getId())) {
+            throw new com.estetica.exception.RegraNegocioException("Acesso negado: Este procedimento pertence a outra clínica.");
+        }
 
         Categoria cat = categoriaRepository.findById(request.categoriaId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria não encontrada com ID: " + request.categoriaId()));

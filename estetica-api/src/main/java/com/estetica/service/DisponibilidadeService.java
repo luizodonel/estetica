@@ -43,6 +43,11 @@ public class DisponibilidadeService {
             Profissional prof = profissionalRepository.findById(profissionalId)
                     .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + profissionalId));
             profissionaisAlvo = List.of(prof);
+        } else if (procedimento.getTenant() != null) {
+            profissionaisAlvo = profissionalRepository.findHabilitadosParaProcedimentoETenant(procedimentoId, procedimento.getTenant().getId());
+            if (profissionaisAlvo.isEmpty()) {
+                profissionaisAlvo = profissionalRepository.findByTenantIdAndAtivoTrueOrderByNomeAsc(procedimento.getTenant().getId());
+            }
         } else {
             profissionaisAlvo = profissionalRepository.findHabilitadosParaProcedimento(procedimentoId);
             if (profissionaisAlvo.isEmpty()) {

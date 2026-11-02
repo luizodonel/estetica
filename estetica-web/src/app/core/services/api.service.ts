@@ -15,7 +15,10 @@ import {
   Usuario,
   TenantPublicDTO,
   CadastroLojistaRequest,
-  CadastroLojistaResponse
+  CadastroLojistaResponse,
+  PrimeiroAcessoRequest,
+  VerificarPrimeiroAcessoResponse,
+  AuthResponse
 } from '../models';
 
 @Injectable({
@@ -272,5 +275,15 @@ export class ApiService {
 
   removerBloqueio(bloqueioId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/profissionais/bloqueios/${bloqueioId}`);
+  }
+
+  // Primeiro Acesso
+  verificarPrimeiroAcesso(telefone: string): Observable<VerificarPrimeiroAcessoResponse> {
+    const params = new HttpParams().set('telefone', telefone);
+    return this.http.get<VerificarPrimeiroAcessoResponse>(`${this.baseUrl}/auth/verificar-primeiro-acesso`, { params });
+  }
+
+  primeiroAcesso(payload: PrimeiroAcessoRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/primeiro-acesso`, payload);
   }
 }

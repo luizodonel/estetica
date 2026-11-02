@@ -5,19 +5,32 @@ export type StatusAgendamento = 'PENDENTE' | 'CONFIRMADO' | 'CONCLUIDO' | 'CANCE
 export interface Usuario {
   id: number;
   nome: string;
-  email: string;
+  email?: string;
   telefoneWhatsApp: string;
   role: Role;
   ativo?: boolean;
+  primeiroAcesso?: boolean;
 }
 
 export interface AuthResponse {
   token: string;
   id: number;
   nome: string;
-  email: string;
+  email?: string;
   telefoneWhatsApp: string;
   role: Role;
+  primeiroAcesso?: boolean;
+}
+
+export interface PrimeiroAcessoRequest {
+  telefoneWhatsApp: string;
+  novaSenha: string;
+}
+
+export interface VerificarPrimeiroAcessoResponse {
+  existe: boolean;
+  nome: string;
+  primeiroAcesso: boolean;
 }
 
 export interface Categoria {

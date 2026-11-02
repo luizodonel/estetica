@@ -1,19 +1,40 @@
 package com.estetica.dto;
 
 import com.estetica.model.Role;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class AuthDTOs {
 
     public record LoginRequest(
-        @NotBlank(message = "O e-mail é obrigatório")
-        @Email(message = "E-mail inválido")
+        String login,
         String email,
+        String telefone,
 
         @NotBlank(message = "A senha é obrigatória")
         String senha
+    ) {
+        public String getIdentificador() {
+            if (login != null && !login.isBlank()) return login.trim();
+            if (telefone != null && !telefone.isBlank()) return telefone.trim();
+            if (email != null && !email.isBlank()) return email.trim();
+            return "";
+        }
+    }
+
+    public record PrimeiroAcessoRequest(
+        @NotBlank(message = "O número de telefone/WhatsApp é obrigatório")
+        String telefoneWhatsApp,
+
+        @NotBlank(message = "A nova senha é obrigatória")
+        @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
+        String novaSenha
+    ) {}
+
+    public record VerificarPrimeiroAcessoResponse(
+        boolean existe,
+        String nome,
+        boolean primeiroAcesso
     ) {}
 
     public record RegisterRequest(
@@ -21,8 +42,6 @@ public class AuthDTOs {
         @Size(min = 3, max = 120, message = "O nome deve ter entre 3 e 120 caracteres")
         String nome,
 
-        @NotBlank(message = "O e-mail é obrigatório")
-        @Email(message = "E-mail inválido")
         String email,
 
         @NotBlank(message = "O WhatsApp é obrigatório")
@@ -39,15 +58,14 @@ public class AuthDTOs {
         String nome,
         String email,
         String telefoneWhatsApp,
-        Role role
+        Role role,
+        Boolean primeiroAcesso
     ) {}
 
     public record CriarClienteRequest(
         @NotBlank(message = "O nome é obrigatório")
         String nome,
 
-        @NotBlank(message = "O e-mail é obrigatório")
-        @Email(message = "E-mail inválido")
         String email,
 
         @NotBlank(message = "O WhatsApp é obrigatório")
@@ -62,7 +80,8 @@ public class AuthDTOs {
         String email,
         String telefoneWhatsApp,
         Role role,
-        Boolean ativo
+        Boolean ativo,
+        Boolean primeiroAcesso
     ) {}
 }
 

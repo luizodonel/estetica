@@ -10,5 +10,9 @@ import java.util.List;
 public interface ProcedimentoRepository extends JpaRepository<Procedimento, Long> {
     List<Procedimento> findByAtivoTrueOrderByTituloAsc();
     List<Procedimento> findByCategoriaIdAndAtivoTrueOrderByTituloAsc(Long categoriaId);
+
+    List<Procedimento> findByTenantIdAndAtivoTrueOrderByTituloAsc(Long tenantId);
+    List<Procedimento> findByTenantIdOrderByTituloAsc(Long tenantId);
+    List<Procedimento> findByTenantIdAndCategoriaIdAndAtivoTrueOrderByTituloAsc(Long tenantId, Long categoriaId);
 }
 

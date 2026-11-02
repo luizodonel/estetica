@@ -58,6 +58,16 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     List<Agendamento> findAgendamentosCalendario(@Param("inicio") LocalDateTime inicio,
                                                 @Param("fim") LocalDateTime fim);
 
+    @Query("SELECT a FROM Agendamento a " +
+           "JOIN FETCH a.procedimento " +
+           "JOIN FETCH a.profissional " +
+           "JOIN FETCH a.cliente " +
+           "WHERE a.tenant.id = :tenantId AND a.dataHoraInicio >= :inicio AND a.dataHoraFim <= :fim " +
+           "ORDER BY a.dataHoraInicio ASC")
+    List<Agendamento> findAgendamentosCalendarioTenant(@Param("tenantId") Long tenantId,
+                                                      @Param("inicio") LocalDateTime inicio,
+                                                      @Param("fim") LocalDateTime fim);
+
     // Agendamentos para lembretes automáticos
     @Query("SELECT a FROM Agendamento a " +
            "JOIN FETCH a.cliente " +

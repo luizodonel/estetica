@@ -30,27 +30,40 @@ public class ProfissionalService {
     private final UsuarioRepository usuarioRepository;
     private final ProcedimentoRepository procedimentoRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TenantResolverService tenantResolverService;
 
     @Transactional(readOnly = true)
     public List<ProfissionalDTO> listarTodos() {
-        return profissionalRepository.findByAtivoTrueOrderByNomeAsc()
-                .stream()
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        List<Profissional> profs = (tenant != null)
+                ? profissionalRepository.findByTenantIdAndAtivoTrueOrderByNomeAsc(tenant.getId())
+                : profissionalRepository.findByAtivoTrueOrderByNomeAsc();
+
+        return profs.stream()
                 .map(this::toDTO)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ProfissionalDTO> listarTodosAdmin() {
-        return profissionalRepository.findAll()
-                .stream()
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        List<Profissional> profs = (tenant != null)
+                ? profissionalRepository.findByTenantIdOrderByNomeAsc(tenant.getId())
+                : profissionalRepository.findAll();
+
+        return profs.stream()
                 .map(this::toDTO)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ProfissionalDTO> listarHabilitados(Long procedimentoId) {
-        return profissionalRepository.findHabilitadosParaProcedimento(procedimentoId)
-                .stream()
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        List<Profissional> profs = (tenant != null)
+                ? profissionalRepository.findHabilitadosParaProcedimentoETenant(procedimentoId, tenant.getId())
+                : profissionalRepository.findHabilitadosParaProcedimento(procedimentoId);
+
+        return profs.stream()
                 .map(this::toDTO)
                 .toList();
     }
@@ -72,20 +85,39 @@ public class ProfissionalService {
 
     @Transactional
     public ProfissionalDTO criarProfissional(CriarProfissionalRequest request) {
-        String email = request.email().toLowerCase().trim();
-        if (usuarioRepository.existsByEmail(email)) {
+        String cleanPhone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
+        if (cleanPhone.length() < 8) {
+            throw new RegraNegocioException("Número de WhatsApp inválido.");
+        }
+
+        if (usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+            throw new RegraNegocioException("Já existe um especialista ou usuário cadastrado com o WhatsApp: " + cleanPhone);
+        }
+
+        String email = (request.email() != null && !request.email().isBlank())
+                ? request.email().toLowerCase().trim()
+                : "tel" + cleanPhone + "@especialista.local";
+
+        if (request.email() != null && !request.email().isBlank() && usuarioRepository.existsByEmail(email)) {
             throw new RegraNegocioException("Já existe um usuário com o e-mail: " + email);
         }
 
-        String senha = (request.senha() != null && !request.senha().isBlank()) ? request.senha() : "Clinica@123";
+        ClinicaTenant adminTenant = tenantResolverService.getTenantDoUsuarioAutenticado();
 
-        // Cria a conta de acesso como ROLE_PROFISSIONAL
+        // Senha temporária caso não informada (o especialista definirá no Primeiro Acesso via WhatsApp)
+        String senha = (request.senha() != null && !request.senha().isBlank())
+                ? request.senha()
+                : java.util.UUID.randomUUID().toString();
+
+        // Cria a conta de acesso como ROLE_PROFISSIONAL com primeiro_acesso = true
         Usuario usuario = Usuario.builder()
                 .nome(request.nome().trim())
                 .email(email)
-                .telefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""))
+                .telefoneWhatsApp(cleanPhone)
                 .senhaHash(passwordEncoder.encode(senha))
                 .role(Role.ROLE_PROFISSIONAL)
+                .tenant(adminTenant)
+                .primeiroAcesso(request.senha() == null || request.senha().isBlank())
                 .ativo(true)
                 .build();
         usuario = usuarioRepository.save(usuario);
@@ -98,6 +130,7 @@ public class ProfissionalService {
 
         Profissional prof = Profissional.builder()
                 .usuario(usuario)
+                .tenant(adminTenant)
                 .nome(request.nome().trim())
                 .especialidade(request.especialidade())
                 .bio(request.bio())
@@ -109,8 +142,7 @@ public class ProfissionalService {
 
         prof = profissionalRepository.save(prof);
 
-        // Cria jornada semanal padrão (Segunda a Sexta, 08:00 às 18:00, almoço 12:00 às
-        // 13:00)
+        // Cria jornada semanal padrão (Segunda a Sexta, 08:00 às 18:00, almoço 12:00 às 13:00)
         List<DayOfWeek> diasUteis = List.of(
                 DayOfWeek.MONDAY,
                 DayOfWeek.TUESDAY,
@@ -139,6 +171,11 @@ public class ProfissionalService {
         Profissional prof = profissionalRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + id));
 
+        ClinicaTenant adminTenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        if (adminTenant != null && prof.getTenant() != null && !prof.getTenant().getId().equals(adminTenant.getId())) {
+            throw new RegraNegocioException("Acesso negado: Este especialista pertence a outra clínica parceira.");
+        }
+
         prof.setNome(request.nome().trim());
         prof.setEspecialidade(request.especialidade());
         prof.setBio(request.bio());
@@ -157,10 +194,15 @@ public class ProfissionalService {
                 prof.getUsuario().setEmail(novoEmail);
             }
             if (request.telefoneWhatsApp() != null && !request.telefoneWhatsApp().isBlank()) {
-                prof.getUsuario().setTelefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""));
+                String cleanPhone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
+                if (!cleanPhone.equals(prof.getUsuario().getTelefoneWhatsApp()) && usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+                    throw new RegraNegocioException("Já existe um usuário cadastrado com este WhatsApp: " + cleanPhone);
+                }
+                prof.getUsuario().setTelefoneWhatsApp(cleanPhone);
             }
             if (request.senha() != null && !request.senha().isBlank()) {
                 prof.getUsuario().setSenhaHash(passwordEncoder.encode(request.senha()));
+                prof.getUsuario().setPrimeiroAcesso(false);
             }
             usuarioRepository.save(prof.getUsuario());
         }

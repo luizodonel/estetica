@@ -26,18 +26,26 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, length = 120)
     private String nome;
 
-    @Column(nullable = false, unique = true, length = 120)
+    @Column(length = 120)
     private String email;
 
     @Column(name = "telefone_whatsapp", nullable = false, length = 20)
     private String telefoneWhatsApp;
 
-    @Column(name = "senha_hash", nullable = false)
+    @Column(name = "senha_hash")
     private String senhaHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 25)
     private Role role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
+    private ClinicaTenant tenant;
+
+    @Builder.Default
+    @Column(name = "primeiro_acesso")
+    private Boolean primeiroAcesso = false;
 
     @Builder.Default
     @Column(nullable = false)

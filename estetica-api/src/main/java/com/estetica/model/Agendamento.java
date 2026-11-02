@@ -35,6 +35,10 @@ public class Agendamento {
     @JoinColumn(name = "procedimento_id", nullable = false)
     private Procedimento procedimento;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
+    private ClinicaTenant tenant;
+
     @Column(name = "data_hora_inicio", nullable = false)
     private LocalDateTime dataHoraInicio;
 

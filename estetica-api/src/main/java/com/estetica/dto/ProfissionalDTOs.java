@@ -12,8 +12,6 @@ public class ProfissionalDTOs {
         @NotBlank(message = "O nome é obrigatório")
         String nome,
 
-        @NotBlank(message = "O e-mail é obrigatório")
-        @Email(message = "E-mail inválido")
         String email,
 
         @NotBlank(message = "O WhatsApp é obrigatório")

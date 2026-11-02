@@ -83,6 +83,11 @@ public class TenantService {
                 .build();
         tenant = tenantRepository.save(tenant);
 
+        // Associa o tenant ao usuário admin do lojista
+        adminLojista.setTenant(tenant);
+        adminLojista.setPrimeiroAcesso(false);
+        usuarioRepository.save(adminLojista);
+
         // 4. Gera token de autenticação imediata
         String token = jwtService.gerarToken(adminLojista);
 
@@ -92,7 +97,8 @@ public class TenantService {
                 adminLojista.getEmail(),
                 adminLojista.getTelefoneWhatsApp(),
                 adminLojista.getRole(),
-                adminLojista.getAtivo()
+                adminLojista.getAtivo(),
+                adminLojista.getPrimeiroAcesso()
         );
 
         TenantPublicDTO tenantDTO = toPublicDTO(tenant);

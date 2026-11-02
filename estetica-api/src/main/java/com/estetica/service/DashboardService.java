@@ -28,6 +28,7 @@ public class DashboardService {
     private final UsuarioRepository usuarioRepository;
     private final ProfissionalRepository profissionalRepository;
     private final AgendamentoService agendamentoService;
+    private final TenantResolverService tenantResolverService;
 
     @Transactional(readOnly = true)
     public DashboardResumoDTO obterResumoHoje() {
@@ -49,7 +50,12 @@ public class DashboardService {
             profLogado = profissionalRepository.findByUsuarioId(usuarioLogado.getId()).orElse(null);
         }
 
-        List<Agendamento> todosAgendamentosHoje = agendamentoRepository.findAgendamentosCalendario(inicioDia, fimDia);
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        Long tenantId = tenant != null ? tenant.getId() : null;
+
+        List<Agendamento> todosAgendamentosHoje = (tenantId != null)
+                ? agendamentoRepository.findAgendamentosCalendarioTenant(tenantId, inicioDia, fimDia)
+                : agendamentoRepository.findAgendamentosCalendario(inicioDia, fimDia);
 
         // Se for um especialista, ele SÓ pode visualizar os atendimentos e o faturamento DELE
         List<Agendamento> agendamentosFiltrados;
@@ -76,7 +82,9 @@ public class DashboardService {
                 .map(Agendamento::getValorCobrado)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        long clientesAtivos = usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE).size();
+        long clientesAtivos = (tenantId != null)
+                ? usuarioRepository.countByTenantIdAndRole(tenantId, Role.ROLE_CLIENTE)
+                : usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE).size();
 
         List<AgendamentoDTO> proximos = agendamentosFiltrados.stream()
                 .filter(a -> a.getDataHoraFim().isAfter(LocalDateTime.now()) && a.getStatus() != StatusAgendamento.CANCELADO)
@@ -84,10 +92,13 @@ public class DashboardService {
                 .map(agendamentoService::toDTO)
                 .toList();
 
-        // Faturamento detalhado por especialista (Apenas visível para ROLE_ADMIN)
+        // Faturamento detalhado por especialista (Apenas visível para ROLE_ADMIN daquela clínica)
         List<FaturamentoEspecialistaDTO> faturamentoPorEspecialista = new ArrayList<>();
         if (isAdmin) {
-            List<Profissional> todosProfissionais = profissionalRepository.findByAtivoTrueOrderByNomeAsc();
+            List<Profissional> todosProfissionais = (tenantId != null)
+                    ? profissionalRepository.findByTenantIdAndAtivoTrueOrderByNomeAsc(tenantId)
+                    : profissionalRepository.findByAtivoTrueOrderByNomeAsc();
+
             for (Profissional prof : todosProfissionais) {
                 List<Agendamento> agendsProf = todosAgendamentosHoje.stream()
                         .filter(a -> a.getProfissional() != null && a.getProfissional().getId().equals(prof.getId()))

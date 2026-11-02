@@ -23,6 +23,10 @@ public class Profissional {
     @JoinColumn(name = "usuario_id", unique = true)
     private Usuario usuario;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
+    private ClinicaTenant tenant;
+
     @Column(nullable = false, length = 120)
     private String nome;
 

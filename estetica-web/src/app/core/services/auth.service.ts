@@ -7,7 +7,10 @@ import { AuthResponse, Role, Usuario } from '../models';
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:8080/api/v1/auth';
+  private readonly apiUrl = (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
+    ? '/api/v1/auth'
+    : 'http://localhost:8080/api/v1/auth';
+
   private readonly TOKEN_KEY = 'estetica_jwt_token';
   private readonly USER_KEY = 'estetica_user_data';
 
@@ -22,13 +25,23 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(dados: { email: string; senha: string }): Observable<AuthResponse> {
+  login(dados: { login: string; senha: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, dados).pipe(
       tap(res => this.handleAuthSuccess(res))
     );
   }
 
-  registrar(dados: { nome: string; email: string; telefoneWhatsApp: string; senha: string }): Observable<AuthResponse> {
+  primeiroAcesso(dados: { telefoneWhatsApp: string; novaSenha: string }): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/primeiro-acesso`, dados).pipe(
+      tap(res => this.handleAuthSuccess(res))
+    );
+  }
+
+  verificarPrimeiroAcesso(telefone: string): Observable<{ existe: boolean; nome: string; primeiroAcesso: boolean }> {
+    return this.http.get<{ existe: boolean; nome: string; primeiroAcesso: boolean }>(`${this.apiUrl}/verificar-primeiro-acesso?telefone=${encodeURIComponent(telefone)}`);
+  }
+
+  registrar(dados: { nome: string; email?: string; telefoneWhatsApp: string; senha: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/registrar`, dados).pipe(
       tap(res => this.handleAuthSuccess(res))
     );

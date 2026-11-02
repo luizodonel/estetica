@@ -25,7 +25,10 @@ data/
 *.mv.db
 *.trace.db
 
-# Logs & OS
+# Uploads
+uploads/
+**/uploads/
+
 *.log
 .DS_Store
 Thumbs.db

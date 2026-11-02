@@ -526,12 +526,14 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail de Acesso *</label>
-                  <input type="email" formControlName="email" placeholder="juliana@clinica.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp (Login do Especialista) *</label>
+                  <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98888-7777" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <span class="text-[10px] text-stone-400 mt-0.5 block">Usado para entrar no sistema</span>
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp *</label>
-                  <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98888-7777" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail (opcional)</label>
+                  <input type="email" formControlName="email" placeholder="juliana@clinica.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <span class="text-[10px] text-stone-400 mt-0.5 block">Opcional</span>
                 </div>
               </div>
 
@@ -669,18 +671,19 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail *</label>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp com DDD (Login de Acesso) *</label>
+                <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98765-4321" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <span class="text-[10px] text-stone-400 mt-0.5 block">Usado para o cliente entrar na plataforma</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail (opcional)</label>
                 <input type="email" formControlName="email" placeholder="fernanda@exemplo.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp com DDD *</label>
-                <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98765-4321" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-              </div>
-
-              <div>
                 <label class="block text-xs font-semibold text-stone-700 mb-1">
-                  {{ clienteEmEdicao() ? 'Alterar Senha (opcional)' : 'Senha de Acesso (padrão Cliente@123)' }}
+                  {{ clienteEmEdicao() ? 'Alterar Senha (opcional)' : 'Senha de Acesso (opcional - cliente cadastrará no primeiro acesso)' }}
                 </label>
                 <input type="password" formControlName="senha" placeholder="Mínimo 6 caracteres" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
               </div>
@@ -777,8 +780,8 @@ export class AdminGestaoComponent implements OnInit {
     if (!termo) return this.clientes();
     return this.clientes().filter(c =>
       c.nome.toLowerCase().includes(termo) ||
-      c.email.toLowerCase().includes(termo) ||
-      c.telefoneWhatsApp.includes(termo)
+      (c.email && c.email.toLowerCase().includes(termo)) ||
+      (c.telefoneWhatsApp && c.telefoneWhatsApp.includes(termo))
     );
   });
 
@@ -806,7 +809,7 @@ export class AdminGestaoComponent implements OnInit {
 
     this.formProfissional = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(3)]],
-      email: ['', [Validators.required, Validators.email]],
+      email: [''],
       telefoneWhatsApp: ['', Validators.required],
       especialidade: ['', Validators.required],
       bio: [''],
@@ -817,7 +820,7 @@ export class AdminGestaoComponent implements OnInit {
 
     this.formCliente = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(3)]],
-      email: ['', [Validators.required, Validators.email]],
+      email: [''],
       telefoneWhatsApp: ['', Validators.required],
       senha: ['']
     });

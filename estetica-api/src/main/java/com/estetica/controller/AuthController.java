@@ -21,9 +21,21 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    @Operation(summary = "Autentica usuário e retorna token JWT")
+    @Operation(summary = "Autentica usuário e retorna token JWT (WhatsApp/Telefone ou E-mail)")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.autenticar(request));
+    }
+
+    @GetMapping("/verificar-primeiro-acesso")
+    @Operation(summary = "Verifica se o telefone informado requer definição de senha (primeiro acesso)")
+    public ResponseEntity<VerificarPrimeiroAcessoResponse> verificarPrimeiroAcesso(@RequestParam String telefone) {
+        return ResponseEntity.ok(authService.verificarPrimeiroAcesso(telefone));
+    }
+
+    @PostMapping("/primeiro-acesso")
+    @Operation(summary = "Define a senha de primeiro acesso do especialista ou cliente cadastrado pelo admin")
+    public ResponseEntity<AuthResponse> primeiroAcesso(@Valid @RequestBody PrimeiroAcessoRequest request) {
+        return ResponseEntity.ok(authService.primeiroAcesso(request));
     }
 
     @PostMapping("/registrar")
@@ -50,7 +62,8 @@ public class AuthController {
                 usuario.getEmail(),
                 usuario.getTelefoneWhatsApp(),
                 usuario.getRole(),
-                usuario.getAtivo()
+                usuario.getAtivo(),
+                usuario.getPrimeiroAcesso()
         ));
     }
 }
