@@ -2,15 +2,14 @@ package com.estetica.service;
 
 import com.estetica.dto.ProntuarioDTOs.*;
 import com.estetica.exception.RecursoNaoEncontradoException;
-import com.estetica.model.Agendamento;
-import com.estetica.model.HistoricoAtendimento;
-import com.estetica.model.Profissional;
-import com.estetica.model.Usuario;
+import com.estetica.model.*;
 import com.estetica.repository.AgendamentoRepository;
 import com.estetica.repository.HistoricoAtendimentoRepository;
 import com.estetica.repository.ProfissionalRepository;
 import com.estetica.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +24,7 @@ public class ProntuarioService {
     private final UsuarioRepository usuarioRepository;
     private final ProfissionalRepository profissionalRepository;
     private final AgendamentoRepository agendamentoRepository;
+    private final TenantResolverService tenantResolverService;
 
     @Transactional(readOnly = true)
     public List<HistoricoAtendimentoDTO> buscarHistoricoPorCliente(Long clienteId) {
@@ -42,6 +42,11 @@ public class ProntuarioService {
         Profissional prof = null;
         if (req.profissionalId() != null) {
             prof = profissionalRepository.findById(req.profissionalId()).orElse(null);
+        } else {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof Usuario u && u.getRole() == Role.ROLE_PROFISSIONAL) {
+                prof = profissionalRepository.findByUsuarioId(u.getId()).orElse(null);
+            }
         }
 
         Agendamento agendamento = null;
@@ -49,9 +54,15 @@ public class ProntuarioService {
             agendamento = agendamentoRepository.findById(req.agendamentoId()).orElse(null);
         }
 
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        if (tenant == null && cliente.getTenant() != null) {
+            tenant = cliente.getTenant();
+        }
+
         HistoricoAtendimento h = HistoricoAtendimento.builder()
                 .cliente(cliente)
                 .profissional(prof)
+                .tenant(tenant)
                 .agendamento(agendamento)
                 .dataAtendimento(LocalDateTime.now())
                 .notasAnamnese(req.notasAnamnese())

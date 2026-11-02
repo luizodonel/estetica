@@ -70,9 +70,23 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
         <div class="bg-white rounded-3xl p-6 sm:p-8 border border-nude-200 shadow-sm mb-8">
           <h3 class="font-serif text-lg font-bold text-stone-900 mb-4">+ Nova Anotação Clínica / Anamnese</h3>
 
+          @if (mensagemSucesso()) {
+            <div class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
+              <span>{{ mensagemSucesso() }}</span>
+              <button (click)="mensagemSucesso.set(null)" class="text-emerald-600 font-bold ml-2">✕</button>
+            </div>
+          }
+
+          @if (mensagemErro()) {
+            <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+              <span>{{ mensagemErro() }}</span>
+              <button (click)="mensagemErro.set(null)" class="text-rose-600 font-bold ml-2">✕</button>
+            </div>
+          }
+
           <div class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1">Notas de Anamnese & Queixas:</label>
+              <label class="block text-xs font-semibold text-stone-700 mb-1">Notas de Anamnese & Queixas *:</label>
               <textarea 
                 [(ngModel)]="notasAnamnese" 
                 rows="3" 
@@ -101,10 +115,10 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
 
             <div class="flex justify-end pt-2">
               <button 
-                [disabled]="!notasAnamnese"
+                [disabled]="salvando() || !notasAnamnese"
                 (click)="salvarEntrada()" 
-                class="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-all shadow-md disabled:opacity-50">
-                Salvar Entrada no Prontuário
+                class="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-all shadow-md disabled:opacity-50 flex items-center gap-2">
+                <span>{{ salvando() ? 'Salvando...' : 'Salvar Entrada no Prontuário' }}</span>
               </button>
             </div>
           </div>
@@ -176,6 +190,9 @@ export class AdminProntuarioComponent implements OnInit {
 
   historico = signal<HistoricoAtendimento[]>([]);
   carregando = signal<boolean>(false);
+  salvando = signal<boolean>(false);
+  mensagemSucesso = signal<string | null>(null);
+  mensagemErro = signal<string | null>(null);
 
   notasAnamnese = '';
   orientacoesPos = '';
@@ -199,6 +216,8 @@ export class AdminProntuarioComponent implements OnInit {
 
   onClienteChange(novoId: number | null): void {
     this.clienteId = novoId;
+    this.mensagemSucesso.set(null);
+    this.mensagemErro.set(null);
     if (novoId) {
       const p = this.clientes().find(c => c.id === novoId) || null;
       this.pacienteSelecionado.set(p);
@@ -229,7 +248,18 @@ export class AdminProntuarioComponent implements OnInit {
   }
 
   salvarEntrada(): void {
-    if (!this.clienteId || !this.notasAnamnese) return;
+    if (!this.clienteId) {
+      this.mensagemErro.set('Selecione um paciente cadastrado.');
+      return;
+    }
+    if (!this.notasAnamnese) {
+      this.mensagemErro.set('Preencha as notas de anamnese e queixas.');
+      return;
+    }
+
+    this.salvando.set(true);
+    this.mensagemSucesso.set(null);
+    this.mensagemErro.set(null);
 
     this.api.salvarProntuario({
       clienteId: this.clienteId,
@@ -238,12 +268,17 @@ export class AdminProntuarioComponent implements OnInit {
       reacoesAdversas: this.reacoesAdversas
     }).subscribe({
       next: () => {
+        this.salvando.set(false);
+        this.mensagemSucesso.set('Anotação de atendimento registrada com sucesso no prontuário!');
         this.notasAnamnese = '';
         this.orientacoesPos = '';
         this.reacoesAdversas = '';
         this.buscarHistorico();
       },
-      error: (err) => console.error(err)
+      error: (err) => {
+        this.salvando.set(false);
+        this.mensagemErro.set(err?.error?.message || err?.error?.detail || 'Erro ao salvar prontuário.');
+      }
     });
   }
 }

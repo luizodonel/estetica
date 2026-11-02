@@ -23,8 +23,12 @@ public class HistoricoAtendimento {
     private Usuario cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profissional_id", nullable = false)
+    @JoinColumn(name = "profissional_id")
     private Profissional profissional;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
+    private ClinicaTenant tenant;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agendamento_id")
