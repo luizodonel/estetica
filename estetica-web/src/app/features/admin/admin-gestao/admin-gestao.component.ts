@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -89,7 +89,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
           [class.bg-white]="abaAtiva() !== 'identidade'"
           [class.text-stone-700]="abaAtiva() !== 'identidade'"
           class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
-          <span>🎨 Identidade & Cores</span>
+          <span>🖼️ Logotipo & Dados</span>
         </button>
       </div>
 
@@ -125,10 +125,10 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
                 Personalização Visual Whitelabel
               </span>
               <h2 class="font-serif text-2xl font-bold text-stone-900">
-                Logotipo & Cores do Sistema
+                Logotipo da Clínica & Dados Cadastrais
               </h2>
               <p class="text-xs text-stone-500 mt-1">
-                Altere a logomarca da clínica e a paleta de cores a qualquer momento. Suas alterações são aplicadas instantaneamente em toda a plataforma.
+                Altere a logomarca e o nome de exibição da sua clínica a qualquer momento.
               </p>
             </div>
 
@@ -207,100 +207,12 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
                 <input #fileInputLogoClinica type="file" accept="image/*" (change)="aoSelecionarLogoClinica($event)" class="hidden" />
               </div>
 
-              <!-- Paleta de Cores e Temas -->
-              <div class="space-y-4 pt-2 border-t border-nude-200">
-                <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">
-                    Sugestões de Paletas Elegantes:
-                  </label>
-                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    <button
-                      type="button"
-                      (click)="aplicarPaletaClinica('#e11d48', '#f43f5e')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-rose-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#e11d48] to-[#f43f5e] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Rose Luxury</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="aplicarPaletaClinica('#0f766e', '#14b8a6')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-teal-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#0f766e] to-[#14b8a6] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Teal Spa</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="aplicarPaletaClinica('#7c2d12', '#c2410c')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-amber-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#7c2d12] to-[#c2410c] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Terracota</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="aplicarPaletaClinica('#1e293b', '#475569')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-slate-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#1e293b] to-[#475569] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Graphite Minimal</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="aplicarPaletaClinica('#b45309', '#d97706')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-amber-500 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#b45309] to-[#d97706] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Ouro Imperial</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="aplicarPaletaClinica('#047857', '#10b981')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-emerald-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#047857] to-[#10b981] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Esmeralda Nobre</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Seletores de Cores Personalizadas -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="p-4 rounded-2xl border border-nude-200 bg-stone-50">
-                    <label class="block text-xs font-semibold text-stone-700 mb-2">Cor Primária (Principal)</label>
-                    <div class="flex items-center gap-3">
-                      <input
-                        type="color"
-                        formControlName="corPrimaria"
-                        class="w-12 h-12 rounded-xl border border-nude-300 p-1 cursor-pointer bg-white" />
-                      <div>
-                        <span class="font-mono font-bold text-xs text-stone-800 uppercase block">
-                          {{ formIdentidade.get('corPrimaria')?.value }}
-                        </span>
-                        <span class="text-[10px] text-stone-400">Botões, cabeçalho e destaques</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="p-4 rounded-2xl border border-nude-200 bg-stone-50">
-                    <label class="block text-xs font-semibold text-stone-700 mb-2">Cor Secundária (Destaques)</label>
-                    <div class="flex items-center gap-3">
-                      <input
-                        type="color"
-                        formControlName="corSecundaria"
-                        class="w-12 h-12 rounded-xl border border-nude-300 p-1 cursor-pointer bg-white" />
-                      <div>
-                        <span class="font-mono font-bold text-xs text-stone-800 uppercase block">
-                          {{ formIdentidade.get('corSecundaria')?.value }}
-                        </span>
-                        <span class="text-[10px] text-stone-400">Gradientes e badges</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Prévia em Tempo Real -->
+              <!-- Prévia em Tempo Real -->
                 <div class="p-5 rounded-3xl border border-nude-200 bg-stone-50/60 space-y-3">
                   <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Prévia da Barra do Seu Sistema</span>
                   <div class="p-3.5 rounded-2xl border border-nude-200 flex items-center justify-between bg-white shadow-sm">
                     <div class="flex items-center gap-3">
-                      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm"
-                           [style.background]="'linear-gradient(135deg, ' + formIdentidade.get('corPrimaria')?.value + ', ' + formIdentidade.get('corSecundaria')?.value + ')'">
+                      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm bg-gradient-to-tr from-rose-500 to-rose-600">
                         @if (formIdentidade.get('logoUrl')?.value) {
                           <img [src]="obterImagemUrl(formIdentidade.get('logoUrl')?.value)" class="w-full h-full object-contain p-1" />
                         } @else {
@@ -317,13 +229,11 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
 
                     <button
                       type="button"
-                      class="px-4 py-2 rounded-xl text-white font-semibold text-xs shadow-sm"
-                      [style.backgroundColor]="formIdentidade.get('corPrimaria')?.value">
+                      class="px-4 py-2 rounded-xl text-white font-semibold text-xs shadow-sm bg-rose-600">
                       Agendar Consulta
                     </button>
                   </div>
                 </div>
-              </div>
 
               <div class="pt-2 flex justify-end">
                 <button
@@ -334,7 +244,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
                     <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                     <span>Salvando Alterações...</span>
                   } @else {
-                    <span>💾 Salvar Logotipo & Cores</span>
+                    <span>💾 Salvar Alterações</span>
                   }
                 </button>
               </div>
@@ -1468,10 +1378,6 @@ export class AdminGestaoComponent implements OnInit {
 
   removerLogoClinica(): void {
     this.formIdentidade.patchValue({ logoUrl: '' });
-  }
-
-  aplicarPaletaClinica(corPrimaria: string, corSecundaria: string): void {
-    this.formIdentidade.patchValue({ corPrimaria, corSecundaria });
   }
 
   salvarIdentidadeVisual(): void {

@@ -7,14 +7,17 @@
     <router-outlet></router-outlet>
   </main>
 
-  <!-- Rodapé Elegante -->
+  <!-- Rodapé Dinâmico com o Nome da Clínica / Lojista -->
   <footer class="border-t border-nude-200 bg-white py-12 px-4 sm:px-6 mb-16 md:mb-0 text-stone-500 text-xs">
     <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-2">
-        <span class="font-serif text-lg font-bold text-stone-900">L'Élégance</span>
-        <span>• Alta Estética Avançada</span>
+        @if (tenantService.logoUrl()) {
+          <img [src]="tenantService.logoUrl()!" [alt]="tenantService.nomeEmpresa()" class="h-6 w-auto object-contain max-w-[120px]" />
+        }
+        <span class="font-serif text-lg font-bold text-stone-900">{{ tenantService.nomeEmpresa() }}</span>
+        <span>• {{ tenantService.tenant() ? 'Portal Oficial' : 'Alta Estética Avançada' }}</span>
       </div>
-      <p class="text-stone-400">© 2026 Clínica L'Élégance Estética. Todos os direitos reservados.</p>
+      <p class="text-stone-400">© 2026 {{ tenantService.nomeEmpresa() }}. Todos os direitos reservados.</p>
     </div>
   </footer>
 

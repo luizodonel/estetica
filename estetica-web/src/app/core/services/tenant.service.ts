@@ -16,8 +16,8 @@ export class TenantService {
     const raw = this.tenant()?.logoUrl;
     return raw ? this.api.formatarUrlImagem(raw) : null;
   });
-  corPrimaria = computed(() => this.tenant()?.corPrimaria || '#e11d48');
-  corSecundaria = computed(() => this.tenant()?.corSecundaria || '#f43f5e');
+  corPrimaria = computed(() => '#e11d48');
+  corSecundaria = computed(() => '#f43f5e');
   linkPersonalizado = computed(() => this.tenant()?.linkPersonalizado || '');
 
   constructor() {
@@ -72,14 +72,10 @@ export class TenantService {
       document.title = `${tenant.nomeEmpresa} | Agendamento Online`;
     }
 
-    // Injeta as variáveis CSS dinâmicas no elemento raiz (:root)
+    // Injeta as cores originais da identidade da plataforma no elemento raiz (:root)
     const root = document.documentElement;
-    if (tenant.corPrimaria) {
-      root.style.setProperty('--cor-primaria', tenant.corPrimaria);
-    }
-    if (tenant.corSecundaria) {
-      root.style.setProperty('--cor-secundaria', tenant.corSecundaria);
-    }
+    root.style.setProperty('--cor-primaria', '#e11d48');
+    root.style.setProperty('--cor-secundaria', '#f43f5e');
   }
 
   setTenantManual(tenant: TenantPublicDTO): void {

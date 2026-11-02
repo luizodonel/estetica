@@ -58,7 +58,7 @@ import { TenantPublicDTO } from '../../core/models';
                  [class.border-nude-300]="passoAtual() < 2">
               2
             </div>
-            <span class="text-[10px] font-semibold text-stone-600">Suas Cores</span>
+            <span class="text-[10px] font-semibold text-stone-600">Acesso Admin</span>
           </div>
 
           <!-- Passo 3 -->
@@ -70,19 +70,6 @@ import { TenantPublicDTO } from '../../core/models';
                  [class.border-2]="passoAtual() < 3"
                  [class.border-nude-300]="passoAtual() < 3">
               3
-            </div>
-            <span class="text-[10px] font-semibold text-stone-600">Acesso Admin</span>
-          </div>
-
-          <!-- Passo 4 -->
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
-                 [class.bg-rose-600]="passoAtual() >= 4"
-                 [class.text-white]="passoAtual() >= 4"
-                 [class.bg-white]="passoAtual() < 4"
-                 [class.border-2]="passoAtual() < 4"
-                 [class.border-nude-300]="passoAtual() < 4">
-              4
             </div>
             <span class="text-[10px] font-semibold text-stone-600">Ativação PIX</span>
           </div>
@@ -210,106 +197,9 @@ import { TenantPublicDTO } from '../../core/models';
                 <div class="pt-4 flex justify-end">
                   <button
                     type="button"
-                    (click)="avancarParaPasso2()"
+                    (click)="passoAtual.set(2)"
                     [disabled]="!formLojista.get('nomeEmpresa')?.value || !formLojista.get('slug')?.value || slugDisponivel() === false"
                     class="px-6 py-3 rounded-2xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-md disabled:opacity-40">
-                    Próximo: Cores da Marca →
-                  </button>
-                </div>
-              </div>
-            }
-
-            <!-- ========================================================================= -->
-            <!-- PASSO 2: PALETA DE CORES WHITELABEL -->
-            <!-- ========================================================================= -->
-            @if (passoAtual() === 2) {
-              <div class="space-y-6 animate-fade-in">
-                <div>
-                  <h2 class="font-serif text-xl font-bold text-stone-900 mb-1">Paleta de Cores Exclusiva</h2>
-                  <p class="text-xs text-stone-500">Escolha a identidade visual do seu sistema. Os botões, cabeçalhos e destaques usarão estas cores.</p>
-                </div>
-
-                <!-- Paletas Prontas Sugeridas -->
-                <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-2">Sugestões de Paletas Elegantes:</label>
-                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    <button
-                      type="button"
-                      (click)="aplicarPaleta('#e11d48', '#f43f5e')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-rose-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#e11d48] to-[#f43f5e] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Rose Luxury</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="aplicarPaleta('#0f766e', '#14b8a6')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-teal-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#0f766e] to-[#14b8a6] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Teal Spa</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="aplicarPaleta('#7c2d12', '#c2410c')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-amber-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#7c2d12] to-[#c2410c] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Terracota</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="aplicarPaleta('#1e293b', '#475569')"
-                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-slate-400 bg-stone-50 transition-all flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#1e293b] to-[#475569] shadow-sm"></div>
-                      <span class="text-[11px] font-semibold text-stone-700">Graphite Minimal</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Seletores de Cores Hexadecimal -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="p-4 rounded-2xl border border-nude-200 bg-stone-50">
-                    <label class="block text-xs font-semibold text-stone-700 mb-2">Cor Primária (Principal)</label>
-                    <div class="flex items-center gap-3">
-                      <input
-                        type="color"
-                        formControlName="corPrimaria"
-                        class="w-12 h-12 rounded-xl border border-nude-300 p-1 cursor-pointer bg-white" />
-                      <div>
-                        <span class="font-mono font-bold text-xs text-stone-800 uppercase block">
-                          {{ formLojista.get('corPrimaria')?.value }}
-                        </span>
-                        <span class="text-[10px] text-stone-400">Botões, destaques e cabeçalho</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="p-4 rounded-2xl border border-nude-200 bg-stone-50">
-                    <label class="block text-xs font-semibold text-stone-700 mb-2">Cor Secundária (Destaque)</label>
-                    <div class="flex items-center gap-3">
-                      <input
-                        type="color"
-                        formControlName="corSecundaria"
-                        class="w-12 h-12 rounded-xl border border-nude-300 p-1 cursor-pointer bg-white" />
-                      <div>
-                        <span class="font-mono font-bold text-xs text-stone-800 uppercase block">
-                          {{ formLojista.get('corSecundaria')?.value }}
-                        </span>
-                        <span class="text-[10px] text-stone-400">Gradientes, ícones e badges</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="pt-4 flex items-center justify-between">
-                  <button
-                    type="button"
-                    (click)="passoAtual.set(1)"
-                    class="px-5 py-2.5 rounded-xl border border-nude-300 text-stone-600 text-xs font-semibold hover:bg-stone-50">
-                    ← Voltar
-                  </button>
-                  <button
-                    type="button"
-                    (click)="passoAtual.set(3)"
-                    class="px-6 py-3 rounded-2xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-md">
                     Próximo: Dados de Acesso →
                   </button>
                 </div>
@@ -317,9 +207,9 @@ import { TenantPublicDTO } from '../../core/models';
             }
 
             <!-- ========================================================================= -->
-            <!-- PASSO 3: DADOS DE ACESSO DO ADMINISTRADOR -->
+            <!-- PASSO 2: DADOS DE ACESSO DO ADMINISTRADOR -->
             <!-- ========================================================================= -->
-            @if (passoAtual() === 3) {
+            @if (passoAtual() === 2) {
               <div class="space-y-5 animate-fade-in">
                 <div>
                   <h2 class="font-serif text-xl font-bold text-stone-900 mb-1">Seus Dados de Acesso</h2>
@@ -400,7 +290,7 @@ import { TenantPublicDTO } from '../../core/models';
                 <div class="pt-4 flex items-center justify-between">
                   <button
                     type="button"
-                    (click)="passoAtual.set(2)"
+                    (click)="passoAtual.set(1)"
                     class="px-5 py-2.5 rounded-xl border border-nude-300 text-stone-600 text-xs font-semibold hover:bg-stone-50">
                     ← Voltar
                   </button>
@@ -422,7 +312,7 @@ import { TenantPublicDTO } from '../../core/models';
             <!-- ========================================================================= -->
             <!-- PASSO 4: PAGAMENTO PIX & ATIVAÇÃO DA LOJA (MERCADO PAGO) -->
             <!-- ========================================================================= -->
-            @if (passoAtual() === 4) {
+            @if (passoAtual() === 3) {
               <div class="space-y-6 animate-scale-up text-center">
 
                 @if (!pagamentoAprovado()) {
@@ -698,10 +588,6 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
     return this.api.formatarUrlImagem(url);
   }
 
-  aplicarPaleta(corPrimaria: string, corSecundaria: string): void {
-    this.formLojista.patchValue({ corPrimaria, corSecundaria });
-  }
-
   salvarLojista(): void {
     if (this.formLojista.invalid) return;
 
@@ -729,7 +615,7 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
         }
 
         // Avança para o Passo 4 (Pagamento PIX)
-        this.passoAtual.set(4);
+        this.passoAtual.set(3);
 
         // Inicia checagem automática a cada 3 segundos
         if (res.paymentId) {

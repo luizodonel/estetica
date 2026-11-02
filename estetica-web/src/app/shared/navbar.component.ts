@@ -19,8 +19,7 @@ import { TenantService } from '../core/services/tenant.service';
               <img [src]="tenantService.logoUrl()!" [alt]="tenantService.nomeEmpresa()" class="w-full h-full object-contain p-1" />
             </div>
           } @else {
-            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-400 via-rose-500 to-champagne-400 flex items-center justify-center text-white shadow-md shadow-rose-200 group-hover:scale-105 transition-transform duration-300"
-                 [style.background]="tenantService.tenant() ? 'linear-gradient(135deg, ' + tenantService.corPrimaria() + ', ' + tenantService.corSecundaria() + ')' : null">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-400 via-rose-500 to-rose-600 flex items-center justify-center text-white shadow-md shadow-rose-200 group-hover:scale-105 transition-transform duration-300">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
               </svg>
