@@ -14,5 +14,7 @@ public interface ClinicaTenantRepository extends JpaRepository<ClinicaTenant, Lo
     boolean existsBySlugIgnoreCase(String slug);
 
     Optional<ClinicaTenant> findByAdminUsuarioId(Long adminUsuarioId);
+
+    Optional<ClinicaTenant> findByMercadoPagoPaymentId(String mercadoPagoPaymentId);
 }
 

@@ -57,6 +57,23 @@ public class ClinicaTenant {
     private String bannerBotaoTexto;
 
     @Builder.Default
+    @Column(name = "status_pagamento", length = 30)
+    private String statusPagamento = "PENDENTE";
+
+    @Column(name = "mercado_pago_payment_id", length = 100)
+    private String mercadoPagoPaymentId;
+
+    @Column(name = "pix_copia_cola", columnDefinition = "TEXT")
+    private String pixCopiaCola;
+
+    @Column(name = "pix_qr_code_base64", columnDefinition = "TEXT")
+    private String pixQrCodeBase64;
+
+    @Builder.Default
+    @Column(name = "valor_adesao")
+    private java.math.BigDecimal valorAdesao = new java.math.BigDecimal("149.90");
+
+    @Builder.Default
     @Column(nullable = false)
     private Boolean ativo = true;
 

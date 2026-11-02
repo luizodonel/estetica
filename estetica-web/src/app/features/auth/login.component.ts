@@ -24,7 +24,7 @@ import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive
           </h2>
           <p class="text-xs text-stone-500 mt-1">
             {{ modo() === 'login' 
-              ? 'Informe seu WhatsApp para gerenciar agendamentos e atendimentos' 
+              ? 'Acesse seu painel com seu usuário, WhatsApp ou e-mail' 
               : 'Cadastre sua senha de acesso com seu número de WhatsApp' }}
           </p>
         </div>
@@ -72,16 +72,17 @@ import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive
         @if (modo() === 'login') {
           <form (ngSubmit)="entrar()" class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp / Telefone de Acesso:</label>
+              <label class="block text-xs font-semibold text-stone-700 mb-1">Usuário, WhatsApp ou E-mail:</label>
               <input 
                 type="text" 
-                appPhoneMask
                 [(ngModel)]="loginIdentificador" 
                 name="loginIdentificador"
                 required
-                placeholder="(61) 98226-1155 ou 61982261155" 
+                placeholder="Seu usuário, (61) 98226-1155 ou e-mail" 
                 class="w-full p-3 rounded-xl border border-nude-300 text-xs font-medium focus:ring-2 focus:ring-rose-400 focus:outline-none" />
-              <span class="text-[11px] text-stone-400 mt-1 block">Digite seu número com DDD (ex: 61982261155).</span>
+              <span class="text-[11px] text-stone-400 mt-1 block">
+                Clientes: digite seu WhatsApp. Especialistas e Administradores: login de usuário ou e-mail.
+              </span>
             </div>
 
             <div>

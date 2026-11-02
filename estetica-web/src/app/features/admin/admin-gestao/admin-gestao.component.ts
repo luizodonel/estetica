@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+﻿import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -526,15 +526,21 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp (Login do Especialista) *</label>
-                  <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98888-7777" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                  <span class="text-[10px] text-stone-400 mt-0.5 block">Usado para entrar no sistema</span>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Usuário / Login do Especialista</label>
+                  <input type="text" formControlName="login" placeholder="Ex: judite, dra.paula" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <span class="text-[10px] text-stone-400 mt-0.5 block">Campo livre de acesso para o especialista</span>
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail (opcional)</label>
-                  <input type="email" formControlName="email" placeholder="juliana@clinica.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                  <span class="text-[10px] text-stone-400 mt-0.5 block">Opcional</span>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp do Especialista *</label>
+                  <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98888-7777" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <span class="text-[10px] text-stone-400 mt-0.5 block">WhatsApp com DDD</span>
                 </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail (opcional)</label>
+                <input type="email" formControlName="email" placeholder="juliana@clinica.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <span class="text-[10px] text-stone-400 mt-0.5 block">Opcional</span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -809,6 +815,7 @@ export class AdminGestaoComponent implements OnInit {
 
     this.formProfissional = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(3)]],
+      login: [''],
       email: [''],
       telefoneWhatsApp: ['', Validators.required],
       especialidade: ['', Validators.required],
@@ -820,6 +827,7 @@ export class AdminGestaoComponent implements OnInit {
 
     this.formCliente = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(3)]],
+      login: [''],
       email: [''],
       telefoneWhatsApp: ['', Validators.required],
       senha: ['']
@@ -933,6 +941,7 @@ export class AdminGestaoComponent implements OnInit {
       this.procedimentosSelecionadosIds.set([...(prof.procedimentosIds || [])]);
       this.formProfissional.patchValue({
         nome: prof.nome,
+        login: prof.login || '',
         email: prof.email || '',
         telefoneWhatsApp: prof.telefoneWhatsApp || '',
         especialidade: prof.especialidade || '',

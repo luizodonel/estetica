@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
+
 public class TenantDTOs {
 
     public record CadastroLojistaRequest(
@@ -25,6 +27,8 @@ public class TenantDTOs {
 
         @NotBlank(message = "O nome do responsável é obrigatório")
         String nomeResponsavel,
+
+        String usuarioLogin, // Campo livre para login de administrador (ex: admin, luiz, clinicabem)
 
         @NotBlank(message = "O e-mail é obrigatório")
         @Email(message = "E-mail inválido")
@@ -50,7 +54,9 @@ public class TenantDTOs {
         String bannerTag,
         String bannerTitulo,
         String bannerSubtitulo,
-        String bannerBotaoTexto
+        String bannerBotaoTexto,
+        String statusPagamento,
+        Boolean ativo
     ) {}
 
     public record AtualizarBannerRequest(
@@ -61,10 +67,24 @@ public class TenantDTOs {
     ) {}
 
     public record CadastroLojistaResponse(
+        String paymentId,
+        String pixCopiaCola,
+        String pixQrCodeBase64,
+        BigDecimal valor,
+        String statusPagamento,
+        String linkPersonalizado,
+        TenantPublicDTO tenant,
+        UsuarioDTO usuario,
+        String token
+    ) {}
+
+    public record StatusPagamentoResponse(
+        String status,
+        boolean pago,
         String token,
         String linkPersonalizado,
+        String slug,
         TenantPublicDTO tenant,
         UsuarioDTO usuario
     ) {}
 }
-

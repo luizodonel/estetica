@@ -17,6 +17,7 @@ import {
   AtualizarBannerRequest,
   CadastroLojistaRequest,
   CadastroLojistaResponse,
+  StatusPagamentoResponse,
   PrimeiroAcessoRequest,
   VerificarPrimeiroAcessoResponse,
   AuthResponse
@@ -236,6 +237,10 @@ export class ApiService {
   verificarDisponibilidadeSlug(slug: string): Observable<{ disponivel: boolean }> {
     const params = new HttpParams().set('slug', slug);
     return this.http.get<{ disponivel: boolean }>(`${this.baseUrl}/onboarding/verificar-slug`, { params });
+  }
+
+  consultarStatusPagamento(paymentId: string): Observable<StatusPagamentoResponse> {
+    return this.http.get<StatusPagamentoResponse>(`${this.baseUrl}/onboarding/status-pagamento/${paymentId}`);
   }
 
   // Upload de Imagens (Logotipos, Fotos de Especialistas e Capas de Procedimentos)

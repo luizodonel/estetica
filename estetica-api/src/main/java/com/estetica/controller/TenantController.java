@@ -64,5 +64,33 @@ public class TenantController {
         boolean disponivel = tenantService.verificarDisponibilidadeSlug(slug);
         return ResponseEntity.ok(Map.of("disponivel", disponivel));
     }
+
+    @GetMapping("/status-pagamento/{paymentId}")
+    @Operation(summary = "Consulta o status do pagamento Pix e libera o acesso caso aprovado")
+    public ResponseEntity<StatusPagamentoResponse> consultarStatusPagamento(@PathVariable String paymentId) {
+        return ResponseEntity.ok(tenantService.verificarStatusPagamento(paymentId));
+    }
+
+    @PostMapping("/webhook-mercadopago")
+    @Operation(summary = "Webhook do Mercado Pago para notificação instantânea de pagamentos")
+    public ResponseEntity<Void> webhookMercadoPago(
+            @RequestParam(required = false) String id,
+            @RequestParam(required = false) String topic,
+            @RequestBody(required = false) Map<String, Object> body) {
+        try {
+            String paymentId = id;
+            if (paymentId == null && body != null && body.get("data") instanceof Map) {
+                Map<String, Object> data = (Map<String, Object>) body.get("data");
+                if (data.get("id") != null) {
+                    paymentId = String.valueOf(data.get("id"));
+                }
+            }
+            if (paymentId != null) {
+                tenantService.verificarStatusPagamento(paymentId);
+            }
+        } catch (Exception ignored) {
+        }
+        return ResponseEntity.ok().build();
+    }
 }
 

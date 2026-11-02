@@ -109,9 +109,18 @@ public class ProfissionalService {
                 ? request.senha()
                 : java.util.UUID.randomUUID().toString();
 
+        String cleanLogin = (request.login() != null && !request.login().isBlank())
+                ? request.login().trim().toLowerCase()
+                : null;
+
+        if (cleanLogin != null && usuarioRepository.existsByLoginIgnoreCase(cleanLogin)) {
+            throw new RegraNegocioException("Já existe um especialista ou usuário cadastrado com o login: " + cleanLogin);
+        }
+
         // Cria a conta de acesso como ROLE_PROFISSIONAL com primeiro_acesso = true
         Usuario usuario = Usuario.builder()
                 .nome(request.nome().trim())
+                .login(cleanLogin)
                 .email(email)
                 .telefoneWhatsApp(cleanPhone)
                 .senhaHash(passwordEncoder.encode(senha))
@@ -231,12 +240,14 @@ public class ProfissionalService {
 
     private ProfissionalDTO toDTO(Profissional p) {
         List<Long> procIds = p.getProcedimentos().stream().map(Procedimento::getId).toList();
+        String login = p.getUsuario() != null ? p.getUsuario().getLogin() : null;
         String email = p.getUsuario() != null ? p.getUsuario().getEmail() : null;
         String telefone = p.getUsuario() != null ? p.getUsuario().getTelefoneWhatsApp() : null;
         return new ProfissionalDTO(
                 p.getId(),
                 p.getUsuario() != null ? p.getUsuario().getId() : null,
                 p.getNome(),
+                login,
                 email,
                 telefone,
                 p.getEspecialidade(),

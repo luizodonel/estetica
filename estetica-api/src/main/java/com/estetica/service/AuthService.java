@@ -103,30 +103,55 @@ public class AuthService {
     public AuthResponse autenticar(LoginRequest request) {
         String iden = request.getIdentificador();
         if (iden.isBlank()) {
-            throw new BadCredentialsException("Informe seu telefone ou WhatsApp para acessar.");
+            throw new BadCredentialsException("Informe seu login, WhatsApp ou e-mail para acessar.");
         }
 
-        String digits = iden.replaceAll("[^0-9]", "");
         Usuario usuario = null;
 
-        // 1. Tenta buscar pelo número de telefone (dígitos limpos)
-        if (digits.length() >= 8) {
-            usuario = usuarioRepository.findByTelefoneWhatsApp(digits).orElse(null);
-            if (usuario == null) {
-                usuario = usuarioRepository.findByTelefoneWhatsApp(iden).orElse(null);
-            }
-        }
+        // 1. Tenta buscar por login (campo livre case-insensitive, ex: admin, judite, luiz)
+        usuario = usuarioRepository.findByLoginIgnoreCase(iden).orElse(null);
 
-        // 2. Tenta buscar por e-mail caso não tenha encontrado pelo telefone
+        // 2. Tenta buscar por e-mail caso não tenha encontrado pelo login
         if (usuario == null) {
             usuario = usuarioRepository.findByEmail(iden.toLowerCase().trim()).orElse(null);
         }
 
+        // 3. Tenta buscar pelo número de WhatsApp (dígitos limpos)
         if (usuario == null) {
-            throw new BadCredentialsException("Credenciais inválidas: usuário não encontrado com o telefone/e-mail informado.");
+            String digits = iden.replaceAll("[^0-9]", "");
+            if (digits.length() >= 8) {
+                usuario = usuarioRepository.findByTelefoneWhatsApp(digits).orElse(null);
+                if (usuario == null) {
+                    usuario = usuarioRepository.findByTelefoneWhatsApp(iden).orElse(null);
+                }
+            }
         }
 
-        // 3. Se estiver no primeiro acesso ou sem senha definida
+        if (usuario == null) {
+            throw new BadCredentialsException("Credenciais inválidas: usuário ou telefone não encontrado.");
+        }
+
+        // REGRA DE ACESSO:
+        // Clientes: login exclusivo via Telefone / WhatsApp
+        // Especialistas e Administradores: campo livre (login de usuário, e-mail ou WhatsApp)
+        if (usuario.getRole() == Role.ROLE_CLIENTE) {
+            String digits = iden.replaceAll("[^0-9]", "");
+            String userDigits = usuario.getTelefoneWhatsApp() != null ? usuario.getTelefoneWhatsApp().replaceAll("[^0-9]", "") : "";
+            if (digits.length() < 8 || !userDigits.endsWith(digits.substring(Math.max(0, digits.length() - 8)))) {
+                throw new BadCredentialsException("Para clientes/pacientes, o acesso é realizado exclusivamente pelo número do WhatsApp.");
+            }
+        }
+
+        // Validação de Tenant ativo e pagamento PIX do lojista
+        if (usuario.getTenant() != null && Boolean.FALSE.equals(usuario.getTenant().getAtivo())) {
+            if ("PENDENTE".equalsIgnoreCase(usuario.getTenant().getStatusPagamento())) {
+                throw new RegraNegocioException("O acesso da clínica está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).");
+            } else {
+                throw new RegraNegocioException("Esta clínica está temporariamente desativada. Entre em contato com o suporte.");
+            }
+        }
+
+        // Se estiver no primeiro acesso ou sem senha definida
         if (Boolean.TRUE.equals(usuario.getPrimeiroAcesso()) || usuario.getSenhaHash() == null) {
             throw new RegraNegocioException("Primeiro acesso detectado! Por favor, use a opção 'Primeiro Acesso' para definir sua senha.");
         }
@@ -136,7 +161,7 @@ public class AuthService {
         }
 
         if (!usuario.isEnabled()) {
-            throw new RegraNegocioException("Usuário inativo. Entre em contato com o suporte ou a clínica.");
+            throw new RegraNegocioException("Usuário inativo. Entre em contato com a clínica.");
         }
 
         String token = jwtService.gerarToken(usuario);

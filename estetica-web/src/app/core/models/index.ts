@@ -58,6 +58,7 @@ export interface Profissional {
   id: number;
   usuarioId?: number;
   nome: string;
+  login?: string;
   email?: string;
   telefoneWhatsApp?: string;
   especialidade?: string;
@@ -189,16 +190,32 @@ export interface CadastroLojistaRequest {
   corPrimaria: string;
   corSecundaria: string;
   nomeResponsavel: string;
+  usuarioLogin?: string;
   email: string;
   telefoneWhatsApp: string;
   senha: string;
 }
 
 export interface CadastroLojistaResponse {
-  token: string;
+  paymentId?: string;
+  pixCopiaCola?: string;
+  pixQrCodeBase64?: string;
+  valor?: number;
+  statusPagamento?: string;
   linkPersonalizado: string;
   tenant: TenantPublicDTO;
   usuario: Usuario;
+  token?: string;
+}
+
+export interface StatusPagamentoResponse {
+  status: string;
+  pago: boolean;
+  token?: string;
+  linkPersonalizado?: string;
+  slug?: string;
+  tenant?: TenantPublicDTO;
+  usuario?: Usuario;
 }
 
 

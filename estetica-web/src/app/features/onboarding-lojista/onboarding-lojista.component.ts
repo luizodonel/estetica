@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -26,15 +26,15 @@ import { TenantPublicDTO } from '../../core/models';
             Crie sua Clínica de Estética Online
           </h1>
           <p class="mt-2 text-xs sm:text-sm text-stone-500 max-w-lg mx-auto leading-relaxed">
-            Configure sua marca, escolha seu link personalizado e defina as cores do seu sistema em poucos passos.
+            Configure sua marca, escolha seu link personalizado, defina seu usuário administrador e ative sua loja via PIX.
           </p>
         </div>
 
         <!-- Indicador de Passos -->
-        <div class="flex items-center justify-between max-w-md mx-auto mb-8 relative">
+        <div class="flex items-center justify-between max-w-lg mx-auto mb-8 relative">
           <div class="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 w-full bg-nude-200 -z-10"></div>
           <div class="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-rose-500 transition-all duration-500 -z-10"
-               [style.width]="passoAtual() === 1 ? '0%' : (passoAtual() === 2 ? '50%' : '100%')"></div>
+               [style.width]="passoAtual() === 1 ? '0%' : (passoAtual() === 2 ? '33%' : (passoAtual() === 3 ? '66%' : '100%'))"></div>
 
           <!-- Passo 1 -->
           <div class="flex flex-col items-center gap-1">
@@ -73,6 +73,19 @@ import { TenantPublicDTO } from '../../core/models';
             </div>
             <span class="text-[10px] font-semibold text-stone-600">Acesso Admin</span>
           </div>
+
+          <!-- Passo 4 -->
+          <div class="flex flex-col items-center gap-1">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
+                 [class.bg-rose-600]="passoAtual() >= 4"
+                 [class.text-white]="passoAtual() >= 4"
+                 [class.bg-white]="passoAtual() < 4"
+                 [class.border-2]="passoAtual() < 4"
+                 [class.border-nude-300]="passoAtual() < 4">
+              4
+            </div>
+            <span class="text-[10px] font-semibold text-stone-600">Ativação PIX</span>
+          </div>
         </div>
 
         <!-- Card Principal do Formulário -->
@@ -93,30 +106,30 @@ import { TenantPublicDTO } from '../../core/models';
                 <!-- Nome da Empresa -->
                 <div>
                   <label class="block text-xs font-semibold text-stone-700 mb-1.5">
-                    Nome Comercial da Empresa / Clínica *
+                    Nome da Clínica ou Estética *
                   </label>
                   <input
                     type="text"
                     formControlName="nomeEmpresa"
                     (input)="aoDigitarNomeEmpresa()"
-                    placeholder="Ex: Espaço VIP Estética Avançada"
-                    class="w-full text-sm px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                    placeholder="Ex: Clínica Bela Vida"
+                    class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                 </div>
 
                 <!-- Link Personalizado / Subdomínio -->
                 <div>
                   <label class="block text-xs font-semibold text-stone-700 mb-1.5">
-                    Seu Link Personalizado Exclusivo *
+                    Endereço Web Exclusivo (Link da sua Loja) *
                   </label>
-                  <div class="flex items-center rounded-2xl border border-nude-300 bg-stone-50 overflow-hidden focus-within:ring-2 focus-within:ring-rose-400">
-                    <span class="px-3.5 py-3 text-xs font-semibold text-stone-500 bg-stone-100 border-r border-nude-200 select-none">
+                  <div class="flex items-center rounded-2xl border border-nude-300 bg-stone-50 overflow-hidden focus-within:ring-2 focus-within:ring-rose-400 focus-within:border-transparent">
+                    <span class="px-3.5 py-3 text-xs font-semibold text-stone-400 bg-stone-100 border-r border-nude-200 select-none">
                       https://
                     </span>
                     <input
                       type="text"
                       formControlName="slug"
                       (input)="aoDigitarSlug()"
-                      placeholder="minhaloja"
+                      placeholder="belavida"
                       class="flex-1 px-3 py-3 text-xs sm:text-sm font-mono font-bold text-rose-600 bg-transparent focus:outline-none lowercase" />
                     <span class="px-3.5 py-3 text-xs font-semibold text-stone-500 bg-stone-100 border-l border-nude-200 select-none">
                       .logistadigital.com.br
@@ -178,7 +191,7 @@ import { TenantPublicDTO } from '../../core/models';
                         <button
                           type="button"
                           (click)="fileInputLogo.click()"
-                          class="px-3 py-1.5 rounded-xl border border-nude-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-semibold transition-all">
+                          class="px-3 py-1.5 rounded-xl border border-nude-300 bg-white text-xs font-semibold text-stone-700 hover:bg-stone-100 transition-all">
                           Trocar Foto
                         </button>
                         <button
@@ -198,81 +211,55 @@ import { TenantPublicDTO } from '../../core/models';
                   <button
                     type="button"
                     (click)="avancarParaPasso2()"
-                    [disabled]="formLojista.get('nomeEmpresa')?.invalid || formLojista.get('slug')?.invalid || slugDisponivel() === false"
-                    class="px-6 py-3 rounded-2xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 disabled:opacity-40 transition-all shadow-md">
-                    Próximo: Escolher Cores →
+                    [disabled]="!formLojista.get('nomeEmpresa')?.value || !formLojista.get('slug')?.value || slugDisponivel() === false"
+                    class="px-6 py-3 rounded-2xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-md disabled:opacity-40">
+                    Próximo: Cores da Marca →
                   </button>
                 </div>
               </div>
             }
 
             <!-- ========================================================================= -->
-            <!-- PASSO 2: ESCOLHA DAS 2 CORES (WHITELABEL) -->
+            <!-- PASSO 2: PALETA DE CORES WHITELABEL -->
             <!-- ========================================================================= -->
             @if (passoAtual() === 2) {
               <div class="space-y-6 animate-fade-in">
                 <div>
-                  <h2 class="font-serif text-xl font-bold text-stone-900 mb-1">Personalização de Cores</h2>
-                  <p class="text-xs text-stone-500">Escolha as 2 cores oficiais que representarão a sua marca em todo o sistema.</p>
+                  <h2 class="font-serif text-xl font-bold text-stone-900 mb-1">Paleta de Cores Exclusiva</h2>
+                  <p class="text-xs text-stone-500">Escolha a identidade visual do seu sistema. Os botões, cabeçalhos e destaques usarão estas cores.</p>
                 </div>
 
-                <!-- Sugestões de Paletas Prontas Elegantes -->
+                <!-- Paletas Prontas Sugeridas -->
                 <div>
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-2">Paletas Sugeridas para Estética</span>
-                  <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <label class="block text-xs font-semibold text-stone-700 mb-2">Sugestões de Paletas Elegantes:</label>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     <button
                       type="button"
                       (click)="aplicarPaleta('#e11d48', '#f43f5e')"
-                      class="p-2.5 rounded-xl border border-nude-200 text-left hover:border-stone-400 transition-all">
-                      <div class="flex items-center gap-1.5 mb-1">
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#e11d48]"></span>
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#f43f5e]"></span>
-                      </div>
-                      <span class="text-[10px] font-semibold text-stone-700 block truncate">Rosé Clean</span>
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-rose-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#e11d48] to-[#f43f5e] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Rose Luxury</span>
                     </button>
-
-                    <button
-                      type="button"
-                      (click)="aplicarPaleta('#b45309', '#d97706')"
-                      class="p-2.5 rounded-xl border border-nude-200 text-left hover:border-stone-400 transition-all">
-                      <div class="flex items-center gap-1.5 mb-1">
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#b45309]"></span>
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#d97706]"></span>
-                      </div>
-                      <span class="text-[10px] font-semibold text-stone-700 block truncate">Gold Luxury</span>
-                    </button>
-
                     <button
                       type="button"
                       (click)="aplicarPaleta('#0f766e', '#14b8a6')"
-                      class="p-2.5 rounded-xl border border-nude-200 text-left hover:border-stone-400 transition-all">
-                      <div class="flex items-center gap-1.5 mb-1">
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#0f766e]"></span>
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#14b8a6]"></span>
-                      </div>
-                      <span class="text-[10px] font-semibold text-stone-700 block truncate">Esmeralda Spa</span>
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-teal-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#0f766e] to-[#14b8a6] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Teal Spa</span>
                     </button>
-
                     <button
                       type="button"
-                      (click)="aplicarPaleta('#7c3aed', '#a855f7')"
-                      class="p-2.5 rounded-xl border border-nude-200 text-left hover:border-stone-400 transition-all">
-                      <div class="flex items-center gap-1.5 mb-1">
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#7c3aed]"></span>
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#a855f7]"></span>
-                      </div>
-                      <span class="text-[10px] font-semibold text-stone-700 block truncate">Lavanda VIP</span>
+                      (click)="aplicarPaleta('#7c2d12', '#c2410c')"
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-amber-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#7c2d12] to-[#c2410c] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Terracota</span>
                     </button>
-
                     <button
                       type="button"
-                      (click)="aplicarPaleta('#1e293b', '#334155')"
-                      class="p-2.5 rounded-xl border border-nude-200 text-left hover:border-stone-400 transition-all">
-                      <div class="flex items-center gap-1.5 mb-1">
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#1e293b]"></span>
-                        <span class="w-3.5 h-3.5 rounded-full bg-[#334155]"></span>
-                      </div>
-                      <span class="text-[10px] font-semibold text-stone-700 block truncate">Noir Minimal</span>
+                      (click)="aplicarPaleta('#1e293b', '#475569')"
+                      class="p-2.5 rounded-2xl border border-nude-200 text-left hover:border-slate-400 bg-stone-50 transition-all flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-r from-[#1e293b] to-[#475569] shadow-sm"></div>
+                      <span class="text-[11px] font-semibold text-stone-700">Graphite Minimal</span>
                     </button>
                   </div>
                 </div>
@@ -312,38 +299,6 @@ import { TenantPublicDTO } from '../../core/models';
                   </div>
                 </div>
 
-                <!-- Mini Mockup de Demonstração em Tempo Real -->
-                <div class="p-5 rounded-3xl border border-nude-200 bg-white shadow-sm space-y-3">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Prévia em Tempo Real do Seu Sistema</span>
-                  
-                  <!-- Barra simulada da sua loja -->
-                  <div class="p-3 rounded-2xl border border-nude-200 flex items-center justify-between bg-white shadow-sm">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm"
-                           [style.background]="'linear-gradient(135deg, ' + formLojista.get('corPrimaria')?.value + ', ' + formLojista.get('corSecundaria')?.value + ')'">
-                        @if (formLojista.get('logoUrl')?.value) {
-                          <img [src]="formLojista.get('logoUrl')?.value" class="w-full h-full object-contain p-1" />
-                        } @else {
-                          ★
-                        }
-                      </div>
-                      <div>
-                        <span class="font-serif font-bold text-xs text-stone-900 block leading-tight">
-                          {{ formLojista.get('nomeEmpresa')?.value || 'Sua Clínica' }}
-                        </span>
-                        <span class="text-[9px] uppercase tracking-wider text-stone-400 font-semibold">Portal Oficial</span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      class="px-3 py-1.5 rounded-xl text-white font-semibold text-[11px] shadow-sm"
-                      [style.backgroundColor]="formLojista.get('corPrimaria')?.value">
-                      Agendar Consulta
-                    </button>
-                  </div>
-                </div>
-
                 <div class="pt-4 flex items-center justify-between">
                   <button
                     type="button"
@@ -365,10 +320,10 @@ import { TenantPublicDTO } from '../../core/models';
             <!-- PASSO 3: DADOS DE ACESSO DO ADMINISTRADOR -->
             <!-- ========================================================================= -->
             @if (passoAtual() === 3) {
-              <div class="space-y-6 animate-fade-in">
+              <div class="space-y-5 animate-fade-in">
                 <div>
                   <h2 class="font-serif text-xl font-bold text-stone-900 mb-1">Seus Dados de Acesso</h2>
-                  <p class="text-xs text-stone-500">Crie sua conta de administrador da clínica para gerenciar sua agenda e clientes.</p>
+                  <p class="text-xs text-stone-500">Crie sua conta de administrador da clínica para gerenciar sua agenda, equipe e clientes.</p>
                 </div>
 
                 <div>
@@ -380,9 +335,24 @@ import { TenantPublicDTO } from '../../core/models';
                     class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                 </div>
 
+                <!-- Campo Livre: Usuário de Login do Administrador -->
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">
+                    Usuário / Login de Acesso do Administrador (Campo Livre) *
+                  </label>
+                  <input
+                    type="text"
+                    formControlName="usuarioLogin"
+                    placeholder="Ex: admin, luiz, clinicamar"
+                    class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <span class="text-[11px] text-stone-400 mt-1 block">
+                    Defina seu nome de usuário preferido para login (letras ou números, sem espaços).
+                  </span>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-xs font-semibold text-stone-700 mb-1.5">E-mail de Login *</label>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1.5">E-mail *</label>
                     <input
                       type="email"
                       formControlName="email"
@@ -395,13 +365,14 @@ import { TenantPublicDTO } from '../../core/models';
                       type="text"
                       appPhoneMask
                       formControlName="telefoneWhatsApp"
-                      placeholder="(11) 99999-8888"
+                      placeholder="(61) 98226-1155"
                       class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                   </div>
                 </div>
 
+                <!-- Campo de Senha do Administrador -->
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">Crie uma Senha Forte *</label>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">Senha de Acesso do Administrador *</label>
                   <input
                     type="password"
                     formControlName="senha"
@@ -413,6 +384,10 @@ import { TenantPublicDTO } from '../../core/models';
                 <div class="p-4 rounded-2xl bg-stone-50 border border-nude-200 text-xs text-stone-600 space-y-1">
                   <div><strong>Empresa:</strong> {{ formLojista.get('nomeEmpresa')?.value }}</div>
                   <div><strong>Link que será ativado:</strong> <span class="text-rose-600 font-mono font-bold">https://{{ formLojista.get('slug')?.value }}.logistadigital.com.br/</span></div>
+                  <div><strong>Usuário Administrador:</strong> <span class="font-semibold text-stone-800">{{ formLojista.get('usuarioLogin')?.value || 'Não definido' }}</span></div>
+                  <div class="text-[11px] text-stone-500 pt-1">
+                    💳 Taxa de ativação / mensalidade: <span class="font-bold text-rose-600">R$ 149,90 via PIX</span>.
+                  </div>
                 </div>
 
                 <!-- Mensagem de Erro de Envio -->
@@ -432,57 +407,140 @@ import { TenantPublicDTO } from '../../core/models';
                   <button
                     type="submit"
                     [disabled]="formLojista.invalid || salvando()"
-                    class="px-7 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs shadow-lg shadow-rose-200 disabled:opacity-40 transition-all">
-                    {{ salvando() ? 'Criando Sua Loja...' : '🚀 Finalizar e Criar Minha Loja' }}
+                    class="px-7 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs shadow-lg shadow-rose-200 disabled:opacity-40 transition-all flex items-center gap-2">
+                    @if (salvando()) {
+                      <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Gerando Cobrança PIX...</span>
+                    } @else {
+                      <span>🚀 Finalizar e Gerar PIX (R$ 149,90)</span>
+                    }
                   </button>
                 </div>
               </div>
             }
 
             <!-- ========================================================================= -->
-            <!-- PASSO 4: SUCESSO & ATIVAÇÃO CONCLUÍDA -->
+            <!-- PASSO 4: PAGAMENTO PIX & ATIVAÇÃO DA LOJA (MERCADO PAGO) -->
             <!-- ========================================================================= -->
-            @if (passoAtual() === 4 && tenantCriado()) {
-              <div class="text-center py-6 space-y-6 animate-scale-up">
-                <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
-                  🎉
-                </div>
+            @if (passoAtual() === 4) {
+              <div class="space-y-6 animate-scale-up text-center">
 
-                <div>
-                  <h2 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-                    Parabéns! Sua Clínica Está Pronta!
-                  </h2>
-                  <p class="text-xs sm:text-sm text-stone-500 mt-2 max-w-md mx-auto">
-                    Seu sistema personalizado foi gerado com a sua logo e paleta de cores exclusivas.
-                  </p>
-                </div>
+                @if (!pagamentoAprovado()) {
+                  <!-- Estado 1: Aguardando Pagamento PIX -->
+                  <div>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                      💳 Ativação via PIX • Mercado Pago
+                    </span>
+                    <h2 class="font-serif text-2xl font-bold text-stone-900">
+                      Efetue o Pagamento para Liberar seu Acesso
+                    </h2>
+                    <p class="text-xs text-stone-500 mt-1 max-w-md mx-auto">
+                      Pague o valor de <strong class="text-stone-900 text-sm">R$ {{ pixValor().toFixed(2).replace('.', ',') }}</strong> via PIX para que o seu sistema seja ativado imediatamente.
+                    </p>
+                  </div>
 
-                <!-- Box do Link Exclusivo -->
-                <div class="p-5 rounded-3xl bg-stone-50 border-2 border-dashed border-rose-300 max-w-lg mx-auto">
-                  <span class="text-[10px] uppercase font-bold tracking-wider text-stone-400 block mb-1">
-                    Seu Link Personalizado Oficial:
-                  </span>
-                  <a
-                    [href]="tenantCriado()!.linkPersonalizado"
-                    target="_blank"
-                    class="font-mono text-sm sm:text-base font-bold text-rose-600 hover:underline break-all block">
-                    {{ tenantCriado()!.linkPersonalizado }}
-                  </a>
-                  <button
-                    type="button"
-                    (click)="copiarLink()"
-                    class="mt-3 px-4 py-2 rounded-xl bg-white border border-nude-300 hover:bg-stone-100 text-stone-700 font-semibold text-xs transition-all shadow-sm">
-                    {{ linkCopiado() ? '✓ Link Copiado!' : '📋 Copiar Link da Minha Loja' }}
-                  </button>
-                </div>
+                  <!-- QR Code PIX -->
+                  <div class="p-6 rounded-3xl bg-white border border-nude-200 shadow-sm max-w-sm mx-auto space-y-4">
+                    @if (pixQrCodeBase64()) {
+                      <div class="w-52 h-52 mx-auto p-2 bg-white rounded-2xl border border-nude-300 shadow-inner flex items-center justify-center">
+                        <img
+                          [src]="'data:image/png;base64,' + pixQrCodeBase64()"
+                          alt="QR Code PIX Mercado Pago"
+                          class="w-full h-full object-contain rounded-xl" />
+                      </div>
+                    } @else {
+                      <div class="w-52 h-52 mx-auto bg-stone-100 rounded-2xl flex items-center justify-center text-xs text-stone-400">
+                        Carregando QR Code...
+                      </div>
+                    }
 
-                <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-                  <a
-                    routerLink="/admin/dashboard"
-                    class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-md">
-                    Ir Para o Meu Painel da Clínica →
-                  </a>
-                </div>
+                    <span class="text-[11px] text-stone-500 block">
+                      Abra o app do seu banco e escaneie a imagem acima.
+                    </span>
+                  </div>
+
+                  <!-- Código PIX Copia e Cola -->
+                  @if (pixCopiaCola()) {
+                    <div class="max-w-md mx-auto space-y-2 text-left">
+                      <label class="block text-xs font-semibold text-stone-700">Ou use o Código PIX Copia e Cola:</label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readonly
+                          [value]="pixCopiaCola()"
+                          class="w-full text-xs font-mono p-3 rounded-xl border border-nude-300 bg-stone-50 select-all focus:outline-none" />
+                        <button
+                          type="button"
+                          (click)="copiarPix()"
+                          class="px-4 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs whitespace-nowrap shadow-sm transition-all">
+                          {{ pixCopiado() ? '✓ Copiado!' : 'Copiar PIX' }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Status de Verificação Automática -->
+                  <div class="flex items-center justify-center gap-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 py-3 px-4 rounded-2xl max-w-md mx-auto shadow-sm">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                    <span>Aguardando confirmação do banco... Verificação automática ativa.</span>
+                  </div>
+
+                  <div class="pt-2 flex flex-col items-center gap-2">
+                    <button
+                      type="button"
+                      (click)="checarStatusManual()"
+                      class="px-5 py-2.5 rounded-xl border border-nude-300 bg-white hover:bg-stone-50 text-stone-700 font-semibold text-xs transition-all shadow-sm flex items-center gap-2">
+                      <span>🔄 Já efetuei o pagamento • Verificar Agora</span>
+                    </button>
+                  </div>
+                } @else {
+                  <!-- Estado 2: Pagamento Aprovado com Sucesso! -->
+                  <div class="py-4 space-y-6 animate-scale-up">
+                    <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-4xl mx-auto shadow-lg shadow-emerald-100">
+                      ✓
+                    </div>
+
+                    <div>
+                      <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2">
+                        Pagamento Aprovado!
+                      </span>
+                      <h2 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
+                        Parabéns! Sua Clínica Foi Ativada!
+                      </h2>
+                      <p class="text-xs sm:text-sm text-stone-500 mt-2 max-w-md mx-auto">
+                        Identificamos seu pagamento PIX de R$ 149,90 no Mercado Pago. O acesso administrativo da sua loja está 100% liberado!
+                      </p>
+                    </div>
+
+                    <!-- Box do Link Exclusivo -->
+                    <div class="p-5 rounded-3xl bg-stone-50 border-2 border-dashed border-rose-300 max-w-lg mx-auto">
+                      <span class="text-[10px] uppercase font-bold tracking-wider text-stone-400 block mb-1">
+                        Seu Link Personalizado Oficial:
+                      </span>
+                      <a
+                        [href]="tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/')"
+                        target="_blank"
+                        class="font-mono text-sm sm:text-base font-bold text-rose-600 hover:underline break-all block">
+                        {{ tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/') }}
+                      </a>
+                      <button
+                        type="button"
+                        (click)="copiarLink()"
+                        class="mt-3 px-4 py-2 rounded-xl bg-white border border-nude-300 hover:bg-stone-100 text-stone-700 font-semibold text-xs transition-all shadow-sm">
+                        {{ linkCopiado() ? '✓ Link Copiado!' : '📋 Copiar Link da Minha Loja' }}
+                      </button>
+                    </div>
+
+                    <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <a
+                        routerLink="/admin/dashboard"
+                        class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-semibold text-xs hover:from-rose-600 hover:to-rose-700 transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2">
+                        <span>Acessar Meu Painel Administrativo →</span>
+                      </a>
+                    </div>
+                  </div>
+                }
+
               </div>
             }
 
@@ -495,7 +553,7 @@ import { TenantPublicDTO } from '../../core/models';
     </div>
   `
 })
-export class OnboardingLojistaComponent implements OnInit {
+export class OnboardingLojistaComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private api = inject(ApiService);
   private authService = inject(AuthService);
@@ -512,10 +570,27 @@ export class OnboardingLojistaComponent implements OnInit {
   fazendoUploadLogo = signal<boolean>(false);
   erroUploadLogo = signal<string | null>(null);
 
+  // PIX Mercado Pago Signals
+  pixPaymentId = signal<string | null>(null);
+  pixQrCodeBase64 = signal<string | null>(null);
+  pixCopiaCola = signal<string | null>(null);
+  pixValor = signal<number>(149.90);
+  pixCopiado = signal<boolean>(false);
+  pagamentoAprovado = signal<boolean>(false);
+  verificandoPagamento = signal<boolean>(false);
+
+  private pollingTimer: any = null;
+
   formLojista!: FormGroup;
 
   ngOnInit(): void {
     this.iniciarFormulario();
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollingTimer) {
+      clearInterval(this.pollingTimer);
+    }
   }
 
   private iniciarFormulario(): void {
@@ -526,6 +601,7 @@ export class OnboardingLojistaComponent implements OnInit {
       corPrimaria: ['#e11d48', Validators.required],
       corSecundaria: ['#f43f5e', Validators.required],
       nomeResponsavel: ['', [Validators.required, Validators.minLength(3)]],
+      usuarioLogin: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       telefoneWhatsApp: ['', Validators.required],
       senha: ['', [Validators.required, Validators.minLength(6)]]
@@ -592,7 +668,6 @@ export class OnboardingLojistaComponent implements OnInit {
     this.fazendoUploadLogo.set(true);
     this.erroUploadLogo.set(null);
 
-    // Pré-visualização instantânea via Data URL para UX veloz
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
@@ -600,7 +675,6 @@ export class OnboardingLojistaComponent implements OnInit {
     };
     reader.readAsDataURL(file);
 
-    // Envio seguro ao backend para persistência oficial
     this.api.uploadImagem(file).subscribe({
       next: (res) => {
         if (res && res.url) {
@@ -609,7 +683,6 @@ export class OnboardingLojistaComponent implements OnInit {
         this.fazendoUploadLogo.set(false);
       },
       error: (err) => {
-        // Fallback: se o backend falhar por algum motivo de rede, o dataUrl gerado continua ativo
         this.fazendoUploadLogo.set(false);
         console.warn('Upload de imagem via API utilizou fallback local Base64:', err);
       }
@@ -642,14 +715,26 @@ export class OnboardingLojistaComponent implements OnInit {
         this.salvando.set(false);
         this.tenantCriado.set(res.tenant);
 
-        // Salva a sessão do novo lojista e aplica as cores
-        if (res.token) {
-          localStorage.setItem('auth_token', res.token);
-          this.authService.currentUser.set(res.usuario);
+        // Armazena dados do PIX
+        this.pixPaymentId.set(res.paymentId || null);
+        this.pixCopiaCola.set(res.pixCopiaCola || null);
+        this.pixQrCodeBase64.set(res.pixQrCodeBase64 || null);
+        if (res.valor) {
+          this.pixValor.set(res.valor);
         }
-        this.tenantService.setTenantManual(res.tenant);
 
+        // Aplica cores do novo tenant no tema
+        if (res.tenant) {
+          this.tenantService.setTenantManual(res.tenant);
+        }
+
+        // Avança para o Passo 4 (Pagamento PIX)
         this.passoAtual.set(4);
+
+        // Inicia checagem automática a cada 3 segundos
+        if (res.paymentId) {
+          this.iniciarPollingPagamento(res.paymentId);
+        }
       },
       error: (err) => {
         this.salvando.set(false);
@@ -658,8 +743,67 @@ export class OnboardingLojistaComponent implements OnInit {
     });
   }
 
+  iniciarPollingPagamento(paymentId: string): void {
+    if (this.pollingTimer) {
+      clearInterval(this.pollingTimer);
+    }
+    this.verificandoPagamento.set(true);
+
+    this.pollingTimer = setInterval(() => {
+      this.checarStatusPagamento(paymentId, false);
+    }, 3000);
+  }
+
+  checarStatusManual(): void {
+    const id = this.pixPaymentId();
+    if (id) {
+      this.checarStatusPagamento(id, true);
+    }
+  }
+
+  checarStatusPagamento(paymentId: string, manual: boolean): void {
+    this.api.consultarStatusPagamento(paymentId).subscribe({
+      next: (res) => {
+        if (res.pago || res.status === 'approved') {
+          if (this.pollingTimer) {
+            clearInterval(this.pollingTimer);
+          }
+          this.verificandoPagamento.set(false);
+          this.pagamentoAprovado.set(true);
+
+          // Salva sessão autenticada com o token liberado pelo backend
+          if (res.token) {
+            localStorage.setItem('auth_token', res.token);
+            if (res.usuario) {
+              this.authService.currentUser.set(res.usuario);
+            }
+          }
+          if (res.tenant) {
+            this.tenantCriado.set(res.tenant);
+            this.tenantService.setTenantManual(res.tenant);
+          }
+        } else if (manual) {
+          alert('O pagamento ainda consta como pendente no banco. Por favor, aguarde alguns instantes enquanto o PIX é processado.');
+        }
+      },
+      error: (err) => {
+        console.warn('Erro ao consultar status do pagamento:', err);
+      }
+    });
+  }
+
+  copiarPix(): void {
+    const pix = this.pixCopiaCola();
+    if (pix && navigator.clipboard) {
+      navigator.clipboard.writeText(pix).then(() => {
+        this.pixCopiado.set(true);
+        setTimeout(() => this.pixCopiado.set(false), 3000);
+      });
+    }
+  }
+
   copiarLink(): void {
-    const link = this.tenantCriado()?.linkPersonalizado;
+    const link = this.tenantCriado()?.linkPersonalizado || ('https://' + this.formLojista.get('slug')?.value + '.logistadigital.com.br/');
     if (link && navigator.clipboard) {
       navigator.clipboard.writeText(link).then(() => {
         this.linkCopiado.set(true);
@@ -668,4 +812,3 @@ export class OnboardingLojistaComponent implements OnInit {
     }
   }
 }
-

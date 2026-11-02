@@ -12,6 +12,8 @@ public class ProfissionalDTOs {
         @NotBlank(message = "O nome é obrigatório")
         String nome,
 
+        String login, // Campo livre para login do especialista (ex: judite, dra.paula)
+
         String email,
 
         @NotBlank(message = "O WhatsApp é obrigatório")
@@ -32,6 +34,7 @@ public class ProfissionalDTOs {
         Long id,
         Long usuarioId,
         String nome,
+        String login,
         String email,
         String telefoneWhatsApp,
         String especialidade,
