@@ -131,18 +131,14 @@ interface PixPendenteInfo {
         }
 
         @if (erro() && !pixPendente()) {
-          <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs mb-5 space-y-2">
-            <div class="flex items-start justify-between gap-2">
-              <span class="leading-relaxed font-medium">{{ extrairMensagemSemLink(erro()!) }}</span>
-              <button (click)="erro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold text-sm">✕</button>
+          <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs mb-5 flex items-center justify-between animate-fade-in">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span>{{ erro() }}</span>
             </div>
-            @if (extrairLinkDaMensagem(erro()!)) {
-              <a [href]="extrairLinkDaMensagem(erro()!)"
-                 class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-sm transition-all">
-                <span>🚀 Acessar Meu Link Exclusivo</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-              </a>
-            }
+            <button (click)="erro.set(null)" class="text-rose-700 hover:text-rose-900 font-bold ml-2">✕</button>
           </div>
         }
 
@@ -351,7 +347,7 @@ export class LoginComponent implements OnDestroy {
           this.setModo('primeiro-acesso');
           this.erro.set(msg);
         } else {
-          this.erro.set(msg || 'Credenciais incorretas. Verifique seu login e senha.');
+          this.erro.set(msg || 'Login ou usuário inválido.');
         }
       }
     });

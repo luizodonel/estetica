@@ -29,3 +29,4 @@ public interface LojistaRepository extends JpaRepository<Lojista, Long> {
 
     boolean existsByLoginIgnoreCase(String login);
 }
+

@@ -170,24 +170,18 @@ public class AuthService {
 
     private AuthResponse autenticarLojista(Lojista lojista, LoginRequest request, String slugAmbiente) {
         String lojistaSlug = lojista.getSlug();
-        String linkPersonalizado = (lojista.getLinkLogin() != null && !lojista.getLinkLogin().isBlank())
-                ? lojista.getLinkLogin()
-                : (lojista.getLinkPersonalizado() != null ? lojista.getLinkPersonalizado() + "login" : "https://" + lojistaSlug + ".logistadigital.com.br/login");
 
         // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO:
-        // O link principal (estetica.logistadigital.com.br) é exclusivo do Administrador Master.
         // O lojista só pode fazer login no seu próprio link/subdomínio!
+        // Caso tente logar no link principal ou em outro link, retorna erro genérico conforme solicitado.
         if (slugAmbiente != null) {
-            if ("estetica".equalsIgnoreCase(slugAmbiente)) {
-                throw new RegraNegocioException("Este usuário não pertence ao link https://estetica.logistadigital.com.br/login. Cada usuário só pode fazer login no seu respectivo link: " + linkPersonalizado);
-            }
-            if (!slugAmbiente.equalsIgnoreCase(lojistaSlug)) {
-                throw new RegraNegocioException("Este usuário não pertence a este endereço. Por favor, acesse pelo seu respectivo link: " + linkPersonalizado);
+            if ("estetica".equalsIgnoreCase(slugAmbiente) || !slugAmbiente.equalsIgnoreCase(lojistaSlug)) {
+                throw new BadCredentialsException("Login ou usuário inválido.");
             }
         }
 
         if (!passwordEncoder.matches(request.senha(), lojista.getSenhaHash())) {
-            throw new BadCredentialsException("Senha incorreta. Tente novamente.");
+            throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
         // Validação de Pagamento PIX do Lojista
@@ -235,26 +229,22 @@ public class AuthService {
     }
 
     private AuthResponse autenticarUsuario(Usuario usuario, LoginRequest request, String slugAmbiente) {
-        boolean isMasterAdmin = "admin@logistadigital.com.br".equalsIgnoreCase(usuario.getEmail()) || usuario.getTenant() == null && usuario.getRole() == Role.ROLE_ADMIN;
+        boolean isMasterAdmin = "admin@logistadigital.com.br".equalsIgnoreCase(usuario.getEmail()) || (usuario.getTenant() == null && usuario.getRole() == Role.ROLE_ADMIN);
 
         // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO PARA USUÁRIO COMUM:
         if (isMasterAdmin) {
             // Administrador Master: só acessa pelo link principal (estetica)
             if (slugAmbiente != null && !"estetica".equalsIgnoreCase(slugAmbiente)) {
-                throw new RegraNegocioException("O Administrador Master deve acessar exclusivamente pelo link principal: https://estetica.logistadigital.com.br/login");
+                throw new BadCredentialsException("Login ou usuário inválido.");
             }
         } else {
             // Especialista ou Cliente de uma clínica:
             ClinicaTenant tenant = usuario.getTenant();
             String userSlug = tenant != null ? tenant.getSlug() : null;
-            String userLink = userSlug != null ? "https://" + userSlug + ".logistadigital.com.br/login" : "https://estetica.logistadigital.com.br/login";
 
             if (slugAmbiente != null) {
-                if ("estetica".equalsIgnoreCase(slugAmbiente)) {
-                    throw new RegraNegocioException("Este usuário não pertence ao link https://estetica.logistadigital.com.br/login. Cada usuário só pode fazer login no seu respectivo link: " + userLink);
-                }
-                if (userSlug != null && !slugAmbiente.equalsIgnoreCase(userSlug)) {
-                    throw new RegraNegocioException("Este usuário não pertence a esta clínica. Por favor, acesse pelo seu respectivo link: " + userLink);
+                if ("estetica".equalsIgnoreCase(slugAmbiente) || (userSlug != null && !slugAmbiente.equalsIgnoreCase(userSlug))) {
+                    throw new BadCredentialsException("Login ou usuário inválido.");
                 }
             }
         }
@@ -274,7 +264,7 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(request.senha(), usuario.getSenhaHash())) {
-            throw new BadCredentialsException("Senha incorreta. Tente novamente.");
+            throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
         ClinicaTenant tenant = usuario.getTenant();

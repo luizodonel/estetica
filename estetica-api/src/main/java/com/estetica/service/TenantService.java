@@ -32,6 +32,7 @@ public class TenantService {
     private final JwtService jwtService;
     private final TenantResolverService tenantResolverService;
     private final MercadoPagoService mercadoPagoService;
+    private final CoolifyIntegrationService coolifyIntegrationService;
 
     private static final BigDecimal VALOR_ADESAO_PIX = new BigDecimal("149.90");
 
@@ -139,6 +140,9 @@ public class TenantService {
                 tenant = tenantRepository.save(tenant);
                 lojista = lojistaRepository.save(lojista);
             }
+
+            // Provisiona automaticamente o subdomínio da loja no Coolify / Traefik
+            coolifyIntegrationService.adicionarDominioLojista(cleanSlug);
         } catch (Exception ex) {
             log.error("[TenantService] Erro ao gerar PIX de adesão no Mercado Pago: {}", ex.getMessage(), ex);
             throw new RegraNegocioException("Erro ao gerar QR Code PIX de adesão no Mercado Pago: " + ex.getMessage());

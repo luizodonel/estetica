@@ -142,3 +142,4 @@ public class Lojista implements UserDetails {
         return Boolean.TRUE.equals(this.ativo);
     }
 }
+

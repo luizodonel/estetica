@@ -19,3 +19,4 @@ public class PagamentoPendenteException extends RuntimeException {
         this.valor = valor;
     }
 }
+

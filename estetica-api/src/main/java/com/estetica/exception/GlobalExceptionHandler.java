@@ -59,7 +59,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Credenciais inválidas: e-mail ou senha incorretos.");
+        String msg = (ex.getMessage() != null && !ex.getMessage().isBlank()) ? ex.getMessage() : "Login ou usuário inválido.";
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, msg);
         problem.setTitle("Autenticação Falhou");
         problem.setType(URI.create("https://clinicaestetica.com/erros/unauthorized"));
         problem.setProperty("timestamp", Instant.now());
