@@ -1,0 +1,32 @@
+# Maven & Java
+target/
+*.class
+*.jar
+*.war
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Environment & Secrets (Proteção GitGuardian)
+.env
+.env.*
+!.env.example
+
+# Database local
+data/
+*.mv.db
+*.trace.db
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+

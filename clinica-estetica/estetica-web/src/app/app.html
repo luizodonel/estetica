@@ -1,0 +1,23 @@
+<div class="min-h-screen flex flex-col bg-nude-50 text-stone-800">
+  <!-- Navbar Desktop & Tablet -->
+  <app-navbar></app-navbar>
+
+  <!-- Conteúdo Principal das Rotas -->
+  <main class="flex-1">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Rodapé Elegante -->
+  <footer class="border-t border-nude-200 bg-white py-12 px-4 sm:px-6 mb-16 md:mb-0 text-stone-500 text-xs">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-2">
+        <span class="font-serif text-lg font-bold text-stone-900">L'Élégance</span>
+        <span>• Alta Estética Avançada</span>
+      </div>
+      <p class="text-stone-400">© 2026 Clínica L'Élégance Estética. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- Bottom Navigation para Smartphones (Mobile-First) -->
+  <app-bottom-nav></app-bottom-nav>
+</div>

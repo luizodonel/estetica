@@ -1,0 +1,25 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+  body {
+    @apply bg-nude-50 text-stone-800 antialiased font-sans selection:bg-rose-100 selection:text-rose-900;
+  }
+}
+
+/* Custom Scrollbar suave */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f6f1ea;
+}
+::-webkit-scrollbar-thumb {
+  background: #decabd;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c5ae9d;
+}

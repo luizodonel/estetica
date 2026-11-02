@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # Banco de Dados PostgreSQL
+  # ==========================================
+  estetica-db:
+    image: postgres:16-alpine
+    container_name: estetica-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: clinica_estetica
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - estetica_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d clinica_estetica"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Backend Spring Boot 3 API
+  # ==========================================
+  estetica-api:
+    build:
+      context: ./estetica-api
+      dockerfile: Dockerfile
+    container_name: estetica-backend
+    restart: always
+    depends_on:
+      estetica-db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://estetica-db:5432/clinica_estetica
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgrespassword
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/v3/api-docs || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ==========================================
+  # Frontend Angular PWA / Web
+  # ==========================================
+  estetica-web:
+    build:
+      context: ./estetica-web
+      dockerfile: Dockerfile
+    container_name: estetica-frontend
+    restart: always
+    depends_on:
+      - estetica-api
+    ports:
+      - "4200:80"
+
+volumes:
+  estetica_pgdata:
+    driver: local
+
