@@ -45,6 +45,8 @@ export interface Profissional {
   id: number;
   usuarioId?: number;
   nome: string;
+  email?: string;
+  telefoneWhatsApp?: string;
   especialidade?: string;
   bio?: string;
   fotoUrl?: string;

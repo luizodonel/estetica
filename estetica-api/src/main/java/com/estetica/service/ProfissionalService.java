@@ -140,7 +140,16 @@ public class ProfissionalService {
 
         if (prof.getUsuario() != null) {
             prof.getUsuario().setNome(request.nome().trim());
-            prof.getUsuario().setTelefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""));
+            if (request.email() != null && !request.email().isBlank()) {
+                String novoEmail = request.email().toLowerCase().trim();
+                if (!novoEmail.equalsIgnoreCase(prof.getUsuario().getEmail()) && usuarioRepository.existsByEmail(novoEmail)) {
+                    throw new RegraNegocioException("Já existe um usuário com o e-mail: " + novoEmail);
+                }
+                prof.getUsuario().setEmail(novoEmail);
+            }
+            if (request.telefoneWhatsApp() != null && !request.telefoneWhatsApp().isBlank()) {
+                prof.getUsuario().setTelefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""));
+            }
             if (request.senha() != null && !request.senha().isBlank()) {
                 prof.getUsuario().setSenhaHash(passwordEncoder.encode(request.senha()));
             }
@@ -171,10 +180,14 @@ public class ProfissionalService {
 
     private ProfissionalDTO toDTO(Profissional p) {
         List<Long> procIds = p.getProcedimentos().stream().map(Procedimento::getId).toList();
+        String email = p.getUsuario() != null ? p.getUsuario().getEmail() : null;
+        String telefone = p.getUsuario() != null ? p.getUsuario().getTelefoneWhatsApp() : null;
         return new ProfissionalDTO(
                 p.getId(),
                 p.getUsuario() != null ? p.getUsuario().getId() : null,
                 p.getNome(),
+                email,
+                telefone,
                 p.getEspecialidade(),
                 p.getBio(),
                 p.getFotoUrl(),

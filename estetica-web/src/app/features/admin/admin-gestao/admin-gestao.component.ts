@@ -234,6 +234,17 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes';
                       </div>
                     </div>
 
+                    @if (prof.email || prof.telefoneWhatsApp) {
+                      <div class="mb-3 text-[11px] text-stone-500 space-y-0.5 bg-stone-50 p-2.5 rounded-xl border border-nude-200">
+                        @if (prof.email) {
+                          <div class="truncate text-stone-600">✉ {{ prof.email }}</div>
+                        }
+                        @if (prof.telefoneWhatsApp) {
+                          <div class="text-emerald-700 font-medium">💬 {{ prof.telefoneWhatsApp }}</div>
+                        }
+                      </div>
+                    }
+
                     <p class="text-xs text-stone-500 mb-4 line-clamp-2 leading-relaxed">
                       {{ prof.bio || 'Especialista clínico credenciado.' }}
                     </p>
@@ -874,8 +885,8 @@ export class AdminGestaoComponent implements OnInit {
       this.procedimentosSelecionadosIds.set([...(prof.procedimentosIds || [])]);
       this.formProfissional.patchValue({
         nome: prof.nome,
-        email: '', // preenchido se disponível
-        telefoneWhatsApp: '',
+        email: prof.email || '',
+        telefoneWhatsApp: prof.telefoneWhatsApp || '',
         especialidade: prof.especialidade || '',
         bio: prof.bio || '',
         fotoUrl: prof.fotoUrl || '',

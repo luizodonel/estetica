@@ -34,6 +34,8 @@ public class ProfissionalDTOs {
         Long id,
         Long usuarioId,
         String nome,
+        String email,
+        String telefoneWhatsApp,
         String especialidade,
         String bio,
         String fotoUrl,
