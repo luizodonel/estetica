@@ -26,10 +26,11 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         try {
-            // Remove restrições de unicidade legadas na tabela categorias para permitir
+            // Remove restrições de unicidade legadas na tabela tb_categoria para permitir
             // que cada tenant e nicho tenha suas próprias categorias sem colisão de nomes.
-            jdbcTemplate.execute("ALTER TABLE IF EXISTS categorias DROP CONSTRAINT IF EXISTS uk_at5cf41guxjf4dkdeo5qxva9");
-            jdbcTemplate.execute("ALTER TABLE IF EXISTS categorias DROP CONSTRAINT IF EXISTS categorias_nome_key");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_categoria DROP CONSTRAINT IF EXISTS uk_at5cf41guxjf4dkdeo5qxva9");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_categoria DROP CONSTRAINT IF EXISTS categorias_nome_key");
+            jdbcTemplate.execute("DROP INDEX IF EXISTS uk_at5cf41guxjf4dkdeo5qxva9 CASCADE");
             jdbcTemplate.execute(
                 "DO $$ " +
                 "DECLARE r RECORD; " +
@@ -37,15 +38,21 @@ public class DataInitializer implements CommandLineRunner {
                 "  FOR r IN ( " +
                 "    SELECT conname FROM pg_constraint con " +
                 "    INNER JOIN pg_class rel ON rel.oid = con.conrelid " +
-                "    WHERE rel.relname = 'categorias' AND con.contype = 'u' " +
+                "    WHERE rel.relname = 'tb_categoria' AND con.contype = 'u' " +
                 "  ) LOOP " +
-                "    EXECUTE 'ALTER TABLE categorias DROP CONSTRAINT IF EXISTS ' || quote_ident(r.conname); " +
+                "    EXECUTE 'ALTER TABLE tb_categoria DROP CONSTRAINT IF EXISTS ' || quote_ident(r.conname); " +
+                "  END LOOP; " +
+                "  FOR r IN ( " +
+                "    SELECT indexname FROM pg_indexes " +
+                "    WHERE tablename = 'tb_categoria' AND indexname LIKE '%uk_%' " +
+                "  ) LOOP " +
+                "    EXECUTE 'DROP INDEX IF EXISTS ' || quote_ident(r.indexname) || ' CASCADE'; " +
                 "  END LOOP; " +
                 "END $$;"
             );
-            log.info("Restrições únicas legadas de 'categorias' verificadas e ajustadas.");
+            log.info("Restrições únicas legadas de 'tb_categoria' verificadas e ajustadas.");
         } catch (Exception e) {
-            log.warn("Nota na verificação de constraints de categorias: {}", e.getMessage());
+            log.warn("Nota na verificação de constraints de tb_categoria: {}", e.getMessage());
         }
 
         // Atualiza categorias antigas que eventualmente estejam com setor nulo
