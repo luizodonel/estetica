@@ -20,10 +20,34 @@ public class DataInitializer implements CommandLineRunner {
 
     private final CategoriaRepository categoriaRepository;
     private final ProcedimentoRepository procedimentoRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
     public void run(String... args) {
+        try {
+            // Remove restrições de unicidade legadas na tabela categorias para permitir
+            // que cada tenant e nicho tenha suas próprias categorias sem colisão de nomes.
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS categorias DROP CONSTRAINT IF EXISTS uk_at5cf41guxjf4dkdeo5qxva9");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS categorias DROP CONSTRAINT IF EXISTS categorias_nome_key");
+            jdbcTemplate.execute(
+                "DO $$ " +
+                "DECLARE r RECORD; " +
+                "BEGIN " +
+                "  FOR r IN ( " +
+                "    SELECT conname FROM pg_constraint con " +
+                "    INNER JOIN pg_class rel ON rel.oid = con.conrelid " +
+                "    WHERE rel.relname = 'categorias' AND con.contype = 'u' " +
+                "  ) LOOP " +
+                "    EXECUTE 'ALTER TABLE categorias DROP CONSTRAINT IF EXISTS ' || quote_ident(r.conname); " +
+                "  END LOOP; " +
+                "END $$;"
+            );
+            log.info("Restrições únicas legadas de 'categorias' verificadas e ajustadas.");
+        } catch (Exception e) {
+            log.warn("Nota na verificação de constraints de categorias: {}", e.getMessage());
+        }
+
         // Atualiza categorias antigas que eventualmente estejam com setor nulo
         List<Categoria> antigas = categoriaRepository.findAll();
         for (Categoria c : antigas) {
