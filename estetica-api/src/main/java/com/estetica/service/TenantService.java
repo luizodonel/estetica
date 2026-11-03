@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,6 +32,11 @@ public class TenantService {
     private final ClinicaTenantRepository tenantRepository;
     private final UsuarioRepository usuarioRepository;
     private final com.estetica.repository.LojistaRepository lojistaRepository;
+    private final com.estetica.repository.ProcedimentoRepository procedimentoRepository;
+    private final com.estetica.repository.AgendamentoRepository agendamentoRepository;
+    private final com.estetica.repository.ProfissionalRepository profissionalRepository;
+    private final com.estetica.repository.BloqueioAgendaRepository bloqueioAgendaRepository;
+    private final com.estetica.repository.HistoricoAtendimentoRepository historicoAtendimentoRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final TenantResolverService tenantResolverService;
@@ -403,6 +409,11 @@ public class TenantService {
         if (req.setor() != null && !req.setor().isBlank()) {
             try {
                 com.estetica.model.SetorAtuacao st = com.estetica.model.SetorAtuacao.valueOf(req.setor().trim().toUpperCase());
+                boolean mudouSetor = tenant.getSetor() != null && !tenant.getSetor().equals(st);
+                if (mudouSetor) {
+                    log.warn("[TenantService] Tenant {} mudou de setor de {} para {}. Limpando dados anteriores...", tenant.getId(), tenant.getSetor(), st);
+                    limparDadosDoTenantPorMudancaDeSetor(tenant.getId());
+                }
                 tenant.setSetor(st);
                 if (tenant.getLojista() != null) {
                     tenant.getLojista().setSetor(st);
@@ -430,6 +441,36 @@ public class TenantService {
         tenant = tenantRepository.save(tenant);
         log.info("[TenantService] Identidade visual e cores atualizadas para a loja: {}", tenant.getNomeEmpresa());
         return toPublicDTO(tenant);
+    }
+
+    @Transactional
+    public void limparDadosDoTenantPorMudancaDeSetor(Long tenantId) {
+        log.warn("[TenantService] Limpando dados do tenant {} devido a mudanca de nicho...", tenantId);
+        try {
+            historicoAtendimentoRepository.deleteByTenantId(tenantId);
+        } catch (Exception e) {
+            log.error("Erro ao deletar historico de atendimento do tenant {}: {}", tenantId, e.getMessage());
+        }
+        try {
+            bloqueioAgendaRepository.deleteByTenantId(tenantId);
+        } catch (Exception e) {
+            log.error("Erro ao deletar bloqueios do tenant {}: {}", tenantId, e.getMessage());
+        }
+        try {
+            agendamentoRepository.deleteByTenantId(tenantId);
+        } catch (Exception e) {
+            log.error("Erro ao deletar agendamentos do tenant {}: {}", tenantId, e.getMessage());
+        }
+        try {
+            List<com.estetica.model.Profissional> profissionais = profissionalRepository.findByTenantIdOrderByNomeAsc(tenantId);
+            for (com.estetica.model.Profissional p : profissionais) {
+                p.getProcedimentos().clear();
+                profissionalRepository.save(p);
+            }
+            procedimentoRepository.deleteByTenantId(tenantId);
+        } catch (Exception e) {
+            log.error("Erro ao deletar procedimentos do tenant {}: {}", tenantId, e.getMessage());
+        }
     }
 
     @Transactional

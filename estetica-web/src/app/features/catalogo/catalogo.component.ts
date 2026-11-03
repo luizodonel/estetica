@@ -315,7 +315,8 @@ export class CatalogoComponent implements OnInit {
   }
 
   carregarCategorias(): void {
-    this.api.getCategorias().subscribe({
+    const s = this.setorService.setorAtual();
+    this.api.getCategorias(s).subscribe({
       next: (dados) => this.categorias.set(dados),
       error: (err) => console.error(err)
     });

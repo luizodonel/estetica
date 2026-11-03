@@ -37,8 +37,12 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   // Catálogo e Procedimentos
-  getCategorias(): Observable<Categoria[]> {
-    return this.http.get<Categoria[]>(`${this.baseUrl}/procedimentos/categorias`);
+  getCategorias(setor?: string): Observable<Categoria[]> {
+    let params = new HttpParams();
+    if (setor) {
+      params = params.set('setor', setor);
+    }
+    return this.http.get<Categoria[]>(`${this.baseUrl}/procedimentos/categorias`, { params });
   }
 
   getProcedimentos(categoriaId?: number): Observable<Procedimento[]> {

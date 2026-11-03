@@ -117,5 +117,8 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
                                                    @Param("inicio") LocalDateTime inicio,
                                                    @Param("fim") LocalDateTime fim,
                                                    @Param("status") StatusAgendamento status);
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM Agendamento a WHERE a.tenant.id = :tenantId")
+    void deleteByTenantId(@Param("tenantId") Long tenantId);
 }
 

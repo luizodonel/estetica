@@ -16,7 +16,7 @@ public class Categoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 80)
+    @Column(nullable = false, length = 80)
     private String nome;
 
     @Column(length = 255)
@@ -31,5 +31,9 @@ public class Categoria {
 
     @Column(name = "ordem_exibicao")
     private Integer ordemExibicao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "setor", length = 50)
+    private SetorAtuacao setor;
 }
 

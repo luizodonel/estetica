@@ -25,5 +25,9 @@ public interface BloqueioAgendaRepository extends JpaRepository<BloqueioAgenda, 
                                   @Param("fim") LocalDateTime fim);
 
     List<BloqueioAgenda> findByProfissionalIdOrderByDataInicioDesc(Long profissionalId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM BloqueioAgenda b WHERE b.profissional.tenant.id = :tenantId")
+    void deleteByTenantId(@Param("tenantId") Long tenantId);
 }
 

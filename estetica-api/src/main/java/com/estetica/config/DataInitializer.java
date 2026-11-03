@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -23,6 +24,15 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        // Atualiza categorias antigas que eventualmente estejam com setor nulo
+        List<Categoria> antigas = categoriaRepository.findAll();
+        for (Categoria c : antigas) {
+            if (c.getSetor() == null) {
+                c.setSetor(com.estetica.model.SetorAtuacao.CLINICA_ESTETICA);
+                categoriaRepository.save(c);
+            }
+        }
+
         if (categoriaRepository.count() > 0) {
             log.info("Base de dados já possui categorias e procedimentos cadastrados.");
             return;
@@ -37,6 +47,7 @@ public class DataInitializer implements CommandLineRunner {
                 .icone("sparkles")
                 .ordemExibicao(1)
                 .ativo(true)
+                .setor(com.estetica.model.SetorAtuacao.CLINICA_ESTETICA)
                 .build());
 
         Categoria catCorporal = categoriaRepository.save(Categoria.builder()
@@ -45,6 +56,7 @@ public class DataInitializer implements CommandLineRunner {
                 .icone("sparkles")
                 .ordemExibicao(2)
                 .ativo(true)
+                .setor(com.estetica.model.SetorAtuacao.CLINICA_ESTETICA)
                 .build());
 
         Categoria catMassagens = categoriaRepository.save(Categoria.builder()
@@ -53,6 +65,7 @@ public class DataInitializer implements CommandLineRunner {
                 .icone("heart")
                 .ordemExibicao(3)
                 .ativo(true)
+                .setor(com.estetica.model.SetorAtuacao.CLINICA_ESTETICA)
                 .build());
 
         Categoria catLaser = categoriaRepository.save(Categoria.builder()
@@ -61,6 +74,7 @@ public class DataInitializer implements CommandLineRunner {
                 .icone("zap")
                 .ordemExibicao(4)
                 .ativo(true)
+                .setor(com.estetica.model.SetorAtuacao.CLINICA_ESTETICA)
                 .build());
 
         // 2. Procedimentos Base

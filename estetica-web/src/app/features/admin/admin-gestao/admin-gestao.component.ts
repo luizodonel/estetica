@@ -898,12 +898,68 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
         (atualizado)="carregarDados()">
       </app-modal-trava-agenda>
 
+      <!-- Modal Crítico de Confirmação de Mudança de Setor / Nicho -->
+      @if (modalConfirmarMudancaSetor()) {
+        <div class="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 border-2 border-rose-500 shadow-2xl animate-scale-up space-y-4">
+            
+            <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+              ⚠️
+            </div>
+
+            <div class="text-center space-y-2.5">
+              <span class="text-[10px] uppercase font-bold tracking-widest text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+                Ação Destrutiva & Irreversível
+              </span>
+              <h3 class="font-serif text-xl sm:text-2xl font-bold text-stone-900 leading-tight">
+                Mudar Nicho de Atuação?
+              </h3>
+              
+              <div class="bg-rose-50/90 border border-rose-200 p-3.5 rounded-2xl text-xs text-rose-900 text-left space-y-2">
+                <p class="font-semibold text-xs">
+                  Você está alterando o setor de <strong>{{ obterLabelSetor(tenantService.tenant()?.setor) }}</strong> para <strong>{{ obterLabelSetor(setorPendenteMudanca) }}</strong>.
+                </p>
+                <p class="text-[11px] text-rose-800 leading-relaxed">
+                  Ao trocar de nicho, <strong>TODAS AS SUAS INFORMAÇÕES ANTERIORES SERÃO APAGADAS</strong> para reconfigurar seu sistema:
+                </p>
+                <ul class="list-disc list-inside text-[11px] text-rose-800 space-y-0.5">
+                  <li>Todos os procedimentos e serviços cadastrados;</li>
+                  <li>Todos os agendamentos e horários marcados;</li>
+                  <li>Todas as fichas clínicas, anamneses e prontuários;</li>
+                  <li>Bloqueios de horários na agenda.</li>
+                </ul>
+              </div>
+
+              <p class="text-xs font-bold text-stone-900 leading-relaxed bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                🚨 Esta ação não pode ser desfeita e NÃO HAVERÁ COMO RECUPERAR OS DADOS DE VOLTA!
+              </p>
+            </div>
+
+            <div class="pt-2 flex flex-col sm:flex-row gap-2.5">
+              <button
+                type="button"
+                (click)="cancelarMudancaSetor()"
+                class="flex-1 py-3 px-4 rounded-xl border border-stone-300 text-stone-700 text-xs font-bold hover:bg-stone-100 transition-all">
+                Cancelar (Manter Dados)
+              </button>
+              <button
+                type="button"
+                (click)="confirmarMudancaSetorEEnviar()"
+                class="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-200 transition-all">
+                Sim, Mudar e Apagar Tudo
+              </button>
+            </div>
+
+          </div>
+        </div>
+      }
+
     </div>
   `
 })
 export class AdminGestaoComponent implements OnInit {
   private api = inject(ApiService);
-  private tenantService = inject(TenantService);
+  public tenantService = inject(TenantService);
   setorService = inject(SetorService);
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
@@ -950,6 +1006,15 @@ export class AdminGestaoComponent implements OnInit {
   fazendoUploadLogo = signal<boolean>(false);
   salvandoIdentidade = signal<boolean>(false);
   erroUploadLogo = signal<string | null>(null);
+
+  modalConfirmarMudancaSetor = signal<boolean>(false);
+  setorPendenteMudanca: string | null = null;
+
+  obterLabelSetor(setorId?: string | null): string {
+    if (!setorId) return 'Clínica de Estética';
+    const cfg = this.setorService.obterConfig(setorId);
+    return cfg ? `${cfg.icone} ${cfg.label}` : setorId;
+  }
 
   // Filtros calculados
   procedimentosFiltrados = computed(() => {
@@ -1030,13 +1095,34 @@ export class AdminGestaoComponent implements OnInit {
       corSecundaria: ['#f43f5e', Validators.required],
       telefoneWhatsApp: ['']
     });
+
+    this.formIdentidade.get('setor')?.valueChanges.subscribe((novoS: string) => {
+      if (novoS) {
+        this.carregarCategorias(novoS);
+      }
+    });
   }
 
   carregarDados(): void {
     this.carregando.set(true);
 
-    this.api.getCategorias().subscribe({
-      next: (cats) => this.categorias.set(cats)
+    this.api.getMeuTenant().subscribe({
+      next: (t) => {
+        if (t) {
+          this.formIdentidade.patchValue({
+            nomeEmpresa: t.nomeEmpresa || '',
+            setor: t.setor || 'CLINICA_ESTETICA',
+            logoUrl: t.logoUrl || '',
+            corPrimaria: t.corPrimaria || '#e11d48',
+            corSecundaria: t.corSecundaria || '#f43f5e',
+            telefoneWhatsApp: t.telefoneWhatsApp || ''
+          }, { emitEvent: false });
+          this.carregarCategorias(t.setor);
+        } else {
+          this.carregarCategorias();
+        }
+      },
+      error: () => this.carregarCategorias()
     });
 
     this.api.getProcedimentosAdmin().subscribe({
@@ -1054,27 +1140,24 @@ export class AdminGestaoComponent implements OnInit {
       }
     });
 
-    this.api.getMeuTenant().subscribe({
-      next: (t) => {
-        if (t) {
-          this.formIdentidade.patchValue({
-            nomeEmpresa: t.nomeEmpresa || '',
-            setor: t.setor || 'CLINICA_ESTETICA',
-            logoUrl: t.logoUrl || '',
-            corPrimaria: t.corPrimaria || '#e11d48',
-            corSecundaria: t.corSecundaria || '#f43f5e',
-            telefoneWhatsApp: t.telefoneWhatsApp || ''
-          });
-        }
-      }
-    });
-
     this.api.getClientes().subscribe({
       next: (clis) => {
         this.clientes.set(clis);
         this.carregando.set(false);
       },
       error: () => this.carregando.set(false)
+    });
+  }
+
+  carregarCategorias(setor?: string): void {
+    const s = setor || this.formIdentidade?.get('setor')?.value || this.setorService.setorAtual();
+    this.api.getCategorias(s).subscribe({
+      next: (cats) => {
+        this.categorias.set(cats);
+        if (!this.formProcedimento.get('categoriaId')?.value && cats.length > 0) {
+          this.formProcedimento.patchValue({ categoriaId: cats[0].id });
+        }
+      }
     });
   }
 
@@ -1420,6 +1503,32 @@ export class AdminGestaoComponent implements OnInit {
       return;
     }
 
+    const setorAtual = this.tenantService.tenant()?.setor;
+    const novoSetor = this.formIdentidade.get('setor')?.value;
+
+    if (setorAtual && novoSetor && setorAtual !== novoSetor) {
+      this.setorPendenteMudanca = novoSetor;
+      this.modalConfirmarMudancaSetor.set(true);
+      return;
+    }
+
+    this.executarSalvamentoIdentidadeVisual();
+  }
+
+  cancelarMudancaSetor(): void {
+    const setorAtual = this.tenantService.tenant()?.setor || 'CLINICA_ESTETICA';
+    this.formIdentidade.patchValue({ setor: setorAtual }, { emitEvent: false });
+    this.carregarCategorias(setorAtual);
+    this.modalConfirmarMudancaSetor.set(false);
+    this.setorPendenteMudanca = null;
+  }
+
+  confirmarMudancaSetorEEnviar(): void {
+    this.modalConfirmarMudancaSetor.set(false);
+    this.executarSalvamentoIdentidadeVisual();
+  }
+
+  private executarSalvamentoIdentidadeVisual(): void {
     this.salvandoIdentidade.set(true);
     this.mensagemErro.set(null);
     this.mensagemSucesso.set(null);
@@ -1430,7 +1539,9 @@ export class AdminGestaoComponent implements OnInit {
       next: (res) => {
         this.salvandoIdentidade.set(false);
         this.tenantService.setTenantManual(res);
-        this.mensagemSucesso.set('✓ Logotipo e dados atualizados com sucesso!');
+        this.mensagemSucesso.set('✓ Configurações e nicho de atuação atualizados com sucesso!');
+        this.carregarCategorias(res.setor);
+        this.carregarDados();
       },
       error: (err) => {
         this.salvandoIdentidade.set(false);

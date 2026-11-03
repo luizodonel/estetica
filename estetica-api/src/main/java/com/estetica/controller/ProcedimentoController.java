@@ -2,6 +2,7 @@ package com.estetica.controller;
 
 import com.estetica.dto.ProcedimentoDTOs.*;
 import com.estetica.service.ProcedimentoService;
+import com.estetica.model.SetorAtuacao;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,9 +23,10 @@ public class ProcedimentoController {
     private final ProcedimentoService procedimentoService;
 
     @GetMapping("/categorias")
-    @Operation(summary = "Lista categorias ativas (Facial, Corporal, Massagens, etc.)")
-    public ResponseEntity<List<CategoriaDTO>> listarCategorias() {
-        return ResponseEntity.ok(procedimentoService.listarCategorias());
+    @Operation(summary = "Lista categorias ativas filtradas por setor/nicho")
+    public ResponseEntity<List<CategoriaDTO>> listarCategorias(
+            @RequestParam(required = false) SetorAtuacao setor) {
+        return ResponseEntity.ok(procedimentoService.listarCategorias(setor));
     }
 
     @GetMapping
