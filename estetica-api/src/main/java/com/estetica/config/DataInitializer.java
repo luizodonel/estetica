@@ -71,6 +71,10 @@ public class DataInitializer implements CommandLineRunner {
                 c.setPrecoPadrao(new java.math.BigDecimal("50.00"));
                 mudou = true;
             }
+            if (c.getImagemUrl() == null || c.getImagemUrl().isBlank()) {
+                c.setImagemUrl("https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&q=80&w=600");
+                mudou = true;
+            }
             if (mudou) {
                 categoriaRepository.save(c);
             }

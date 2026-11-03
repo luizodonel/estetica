@@ -34,7 +34,7 @@ import { AssinaturaStatusResponse } from '../../../core/models';
                 Minha Assinatura & Renovação
               </h1>
               <p class="text-xs sm:text-sm text-stone-500 mt-1">
-                Acompanhe o status do plano de <strong class="text-stone-800">{{ dados()?.nomeEmpresa || tenantService.nomeEmpresa() }}</strong>.
+                Acompanhe o status do plano de <strong class="text-stone-800">{{ dados()?.nomeEmpresa || tenantService.nomeEmpresa() }}</strong>
               </p>
             </div>
 
@@ -52,6 +52,25 @@ import { AssinaturaStatusResponse } from '../../../core/models';
             <div class="py-16 text-center">
               <div class="inline-block w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
               <p class="text-xs text-stone-400 mt-3 font-medium">Consultando status da sua assinatura...</p>
+            </div>
+          }
+
+          <!-- Empty / Error State -->
+          @if (!carregando() && !dados()) {
+            <div class="py-16 text-center space-y-4">
+              <div class="w-16 h-16 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center text-2xl mx-auto">
+                💳
+              </div>
+              <div>
+                <h3 class="font-serif text-lg font-bold text-stone-800">Não foi possível carregar os dados da assinatura</h3>
+                <p class="text-xs text-stone-500 max-w-sm mx-auto mt-1">Verifique sua conexão ou clique no botão abaixo para tentar novamente.</p>
+              </div>
+              <button
+                type="button"
+                (click)="carregarStatus()"
+                class="px-5 py-2.5 rounded-xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-sm">
+                🔄 Tentar Novamente
+              </button>
             </div>
           }
 

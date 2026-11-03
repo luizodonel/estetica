@@ -25,6 +25,9 @@ public class Categoria {
     @Column(length = 50)
     private String icone;
 
+    @Column(name = "imagem_url", columnDefinition = "TEXT")
+    private String imagemUrl;
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean ativo = true;

@@ -425,45 +425,49 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
           } @else {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               @for (cat of categoriasFiltradas(); track cat.id) {
-                <div class="bg-white rounded-2xl border border-nude-200 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                <div class="bg-white rounded-2xl border border-nude-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
                   <div>
-                    <div class="flex items-start justify-between gap-3 mb-3">
-                      <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-2xl shadow-sm">
-                          {{ cat.icone || '🏷️' }}
+                    <!-- Imagem de Capa do Tipo / Categoria -->
+                    <div class="h-36 w-full overflow-hidden relative bg-stone-100">
+                      @if (cat.imagemUrl) {
+                        <img [src]="obterImagemUrl(cat.imagemUrl)" [alt]="cat.nome" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      } @else {
+                        <div class="w-full h-full bg-gradient-to-br from-rose-50 to-stone-100 flex items-center justify-center text-stone-300">
+                          <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         </div>
-                        <div>
-                          <div class="flex items-center gap-2">
-                            <h3 class="font-serif font-bold text-base text-stone-900">{{ cat.nome }}</h3>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                                  [class.bg-emerald-100]="cat.ativo"
-                                  [class.text-emerald-700]="cat.ativo"
-                                  [class.bg-stone-100]="!cat.ativo"
-                                  [class.text-stone-500]="!cat.ativo">
-                              {{ cat.ativo ? 'Ativo' : 'Inativo' }}
-                            </span>
-                          </div>
-                          <div class="flex items-center flex-wrap gap-1.5 mt-1">
-                            <span class="text-[10px] font-semibold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                              ⏱️ {{ cat.duracaoMinutosPadrao || 45 }} min
-                            </span>
-                            <span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                              💰 {{ (cat.precoPadrao || 0) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
-                            </span>
-                            <span class="text-[10px] text-stone-400">
-                              #{{ cat.ordemExibicao || 0 }}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      }
+                      <span class="absolute top-3 right-3 text-[10px] px-2.5 py-1 rounded-full font-bold backdrop-blur-md shadow-sm"
+                            [class.bg-emerald-500/90]="cat.ativo"
+                            [class.text-white]="cat.ativo"
+                            [class.bg-stone-800/80]="!cat.ativo"
+                            [class.text-stone-200]="!cat.ativo">
+                        {{ cat.ativo ? 'Ativo' : 'Inativo' }}
+                      </span>
+                      <span class="absolute bottom-2 left-3 text-[10px] font-bold text-white bg-black/60 px-2.5 py-0.5 rounded-md backdrop-blur-sm">
+                        Ordem #{{ cat.ordemExibicao || 0 }}
+                      </span>
                     </div>
 
-                    <p class="text-xs text-stone-500 line-clamp-2 leading-relaxed mb-4 min-h-[32px]">
-                      {{ cat.descricao || 'Sem descrição cadastrada para este tipo de serviço.' }}
-                    </p>
+                    <div class="p-5">
+                      <div>
+                        <h3 class="font-serif font-bold text-base text-stone-900">{{ cat.nome }}</h3>
+                        <div class="flex items-center flex-wrap gap-1.5 mt-2 mb-3">
+                          <span class="text-[10px] font-semibold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            ⏱️ {{ cat.duracaoMinutosPadrao || 45 }} min
+                          </span>
+                          <span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            💰 {{ (cat.precoPadrao || 0) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p class="text-xs text-stone-500 line-clamp-2 leading-relaxed min-h-[32px]">
+                        {{ cat.descricao || 'Sem descrição cadastrada para este tipo de serviço.' }}
+                      </p>
+                    </div>
                   </div>
 
-                  <div class="pt-3 border-t border-nude-100 flex items-center justify-between">
+                  <div class="px-5 pb-4 pt-3 border-t border-nude-100 flex items-center justify-between">
                     <span class="text-[11px] text-stone-400">
                       ID: #{{ cat.id }}
                     </span>
@@ -1114,24 +1118,51 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Emoji / Ícone Visual</label>
-                <div class="flex items-center gap-3">
-                  <input
-                    type="text"
-                    formControlName="icone"
-                    placeholder="Ex: ✂️, 🚗, ✨, 💆"
-                    class="w-24 text-center text-lg px-3.5 py-2 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                  <div class="flex flex-wrap gap-1.5">
-                    @for (sug of ['✂️', '💈', '🚗', '🧼', '✨', '💆', '💅', '🦷', '🩺', '🏋️', '📸', '🍕']; track sug) {
-                      <button
-                        type="button"
-                        (click)="formCategoria.patchValue({ icone: sug })"
-                        class="w-8 h-8 rounded-lg bg-stone-100 hover:bg-rose-100 text-sm flex items-center justify-center transition-all">
-                        {{ sug }}
-                      </button>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Foto / Imagem de Capa do Tipo / Categoria</label>
+                @if (!formCategoria.get('imagemUrl')?.value) {
+                  <div
+                    (click)="fileInputFotoCategoria.click()"
+                    class="border-2 border-dashed border-nude-300 hover:border-rose-400 rounded-2xl p-4 text-center cursor-pointer transition-all bg-stone-50/50 hover:bg-rose-50/20 flex flex-col items-center justify-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-lg">
+                      📷
+                    </div>
+                    <div>
+                      <span class="text-xs font-semibold text-stone-800 block">Clique para fazer upload da foto de capa</span>
+                      <span class="text-[10px] text-stone-400">PNG, JPG, WEBP ou SVG (até 15MB)</span>
+                    </div>
+                    @if (fazendoUploadCategoria()) {
+                      <span class="text-xs font-bold text-rose-600 animate-pulse">Enviando imagem...</span>
                     }
                   </div>
-                </div>
+                } @else {
+                  <div class="p-3 rounded-2xl bg-stone-50 border border-nude-200 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-16 h-12 rounded-xl overflow-hidden border border-nude-300 bg-white shadow-sm flex items-center justify-center">
+                        <img [src]="obterImagemUrl(formCategoria.get('imagemUrl')?.value)" alt="Capa" class="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <span class="text-xs font-semibold text-stone-800 block">Foto selecionada</span>
+                        <span class="text-[10px] text-emerald-600 font-medium">✓ Imagem anexada com sucesso</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        (click)="fileInputFotoCategoria.click()"
+                        class="px-2.5 py-1.5 rounded-lg border border-nude-300 bg-white text-[11px] font-semibold text-stone-700 hover:bg-stone-100">
+                        Trocar Foto
+                      </button>
+                      <button
+                        type="button"
+                        (click)="removerFotoCategoria()"
+                        class="px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 text-[11px] font-semibold">
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <input #fileInputFotoCategoria type="file" accept="image/*" (change)="aoSelecionarFotoCategoria($event)" class="hidden" />
               </div>
 
               <div>
@@ -1254,6 +1285,7 @@ export class AdminGestaoComponent implements OnInit {
   modalClienteAberto = signal<boolean>(false);
   clienteEmEdicao = signal<Usuario | null>(null);
 
+  fazendoUploadCategoria = signal<boolean>(false);
   fazendoUploadProcedimento = signal<boolean>(false);
   fazendoUploadProfissional = signal<boolean>(false);
 
@@ -1331,6 +1363,7 @@ export class AdminGestaoComponent implements OnInit {
       nome: ['', [Validators.required, Validators.minLength(2)]],
       descricao: [''],
       icone: ['🏷️'],
+      imagemUrl: [''],
       ordemExibicao: [1, [Validators.required, Validators.min(1)]],
       duracaoMinutosPadrao: [45, [Validators.required, Validators.min(5)]],
       precoPadrao: [50, [Validators.required, Validators.min(0)]],
@@ -1473,6 +1506,7 @@ export class AdminGestaoComponent implements OnInit {
         nome: cat.nome,
         descricao: cat.descricao || '',
         icone: cat.icone || '🏷️',
+        imagemUrl: cat.imagemUrl || '',
         ordemExibicao: cat.ordemExibicao ?? 1,
         duracaoMinutosPadrao: cat.duracaoMinutosPadrao ?? 45,
         precoPadrao: cat.precoPadrao ?? 50,
@@ -1484,6 +1518,7 @@ export class AdminGestaoComponent implements OnInit {
         nome: '',
         descricao: '',
         icone: '🏷️',
+        imagemUrl: '',
         ordemExibicao: (this.categorias().length + 1),
         duracaoMinutosPadrao: 45,
         precoPadrao: 50,
@@ -1511,6 +1546,7 @@ export class AdminGestaoComponent implements OnInit {
       nome: val.nome,
       descricao: val.descricao,
       icone: val.icone,
+      imagemUrl: val.imagemUrl,
       ordemExibicao: val.ordemExibicao,
       duracaoMinutosPadrao: val.duracaoMinutosPadrao,
       precoPadrao: val.precoPadrao,
@@ -1784,6 +1820,37 @@ export class AdminGestaoComponent implements OnInit {
   }
 
   // ===================== UPLOAD DE FOTOS E IMAGENS =====================
+  aoSelecionarFotoCategoria(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.fazendoUploadCategoria.set(true);
+
+    // Prévia instantânea
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.formCategoria.patchValue({ imagemUrl: e.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+
+    this.api.uploadImagem(file).subscribe({
+      next: (res) => {
+        if (res && res.url) {
+          this.formCategoria.patchValue({ imagemUrl: res.url });
+        }
+        this.fazendoUploadCategoria.set(false);
+      },
+      error: () => {
+        this.fazendoUploadCategoria.set(false);
+      }
+    });
+  }
+
+  removerFotoCategoria(): void {
+    this.formCategoria.patchValue({ imagemUrl: '' });
+  }
+
   aoSelecionarFotoProcedimento(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;

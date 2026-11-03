@@ -61,6 +61,7 @@ export interface Categoria {
   nome: string;
   descricao?: string;
   icone?: string;
+  imagemUrl?: string;
   ativo: boolean;
   ordemExibicao: number;
   duracaoMinutosPadrao?: number;
