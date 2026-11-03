@@ -18,6 +18,15 @@ public class ProcedimentoDTOs {
         Integer ordemExibicao
     ) {}
 
+    public record SalvarCategoriaRequest(
+        @NotBlank(message = "Nome da categoria é obrigatório")
+        String nome,
+        String descricao,
+        String icone,
+        Boolean ativo,
+        Integer ordemExibicao
+    ) {}
+
     public record ProcedimentoDTO(
         Long id,
         Long categoriaId,

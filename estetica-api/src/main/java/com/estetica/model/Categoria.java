@@ -35,5 +35,9 @@ public class Categoria {
     @Enumerated(EnumType.STRING)
     @Column(name = "setor", length = 50)
     private SetorAtuacao setor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
+    private ClinicaTenant tenant;
 }
 

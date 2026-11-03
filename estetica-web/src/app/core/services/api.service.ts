@@ -45,6 +45,22 @@ export class ApiService {
     return this.http.get<Categoria[]>(`${this.baseUrl}/procedimentos/categorias`, { params });
   }
 
+  getCategoriasAdmin(): Observable<Categoria[]> {
+    return this.http.get<Categoria[]>(`${this.baseUrl}/procedimentos/categorias/todas`);
+  }
+
+  criarCategoria(payload: { nome: string; descricao?: string; icone?: string; ativo?: boolean; ordemExibicao?: number }): Observable<Categoria> {
+    return this.http.post<Categoria>(`${this.baseUrl}/procedimentos/categorias`, payload);
+  }
+
+  atualizarCategoria(id: number, payload: { nome: string; descricao?: string; icone?: string; ativo?: boolean; ordemExibicao?: number }): Observable<Categoria> {
+    return this.http.put<Categoria>(`${this.baseUrl}/procedimentos/categorias/${id}`, payload);
+  }
+
+  excluirCategoria(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/procedimentos/categorias/${id}`);
+  }
+
   getProcedimentos(categoriaId?: number): Observable<Procedimento[]> {
     let params = new HttpParams();
     if (categoriaId) {

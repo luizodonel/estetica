@@ -32,6 +32,7 @@ public class TenantService {
     private final ClinicaTenantRepository tenantRepository;
     private final UsuarioRepository usuarioRepository;
     private final com.estetica.repository.LojistaRepository lojistaRepository;
+    private final com.estetica.repository.CategoriaRepository categoriaRepository;
     private final com.estetica.repository.ProcedimentoRepository procedimentoRepository;
     private final com.estetica.repository.AgendamentoRepository agendamentoRepository;
     private final com.estetica.repository.ProfissionalRepository profissionalRepository;
@@ -470,6 +471,11 @@ public class TenantService {
             procedimentoRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("Erro ao deletar procedimentos do tenant {}: {}", tenantId, e.getMessage());
+        }
+        try {
+            categoriaRepository.deleteByTenantId(tenantId);
+        } catch (Exception e) {
+            log.error("Erro ao deletar categorias do tenant {}: {}", tenantId, e.getMessage());
         }
     }
 

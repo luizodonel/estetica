@@ -26,26 +26,140 @@ public class ProcedimentoService {
 
     @Transactional
     public List<CategoriaDTO> listarCategorias(SetorAtuacao setorParam) {
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         SetorAtuacao setor = setorParam;
-        if (setor == null) {
-            ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
-            if (tenant != null && tenant.getSetor() != null) {
-                setor = tenant.getSetor();
-            }
+        if (setor == null && tenant != null && tenant.getSetor() != null) {
+            setor = tenant.getSetor();
         }
         if (setor == null) {
             setor = SetorAtuacao.CLINICA_ESTETICA;
         }
 
-        List<Categoria> cats = categoriaRepository.findBySetorAndAtivoTrueOrderByOrdemExibicaoAsc(setor);
-        if (cats.isEmpty()) {
-            inicializarCategoriasPadraoPorSetor(setor);
+        List<Categoria> cats;
+        if (tenant != null && setorParam == null) {
+            cats = categoriaRepository.findByTenantIdAndAtivoTrueOrderByOrdemExibicaoAsc(tenant.getId());
+            if (cats.isEmpty()) {
+                inicializarCategoriasPadraoParaTenant(tenant, setor);
+                cats = categoriaRepository.findByTenantIdAndAtivoTrueOrderByOrdemExibicaoAsc(tenant.getId());
+            }
+        } else {
             cats = categoriaRepository.findBySetorAndAtivoTrueOrderByOrdemExibicaoAsc(setor);
+            if (cats.isEmpty()) {
+                inicializarCategoriasPadraoPorSetor(setor);
+                cats = categoriaRepository.findBySetorAndAtivoTrueOrderByOrdemExibicaoAsc(setor);
+            }
         }
 
         return cats.stream()
                 .map(c -> new CategoriaDTO(c.getId(), c.getNome(), c.getDescricao(), c.getIcone(), c.getAtivo(), c.getOrdemExibicao()))
                 .toList();
+    }
+
+    @Transactional
+    public List<CategoriaDTO> listarTodasCategoriasAdmin() {
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        SetorAtuacao setor = (tenant != null && tenant.getSetor() != null) ? tenant.getSetor() : SetorAtuacao.CLINICA_ESTETICA;
+
+        List<Categoria> cats;
+        if (tenant != null) {
+            cats = categoriaRepository.findByTenantIdOrderByOrdemExibicaoAsc(tenant.getId());
+            if (cats.isEmpty()) {
+                inicializarCategoriasPadraoParaTenant(tenant, setor);
+                cats = categoriaRepository.findByTenantIdOrderByOrdemExibicaoAsc(tenant.getId());
+            }
+        } else {
+            cats = categoriaRepository.findBySetor(setor);
+            if (cats.isEmpty()) {
+                inicializarCategoriasPadraoPorSetor(setor);
+                cats = categoriaRepository.findBySetor(setor);
+            }
+        }
+
+        return cats.stream()
+                .map(c -> new CategoriaDTO(c.getId(), c.getNome(), c.getDescricao(), c.getIcone(), c.getAtivo(), c.getOrdemExibicao()))
+                .toList();
+    }
+
+    @Transactional
+    public CategoriaDTO criarCategoria(SalvarCategoriaRequest req) {
+        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        SetorAtuacao setor = (tenant != null && tenant.getSetor() != null) ? tenant.getSetor() : SetorAtuacao.CLINICA_ESTETICA;
+
+        Categoria c = Categoria.builder()
+                .nome(req.nome().trim())
+                .descricao(req.descricao() != null ? req.descricao().trim() : null)
+                .icone(req.icone() != null && !req.icone().isBlank() ? req.icone().trim() : "sparkles")
+                .ordemExibicao(req.ordemExibicao() != null ? req.ordemExibicao() : 1)
+                .ativo(req.ativo() != null ? req.ativo() : true)
+                .setor(setor)
+                .tenant(tenant)
+                .build();
+
+        c = categoriaRepository.save(c);
+        log.info("[ProcedimentoService] Nova categoria '{}' criada com sucesso para o tenant {}", c.getNome(), tenant != null ? tenant.getId() : "global");
+        return new CategoriaDTO(c.getId(), c.getNome(), c.getDescricao(), c.getIcone(), c.getAtivo(), c.getOrdemExibicao());
+    }
+
+    @Transactional
+    public CategoriaDTO atualizarCategoria(Long id, SalvarCategoriaRequest req) {
+        Categoria c = categoriaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria não encontrada com ID: " + id));
+
+        c.setNome(req.nome().trim());
+        c.setDescricao(req.descricao() != null ? req.descricao().trim() : null);
+        if (req.icone() != null && !req.icone().isBlank()) {
+            c.setIcone(req.icone().trim());
+        }
+        if (req.ativo() != null) {
+            c.setAtivo(req.ativo());
+        }
+        if (req.ordemExibicao() != null) {
+            c.setOrdemExibicao(req.ordemExibicao());
+        }
+
+        c = categoriaRepository.save(c);
+        log.info("[ProcedimentoService] Categoria ID {} atualizada: '{}'", c.getId(), c.getNome());
+        return new CategoriaDTO(c.getId(), c.getNome(), c.getDescricao(), c.getIcone(), c.getAtivo(), c.getOrdemExibicao());
+    }
+
+    @Transactional
+    public void excluirCategoria(Long id) {
+        Categoria c = categoriaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria não encontrada com ID: " + id));
+
+        List<Procedimento> procs = procedimentoRepository.findByCategoriaIdAndAtivoTrueOrderByTituloAsc(id);
+        if (!procs.isEmpty()) {
+            c.setAtivo(false);
+            categoriaRepository.save(c);
+            log.info("[ProcedimentoService] Categoria ID {} possui procedimentos vinculados. Inativada com sucesso.", id);
+        } else {
+            categoriaRepository.delete(c);
+            log.info("[ProcedimentoService] Categoria ID {} excluída com sucesso.", id);
+        }
+    }
+
+    @Transactional
+    public void inicializarCategoriasPadraoParaTenant(ClinicaTenant tenant, SetorAtuacao setor) {
+        log.info("[ProcedimentoService] Inicializando categorias padrão para o tenant {} no nicho {}", tenant.getId(), setor);
+        List<Categoria> modelos = categoriaRepository.findBySetorAndAtivoTrueOrderByOrdemExibicaoAsc(setor);
+        if (modelos.isEmpty()) {
+            inicializarCategoriasPadraoPorSetor(setor);
+            modelos = categoriaRepository.findBySetorAndAtivoTrueOrderByOrdemExibicaoAsc(setor);
+        }
+
+        for (Categoria mod : modelos) {
+            if (mod.getTenant() == null) {
+                categoriaRepository.save(Categoria.builder()
+                        .nome(mod.getNome())
+                        .descricao(mod.getDescricao())
+                        .icone(mod.getIcone())
+                        .ordemExibicao(mod.getOrdemExibicao())
+                        .ativo(true)
+                        .setor(setor)
+                        .tenant(tenant)
+                        .build());
+            }
+        }
     }
 
     @Transactional

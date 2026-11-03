@@ -10,7 +10,7 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
 
 import { TenantService } from '../../../core/services/tenant.service';
 import { SetorService } from '../../../core/services/setor.service';
-type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
+type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | 'identidade';
 
 @Component({
   selector: 'app-admin-gestao',
@@ -48,9 +48,23 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
           [class.bg-white]="abaAtiva() !== 'procedimentos'"
           [class.text-stone-700]="abaAtiva() !== 'procedimentos'"
           class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
-          <span>💎 Procedimentos & Serviços</span>
+          <span>💎 {{ setorService.termoServicos() }}</span>
           <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-rose-700]="abaAtiva() === 'procedimentos'" [class.bg-nude-100]="abaAtiva() !== 'procedimentos'">
             {{ procedimentos().length }}
+          </span>
+        </button>
+
+        <button
+          (click)="abaAtiva.set('categorias')"
+          [class.bg-rose-500]="abaAtiva() === 'categorias'"
+          [class.text-white]="abaAtiva() === 'categorias'"
+          [class.shadow-md]="abaAtiva() === 'categorias'"
+          [class.bg-white]="abaAtiva() !== 'categorias'"
+          [class.text-stone-700]="abaAtiva() !== 'categorias'"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
+          <span>🏷️ Tipos & Categorias</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-rose-700]="abaAtiva() === 'categorias'" [class.bg-nude-100]="abaAtiva() !== 'categorias'">
+            {{ categorias().length }}
           </span>
         </button>
 
@@ -372,7 +386,103 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
       }
 
       <!-- ========================================================================================= -->
-      <!-- ABA 2: GESTÃO DE PROFISSIONAIS / ESPECIALISTAS -->
+      <!-- ABA 2: GESTÃO DE TIPOS E CATEGORIAS DE SERVIÇOS -->
+      <!-- ========================================================================================= -->
+      @if (abaAtiva() === 'categorias') {
+        <div class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-nude-200 shadow-sm">
+            <div class="flex-1 max-w-sm">
+              <input
+                type="text"
+                [value]="buscaCategoria()"
+                (input)="buscaCategoria.set($any($event.target).value)"
+                placeholder="Buscar tipo ou categoria..."
+                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-rose-400 bg-stone-50" />
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                (click)="abrirModalCategoria()"
+                class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs shadow-md shadow-rose-200 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span>+ Novo Tipo / Categoria</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex items-start gap-3">
+            <span class="text-xl">💡</span>
+            <div class="text-xs text-amber-900 leading-relaxed">
+              <strong class="font-bold">Personalização do seu Negócio:</strong> Aqui você pode editar os nomes das categorias pré-prontas do seu setor, alterar emojis/ícones, definir a ordem de exibição na página inicial e criar novos tipos de serviços específicos para seu estabelecimento.
+            </div>
+          </div>
+
+          @if (carregando()) {
+            <div class="py-16 text-center text-xs text-stone-400">Carregando tipos e categorias...</div>
+          } @else if (categoriasFiltradas().length === 0) {
+            <div class="py-16 text-center text-xs text-stone-400">
+              Nenhuma categoria encontrada. Clique em "+ Novo Tipo / Categoria" para cadastrar.
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              @for (cat of categoriasFiltradas(); track cat.id) {
+                <div class="bg-white rounded-2xl border border-nude-200 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                      <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-2xl shadow-sm">
+                          {{ cat.icone || '🏷️' }}
+                        </div>
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <h3 class="font-serif font-bold text-base text-stone-900">{{ cat.nome }}</h3>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                                  [class.bg-emerald-100]="cat.ativo"
+                                  [class.text-emerald-700]="cat.ativo"
+                                  [class.bg-stone-100]="!cat.ativo"
+                                  [class.text-stone-500]="!cat.ativo">
+                              {{ cat.ativo ? 'Ativo' : 'Inativo' }}
+                            </span>
+                          </div>
+                          <span class="text-[11px] text-stone-400 block mt-0.5">
+                            Ordem de exibição: #{{ cat.ordemExibicao || 0 }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p class="text-xs text-stone-500 line-clamp-2 leading-relaxed mb-4 min-h-[32px]">
+                      {{ cat.descricao || 'Sem descrição cadastrada para este tipo de serviço.' }}
+                    </p>
+                  </div>
+
+                  <div class="pt-3 border-t border-nude-100 flex items-center justify-between">
+                    <span class="text-[11px] text-stone-400">
+                      ID: #{{ cat.id }}
+                    </span>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        (click)="abrirModalCategoria(cat)"
+                        class="px-3 py-1.5 rounded-xl border border-nude-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold transition-all">
+                        ✏️ Editar
+                      </button>
+                      <button
+                        type="button"
+                        (click)="excluirCategoria(cat)"
+                        class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-all">
+                        🗑️ Excluir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ========================================================================================= -->
+      <!-- ABA 3: GESTÃO DE PROFISSIONAIS / ESPECIALISTAS -->
       <!-- ========================================================================================= -->
       @if (abaAtiva() === 'profissionais') {
         <div class="space-y-6">
@@ -583,11 +693,19 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
 
             <form [formGroup]="formProcedimento" (ngSubmit)="salvarProcedimento()" class="space-y-4">
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Categoria *</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-semibold text-stone-700">Categoria / Tipo de Serviço *</label>
+                  <button
+                    type="button"
+                    (click)="irParaGerenciarCategorias()"
+                    class="text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1">
+                    <span>⚙️ Gerenciar Tipos</span>
+                  </button>
+                </div>
                 <select formControlName="categoriaId" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50">
                   <option value="">-- Selecione uma Categoria --</option>
                   @for (cat of categorias(); track cat.id) {
-                    <option [value]="cat.id">{{ cat.nome }}</option>
+                    <option [value]="cat.id">{{ cat.icone ? cat.icone + ' ' : '' }}{{ cat.nome }}</option>
                   }
                 </select>
               </div>
@@ -954,6 +1072,109 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
         </div>
       }
 
+      <!-- ========================================================================================= -->
+      <!-- MODAL: CADASTRAR / EDITAR TIPO OU CATEGORIA -->
+      <!-- ========================================================================================= -->
+      @if (modalCategoriaAberto()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-nude-200 animate-scale-up my-8">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <span class="text-[10px] uppercase tracking-wider font-bold text-rose-600">Catálogo do Estabelecimento</span>
+                <h3 class="font-serif font-bold text-xl text-stone-900">
+                  {{ categoriaEmEdicao() ? 'Editar Tipo / Categoria' : 'Novo Tipo / Categoria' }}
+                </h3>
+              </div>
+              <button (click)="fecharModalCategoria()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
+            </div>
+
+            @if (mensagemErro()) {
+              <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                <span>{{ mensagemErro() }}</span>
+                <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
+              </div>
+            }
+
+            <form [formGroup]="formCategoria" (ngSubmit)="salvarCategoria()" class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Nome do Tipo / Categoria *</label>
+                <input
+                  type="text"
+                  formControlName="nome"
+                  placeholder="Ex: Corte & Barba, Lavagem Detalhada, Facial..."
+                  class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Emoji / Ícone Visual</label>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="text"
+                    formControlName="icone"
+                    placeholder="Ex: ✂️, 🚗, ✨, 💆"
+                    class="w-24 text-center text-lg px-3.5 py-2 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <div class="flex flex-wrap gap-1.5">
+                    @for (sug of ['✂️', '💈', '🚗', '🧼', '✨', '💆', '💅', '🦷', '🩺', '🏋️', '📸', '🍕']; track sug) {
+                      <button
+                        type="button"
+                        (click)="formCategoria.patchValue({ icone: sug })"
+                        class="w-8 h-8 rounded-lg bg-stone-100 hover:bg-rose-100 text-sm flex items-center justify-center transition-all">
+                        {{ sug }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Descrição Comercial</label>
+                <textarea
+                  formControlName="descricao"
+                  rows="2"
+                  placeholder="Breve descrição dos serviços agrupados nesta categoria..."
+                  class="w-full text-xs px-3.5 py-2 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50"></textarea>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Ordem de Exibição *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    formControlName="ordemExibicao"
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <span class="text-[10px] text-stone-400 mt-0.5 block">1 aparece primeiro</span>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Disponível / Ativo</label>
+                  <div class="h-10 flex items-center">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" formControlName="ativo" class="w-4 h-4 text-rose-600 rounded border-stone-300 focus:ring-rose-400" />
+                      <span class="text-xs text-stone-700 font-semibold">Exibir no catálogo</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-4 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  (click)="fecharModalCategoria()"
+                  class="px-4 py-2.5 rounded-xl border border-nude-300 text-stone-600 text-xs font-semibold hover:bg-stone-50">
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="formCategoria.invalid || salvandoCategoria()"
+                  class="px-6 py-2.5 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 disabled:opacity-50">
+                  {{ salvandoCategoria() ? 'Salvando...' : 'Salvar Categoria' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
     </div>
   `
 })
@@ -981,10 +1202,15 @@ export class AdminGestaoComponent implements OnInit {
 
   // Filtros de busca
   buscaProcedimento = signal<string>('');
+  buscaCategoria = signal<string>('');
   buscaProfissional = signal<string>('');
   buscaCliente = signal<string>('');
 
   // Modais e Estados de Edição
+  modalCategoriaAberto = signal<boolean>(false);
+  categoriaEmEdicao = signal<Categoria | null>(null);
+  salvandoCategoria = signal<boolean>(false);
+
   modalProcedimentoAberto = signal<boolean>(false);
   procedimentoEmEdicao = signal<Procedimento | null>(null);
 
@@ -999,6 +1225,7 @@ export class AdminGestaoComponent implements OnInit {
   fazendoUploadProfissional = signal<boolean>(false);
 
   // Formulários
+  formCategoria!: FormGroup;
   formProcedimento!: FormGroup;
   formProfissional!: FormGroup;
   formCliente!: FormGroup;
@@ -1026,6 +1253,15 @@ export class AdminGestaoComponent implements OnInit {
     );
   });
 
+  categoriasFiltradas = computed(() => {
+    const termo = this.buscaCategoria().toLowerCase().trim();
+    if (!termo) return this.categorias();
+    return this.categorias().filter(c =>
+      c.nome.toLowerCase().includes(termo) ||
+      (c.descricao && c.descricao.toLowerCase().includes(termo))
+    );
+  });
+
   profissionaisFiltrados = computed(() => {
     const termo = this.buscaProfissional().toLowerCase().trim();
     if (!termo) return this.profissionais();
@@ -1049,15 +1285,23 @@ export class AdminGestaoComponent implements OnInit {
     this.iniciarFormularios();
     this.carregarDados();
 
-    // Permite abrir em uma aba específica via queryParam: /admin/gestao?tab=clientes
+    // Permite abrir em uma aba específica via queryParam: /admin/gestao?tab=categorias
     this.route.queryParams.subscribe(params => {
-      if (params['tab'] && ['procedimentos', 'profissionais', 'clientes', 'identidade'].includes(params['tab'])) {
+      if (params['tab'] && ['procedimentos', 'categorias', 'profissionais', 'clientes', 'identidade'].includes(params['tab'])) {
         this.abaAtiva.set(params['tab'] as TabTipo);
       }
     });
   }
 
   private iniciarFormularios(): void {
+    this.formCategoria = this.fb.group({
+      nome: ['', [Validators.required, Validators.minLength(2)]],
+      descricao: [''],
+      icone: ['🏷️'],
+      ordemExibicao: [1, [Validators.required, Validators.min(1)]],
+      ativo: [true]
+    });
+
     this.formProcedimento = this.fb.group({
       categoriaId: ['', Validators.required],
       titulo: ['', [Validators.required, Validators.minLength(3)]],
@@ -1151,12 +1395,103 @@ export class AdminGestaoComponent implements OnInit {
 
   carregarCategorias(setor?: string): void {
     const s = setor || this.formIdentidade?.get('setor')?.value || this.setorService.setorAtual();
-    this.api.getCategorias(s).subscribe({
+    this.api.getCategoriasAdmin().subscribe({
       next: (cats) => {
         this.categorias.set(cats);
-        if (!this.formProcedimento.get('categoriaId')?.value && cats.length > 0) {
-          this.formProcedimento.patchValue({ categoriaId: cats[0].id });
+        if (!this.formProcedimento?.get('categoriaId')?.value && cats.length > 0) {
+          const ativa = cats.find(c => c.ativo) || cats[0];
+          this.formProcedimento.patchValue({ categoriaId: ativa.id });
         }
+      },
+      error: () => {
+        this.api.getCategorias(s).subscribe({
+          next: (cats) => {
+            this.categorias.set(cats);
+            if (!this.formProcedimento?.get('categoriaId')?.value && cats.length > 0) {
+              this.formProcedimento.patchValue({ categoriaId: cats[0].id });
+            }
+          }
+        });
+      }
+    });
+  }
+
+  // ===================== CATEGORIAS / TIPOS DE SERVIÇOS =====================
+  abrirModalCategoria(cat?: Categoria): void {
+    if (cat) {
+      this.categoriaEmEdicao.set(cat);
+      this.formCategoria.patchValue({
+        nome: cat.nome,
+        descricao: cat.descricao || '',
+        icone: cat.icone || '🏷️',
+        ordemExibicao: cat.ordemExibicao ?? 1,
+        ativo: cat.ativo !== false
+      });
+    } else {
+      this.categoriaEmEdicao.set(null);
+      this.formCategoria.reset({
+        nome: '',
+        descricao: '',
+        icone: '🏷️',
+        ordemExibicao: (this.categorias().length + 1),
+        ativo: true
+      });
+    }
+    this.modalCategoriaAberto.set(true);
+  }
+
+  fecharModalCategoria(): void {
+    this.modalCategoriaAberto.set(false);
+    this.categoriaEmEdicao.set(null);
+  }
+
+  irParaGerenciarCategorias(): void {
+    this.modalProcedimentoAberto.set(false);
+    this.abaAtiva.set('categorias');
+  }
+
+  salvarCategoria(): void {
+    if (this.formCategoria.invalid) return;
+    this.salvandoCategoria.set(true);
+    const val = this.formCategoria.value;
+    const payload = {
+      nome: val.nome,
+      descricao: val.descricao,
+      icone: val.icone,
+      ordemExibicao: val.ordemExibicao,
+      ativo: val.ativo !== false
+    };
+
+    const edicao = this.categoriaEmEdicao();
+    const obs$ = edicao
+      ? this.api.atualizarCategoria(edicao.id, payload)
+      : this.api.criarCategoria(payload);
+
+    obs$.subscribe({
+      next: (salva) => {
+        this.salvandoCategoria.set(false);
+        this.mensagemSucesso.set(`Tipo / Categoria "${salva.nome}" salva com sucesso!`);
+        this.fecharModalCategoria();
+        this.carregarCategorias();
+      },
+      error: (err) => {
+        this.salvandoCategoria.set(false);
+        this.mensagemErro.set(err.error?.message || 'Erro ao salvar categoria.');
+      }
+    });
+  }
+
+  excluirCategoria(cat: Categoria): void {
+    if (!confirm(`Tem certeza que deseja excluir ou inativar o tipo/categoria "${cat.nome}"?`)) {
+      return;
+    }
+    this.api.excluirCategoria(cat.id).subscribe({
+      next: () => {
+        this.mensagemSucesso.set(`Tipo/Categoria "${cat.nome}" removida ou inativada com sucesso!`);
+        this.carregarCategorias();
+      },
+      error: (err) => {
+        this.mensagemErro.set(err.error?.message || 'Erro ao excluir tipo/categoria.');
       }
     });
   }

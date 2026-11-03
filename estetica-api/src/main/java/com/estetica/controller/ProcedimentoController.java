@@ -29,6 +29,35 @@ public class ProcedimentoController {
         return ResponseEntity.ok(procedimentoService.listarCategorias(setor));
     }
 
+    @GetMapping("/categorias/todas")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFISSIONAL')")
+    @Operation(summary = "Lista todas as categorias (ativas e inativas) para gestão do lojista")
+    public ResponseEntity<List<CategoriaDTO>> listarTodasCategoriasAdmin() {
+        return ResponseEntity.ok(procedimentoService.listarTodasCategoriasAdmin());
+    }
+
+    @PostMapping("/categorias")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Cadastra uma nova categoria / tipo de serviço para o estabelecimento")
+    public ResponseEntity<CategoriaDTO> criarCategoria(@Valid @RequestBody SalvarCategoriaRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(procedimentoService.criarCategoria(req));
+    }
+
+    @PutMapping("/categorias/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Atualiza uma categoria / tipo de serviço existente")
+    public ResponseEntity<CategoriaDTO> atualizarCategoria(@PathVariable Long id, @Valid @RequestBody SalvarCategoriaRequest req) {
+        return ResponseEntity.ok(procedimentoService.atualizarCategoria(id, req));
+    }
+
+    @DeleteMapping("/categorias/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Exclui ou inativa uma categoria / tipo de serviço")
+    public ResponseEntity<Void> excluirCategoria(@PathVariable Long id) {
+        procedimentoService.excluirCategoria(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     @Operation(summary = "Lista procedimentos com filtro opcional por categoria")
     public ResponseEntity<List<ProcedimentoDTO>> listarProcedimentos(
