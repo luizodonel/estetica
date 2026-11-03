@@ -40,3 +40,4 @@ public enum SetorAtuacao {
         this.requerLocacaoEnsaio = requerLocacaoEnsaio;
     }
 }
+

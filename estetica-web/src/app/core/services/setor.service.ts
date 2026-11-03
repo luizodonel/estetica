@@ -451,6 +451,16 @@ export class SetorService {
   termoProfissionais = computed(() => this.config().termoProfissionais);
   termoAgendar = computed(() => this.config().termoAgendar);
   termoProntuario = computed(() => this.config().termoProntuario);
+  termoProntuarioCurto = computed(() => {
+    const p = this.config().termoProntuario;
+    if (p.includes('&')) {
+      return p.split('&')[0].trim();
+    }
+    if (p.includes('/')) {
+      return p.split('/')[0].trim();
+    }
+    return p;
+  });
   placeholderServico = computed(() => this.config().placeholderServico);
   icone = computed(() => this.config().icone);
   recursos = computed(() => this.config().recursos);
@@ -460,3 +470,4 @@ export class SetorService {
     return SETORES_CATALOGO[setor as SetorAtuacao] || SETORES_CATALOGO.CLINICA_ESTETICA;
   }
 }
+
