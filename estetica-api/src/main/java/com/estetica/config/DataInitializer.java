@@ -55,11 +55,23 @@ public class DataInitializer implements CommandLineRunner {
             log.warn("Nota na verificação de constraints de tb_categoria: {}", e.getMessage());
         }
 
-        // Atualiza categorias antigas que eventualmente estejam com setor nulo
+        // Atualiza categorias antigas que eventualmente estejam com setor nulo ou tempo/preço padrão vazios
         List<Categoria> antigas = categoriaRepository.findAll();
         for (Categoria c : antigas) {
+            boolean mudou = false;
             if (c.getSetor() == null) {
                 c.setSetor(com.estetica.model.SetorAtuacao.CLINICA_ESTETICA);
+                mudou = true;
+            }
+            if (c.getDuracaoMinutosPadrao() == null) {
+                c.setDuracaoMinutosPadrao(45);
+                mudou = true;
+            }
+            if (c.getPrecoPadrao() == null) {
+                c.setPrecoPadrao(new java.math.BigDecimal("50.00"));
+                mudou = true;
+            }
+            if (mudou) {
                 categoriaRepository.save(c);
             }
         }
