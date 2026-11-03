@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { TenantService } from '../../../core/services/tenant.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SetorService } from '../../../core/services/setor.service';
 import {
   RelatorioGeralResponse,
   RelatorioEspecialista,
@@ -38,10 +39,10 @@ import {
                 Relatórios Gerenciais
               </span>
               <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-                Relatório de Especialistas & Faturamento
+                Relatório de {{ setorService.termoProfissionais() }} & Faturamento
               </h1>
               <p class="text-xs sm:text-sm text-stone-500 mt-1">
-                Consulte o faturamento, procedimentos realizados, dias e horários de cada especialista ou de toda a equipe.
+                Consulte o faturamento, {{ setorService.termoServicos() }} realizados, dias e horários de cada {{ setorService.termoProfissional() }} ou de toda a equipe.
               </p>
             </div>
 
@@ -327,6 +328,7 @@ export class AdminRelatoriosComponent implements OnInit {
   private api = inject(ApiService);
   tenantService = inject(TenantService);
   authService = inject(AuthService);
+  setorService = inject(SetorService);
 
   carregando = signal<boolean>(true);
   relatorio = signal<RelatorioGeralResponse | null>(null);
@@ -580,3 +582,4 @@ export class AdminRelatoriosComponent implements OnInit {
     }
   }
 }
+

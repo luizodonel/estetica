@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { SetorService } from '../../../core/services/setor.service';
 import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models';
 
 @Component({
@@ -15,13 +16,13 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
-            {{ resumo()?.isAdmin ? 'Gestão Operacional' : 'Meu Painel de Especialista' }}
+            {{ resumo()?.isAdmin ? 'Gestão Operacional' : ('Meu Painel de ' + setorService.termoProfissional()) }}
           </span>
           <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
             {{ resumo()?.isAdmin ? 'Painel Geral & Faturamento' : 'Meus Atendimentos & Faturamento' }}
           </h1>
           <p class="text-xs text-stone-500 mt-1">
-            {{ resumo()?.isAdmin ? 'Métricas e faturamento de todos os especialistas em tempo real.' : 'Consulte seus agendamentos e faturamento das suas sessões realizadas.' }}
+            {{ resumo()?.isAdmin ? ('Métricas e faturamento de ' + setorService.termoProfissionais() + ' em tempo real.') : 'Consulte seus agendamentos e faturamento das suas sessões realizadas.' }}
           </p>
         </div>
 
@@ -126,10 +127,10 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
             <div>
               <span class="text-[10px] uppercase tracking-wider font-bold text-rose-600">Acesso Restrito ao Administrador</span>
               <h2 class="font-serif text-lg sm:text-xl font-bold text-stone-900">
-                Faturamento Discriminado por Especialista
+                Faturamento Discriminado por {{ setorService.termoProfissional() }}
               </h2>
             </div>
-            <span class="text-xs text-stone-400">Total de {{ resumo()?.faturamentoPorEspecialista?.length }} especialistas ativos</span>
+            <span class="text-xs text-stone-400">Total de {{ resumo()?.faturamentoPorEspecialista?.length }} {{ setorService.termoProfissionais() }} ativos</span>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -209,6 +210,7 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
 })
 export class AdminDashboardComponent implements OnInit {
   private api = inject(ApiService);
+  setorService = inject(SetorService);
 
   resumo = signal<DashboardResumo | null>(null);
   assinatura = signal<AssinaturaStatusResponse | null>(null);

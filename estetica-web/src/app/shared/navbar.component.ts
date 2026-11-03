@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { TenantService } from '../core/services/tenant.service';
+import { SetorService } from '../core/services/setor.service';
 
 @Component({
   selector: 'app-navbar',
@@ -30,7 +31,7 @@ import { TenantService } from '../core/services/tenant.service';
               {{ tenantService.nomeEmpresa() }}
             </span>
             <span class="text-[9px] uppercase tracking-widest text-nude-500 font-semibold block mt-1">
-              {{ tenantService.tenant() ? 'Portal Oficial' : 'Portal de Agendamento' }}
+              {{ tenantService.tenant() ? (setorService.config().label + ' ' + setorService.icone()) : 'Agendar.' }}
             </span>
           </div>
         </a>
@@ -44,14 +45,14 @@ import { TenantService } from '../core/services/tenant.service';
               routerLink="/catalogo" 
               routerLinkActive="text-rose-600 bg-rose-50" 
               class="px-3 py-2 rounded-xl hover:text-stone-900 hover:bg-stone-50 transition-all whitespace-nowrap">
-              Procedimentos
+              {{ setorService.termoServicos() }}
             </a>
 
             <a 
               routerLink="/agendar" 
               routerLinkActive="text-rose-600 bg-rose-50" 
               class="px-3 py-2 rounded-xl hover:text-stone-900 hover:bg-stone-50 transition-all whitespace-nowrap">
-              Agendar Consulta
+              {{ setorService.termoAgendar() }}
             </a>
 
             @if (authService.isAuthenticated()) {
@@ -94,7 +95,7 @@ import { TenantService } from '../core/services/tenant.service';
                 routerLinkActive="bg-white text-stone-900 shadow-sm" 
                 class="px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-600 hover:text-stone-900 transition-all whitespace-nowrap flex items-center gap-1.5">
                 <span>📋</span>
-                <span>Prontuários</span>
+                <span>{{ setorService.termoProntuario() }}</span>
               </a>
 
               <a 
@@ -189,8 +190,8 @@ import { TenantService } from '../core/services/tenant.service';
         <div class="lg:hidden border-t border-nude-200 bg-white p-4 space-y-3 animate-fade-in shadow-lg">
           <div class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Atendimento</div>
           <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
-            <a routerLink="/catalogo" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600">Procedimentos</a>
-            <a routerLink="/agendar" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600">Agendar Consulta</a>
+            <a routerLink="/catalogo" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 truncate">{{ setorService.termoServicos() }}</a>
+            <a routerLink="/agendar" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 truncate">{{ setorService.termoAgendar() }}</a>
           </div>
 
           <div class="text-[10px] uppercase font-bold text-stone-400 tracking-wider pt-2">Módulo de Gestão</div>
@@ -202,7 +203,7 @@ import { TenantService } from '../core/services/tenant.service';
               <span>📅</span> Agenda
             </a>
             <a routerLink="/admin/prontuarios" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-1.5">
-              <span>📋</span> Prontuários
+              <span>📋</span> <span class="truncate">{{ setorService.termoProntuario() }}</span>
             </a>
             <a routerLink="/admin/relatorios" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-1.5">
               <span>📈</span> Relatórios
@@ -224,6 +225,7 @@ import { TenantService } from '../core/services/tenant.service';
 export class NavbarComponent {
   authService = inject(AuthService);
   tenantService = inject(TenantService);
+  setorService = inject(SetorService);
   private router = inject(Router);
 
   menuMobileAberto = signal<boolean>(false);

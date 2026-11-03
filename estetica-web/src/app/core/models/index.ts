@@ -2,6 +2,21 @@ export type Role = 'ROLE_CLIENTE' | 'ROLE_PROFISSIONAL' | 'ROLE_ADMIN';
 
 export type StatusAgendamento = 'PENDENTE' | 'CONFIRMADO' | 'CONCLUIDO' | 'CANCELADO' | 'NO_SHOW';
 
+export type SetorAtuacao =
+  | 'CLINICA_ESTETICA'
+  | 'SALAO_BELEZA'
+  | 'BARBEARIA'
+  | 'RESTAURANTE'
+  | 'DENTISTA'
+  | 'MEDICA'
+  | 'TATUAGEM'
+  | 'PSICOLOGIA'
+  | 'NUTRICAO'
+  | 'PILATES_PERSONAL'
+  | 'SPA_MASSOTERAPIA'
+  | 'ESTETICA_AUTOMOTIVA'
+  | 'ESTUDIO_FOTOGRAFICO';
+
 export interface Usuario {
   id: number;
   nome: string;
@@ -13,6 +28,7 @@ export interface Usuario {
   tenantSlug?: string;
   nomeEmpresa?: string;
   logoUrl?: string;
+  setor?: SetorAtuacao;
 }
 
 export interface AuthResponse {
@@ -26,6 +42,7 @@ export interface AuthResponse {
   tenantSlug?: string;
   nomeEmpresa?: string;
   logoUrl?: string;
+  setor?: SetorAtuacao;
 }
 
 export interface PrimeiroAcessoRequest {
@@ -170,6 +187,7 @@ export interface BloqueioAgenda {
 export interface TenantPublicDTO {
   id: number;
   nomeEmpresa: string;
+  setor?: SetorAtuacao;
   slug: string;
   linkPersonalizado: string;
   logoUrl?: string;
@@ -195,6 +213,7 @@ export interface AtualizarBannerRequest {
 
 export interface AtualizarIdentidadeVisualRequest {
   nomeEmpresa?: string;
+  setor?: SetorAtuacao;
   logoUrl?: string;
   corPrimaria?: string;
   corSecundaria?: string;
@@ -203,6 +222,7 @@ export interface AtualizarIdentidadeVisualRequest {
 
 export interface CadastroLojistaRequest {
   nomeEmpresa: string;
+  setor?: SetorAtuacao;
   slug: string;
   logoUrl?: string;
   corPrimaria: string;

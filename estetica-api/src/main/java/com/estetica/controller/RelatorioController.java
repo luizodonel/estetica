@@ -32,3 +32,4 @@ public class RelatorioController {
         return ResponseEntity.ok(relatorioService.gerarRelatorio(dataInicio, dataFim, profissionalId, status));
     }
 }
+

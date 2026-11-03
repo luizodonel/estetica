@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { SetorService } from '../../../core/services/setor.service';
 import { HistoricoAtendimento, Usuario } from '../../../core/models';
 import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
 
@@ -15,10 +16,10 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
       <!-- Cabeçalho -->
       <div class="mb-8">
         <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
-          Prontuário & Histórico de Atendimentos
+          {{ setorService.termoProntuario() }}
         </span>
         <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-          Ficha & Histórico do Cliente
+          Ficha & Histórico do {{ setorService.termoCliente() }}
         </h1>
         <p class="text-xs text-stone-500 mt-1">Consulte o histórico e registre novas anotações de atendimento.</p>
       </div>
@@ -26,7 +27,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
       <!-- Seleção de Paciente Cadastrado -->
       <div class="bg-white rounded-3xl p-6 border border-nude-200 mb-8 shadow-sm">
         <label class="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-2">
-          Selecione o Cliente Cadastrado:
+          Selecione o {{ setorService.termoCliente() }} Cadastrado:
         </label>
         
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -34,7 +35,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
             [ngModel]="clienteId" 
             (ngModelChange)="onClienteChange($event)"
             class="flex-1 p-3 rounded-2xl border border-nude-300 text-xs sm:text-sm font-medium text-stone-800 focus:ring-2 focus:ring-rose-400 focus:outline-none bg-white">
-            <option [ngValue]="null">-- Selecione um Cliente Cadastrado --</option>
+            <option [ngValue]="null">-- Selecione um {{ setorService.termoCliente() }} Cadastrado --</option>
             @for (p of clientes(); track p.id) {
               <option [ngValue]="p.id">
                 {{ p.nome }} • WhatsApp: {{ formatarTelefone(p.telefoneWhatsApp) }} ({{ p.email }})
@@ -53,7 +54,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
         @if (pacienteSelecionado()) {
           <div class="mt-4 p-4 rounded-2xl bg-gradient-to-r from-nude-100 to-rose-50 border border-nude-200 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div>
-              <span class="text-[10px] uppercase font-bold text-rose-600 block">Paciente em Atendimento</span>
+              <span class="text-[10px] uppercase font-bold text-rose-600 block">{{ setorService.termoCliente() }} em Atendimento</span>
               <h4 class="font-serif font-bold text-stone-900 text-base">{{ pacienteSelecionado()?.nome }}</h4>
               <span class="text-stone-500">E-mail: {{ pacienteSelecionado()?.email }}</span>
             </div>
@@ -183,6 +184,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
 })
 export class AdminProntuarioComponent implements OnInit {
   private api = inject(ApiService);
+  setorService = inject(SetorService);
 
   clientes = signal<Usuario[]>([]);
   clienteId: number | null = null;

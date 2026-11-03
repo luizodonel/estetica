@@ -22,6 +22,11 @@ public class ClinicaTenant {
     @Column(name = "nome_empresa", nullable = false, length = 120)
     private String nomeEmpresa;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "setor", length = 50)
+    @Builder.Default
+    private SetorAtuacao setor = SetorAtuacao.CLINICA_ESTETICA;
+
     @Column(nullable = false, unique = true, length = 80)
     private String slug; // Ex: "belavida" -> https://belavida.logistadigital.com.br/
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SetorService } from '../../../core/services/setor.service';
 import { Agendamento, Profissional, StatusAgendamento } from '../../../core/models';
 import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trava-agenda.component';
 
@@ -170,6 +171,7 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
 export class AdminAgendaComponent implements OnInit {
   private api = inject(ApiService);
   auth = inject(AuthService);
+  setorService = inject(SetorService);
 
   dataFiltro = signal<string>(new Date().toISOString().split('T')[0]);
   profissionais = signal<Profissional[]>([]);

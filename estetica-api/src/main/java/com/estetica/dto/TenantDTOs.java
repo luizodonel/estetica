@@ -16,6 +16,8 @@ public class TenantDTOs {
         @Size(min = 3, max = 120, message = "O nome da empresa deve ter entre 3 e 120 caracteres")
         String nomeEmpresa,
 
+        String setor, // Ex: CLINICA_ESTETICA, BARBEARIA, RESTAURANTE, DENTISTA, etc.
+
         @NotBlank(message = "O link/subdomínio exclusivo é obrigatório")
         @Pattern(regexp = "^[a-z0-9-]+$", message = "O subdomínio deve conter apenas letras minúsculas, números e hífens")
         String slug,
@@ -46,6 +48,7 @@ public class TenantDTOs {
     public record TenantPublicDTO(
         Long id,
         String nomeEmpresa,
+        String setor,
         String slug,
         String linkPersonalizado,
         String logoUrl,
@@ -71,6 +74,7 @@ public class TenantDTOs {
 
     public record AtualizarIdentidadeVisualRequest(
         String nomeEmpresa,
+        String setor,
         String logoUrl,
         String corPrimaria,
         String corSecundaria,

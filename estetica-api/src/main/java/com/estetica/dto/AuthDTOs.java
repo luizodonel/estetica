@@ -65,7 +65,8 @@ public class AuthDTOs {
         Boolean primeiroAcesso,
         String tenantSlug,
         String nomeEmpresa,
-        String logoUrl
+        String logoUrl,
+        String setor
     ) {}
 
     public record CriarClienteRequest(

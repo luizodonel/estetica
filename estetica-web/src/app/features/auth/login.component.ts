@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
+import { SetorService } from '../../core/services/setor.service';
 import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive';
 
 interface PixPendenteInfo {
@@ -155,7 +156,7 @@ interface PixPendenteInfo {
                 placeholder="Seu usuário, (61) 98226-1155 ou e-mail" 
                 class="w-full p-3 rounded-xl border border-nude-300 text-xs font-medium focus:ring-2 focus:ring-rose-400 focus:outline-none" />
               <span class="text-[11px] text-stone-400 mt-1 block">
-                Clientes: digite seu WhatsApp. Especialistas e Administradores: login de usuário ou e-mail.
+                {{ setorService.termoClientes() }}: digite seu WhatsApp. {{ setorService.termoProfissionais() }} e Administradores: login de usuário ou e-mail.
               </span>
             </div>
 
@@ -246,6 +247,7 @@ interface PixPendenteInfo {
   `
 })
 export class LoginComponent implements OnDestroy {
+  public setorService = inject(SetorService);
   private auth = inject(AuthService);
   private api = inject(ApiService);
   private router = inject(Router);

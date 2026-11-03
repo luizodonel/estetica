@@ -9,6 +9,7 @@ import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
 import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trava-agenda.component';
 
 import { TenantService } from '../../../core/services/tenant.service';
+import { SetorService } from '../../../core/services/setor.service';
 type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
 
 @Component({
@@ -213,6 +214,30 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
                 <input #fileInputLogoClinica type="file" accept="image/*" (change)="aoSelecionarLogoClinica($event)" class="hidden" />
               </div>
 
+              <!-- Setor / Segmento de Atuação -->
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1.5">
+                  Setor / Nicho de Atuação do Estabelecimento
+                </label>
+                <div class="relative">
+                  <select
+                    formControlName="setor"
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50 font-medium appearance-none cursor-pointer">
+                    @for (s of setorService.listaSetores; track s.id) {
+                      <option [value]="s.id">
+                        {{ s.icone }} {{ s.label }} ({{ s.categoriaGeral }})
+                      </option>
+                    }
+                  </select>
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-stone-400 text-xs">
+                    ▼
+                  </div>
+                </div>
+                <span class="text-[11px] text-stone-400 mt-1 block">
+                  Define automaticamente os termos de clientes ({{ setorService.termoCliente() }}), serviços ({{ setorService.termoServico() }}) e botões de agendamento em todo o sistema.
+                </span>
+              </div>
+
               <!-- Prévia em Tempo Real -->
                 <div class="p-5 rounded-3xl border border-nude-200 bg-stone-50/60 space-y-3">
                   <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Prévia da Barra do Seu Sistema</span>
@@ -236,7 +261,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
                     <button
                       type="button"
                       class="px-4 py-2 rounded-xl text-white font-semibold text-xs shadow-sm bg-rose-600">
-                      Agendar Consulta
+                      {{ setorService.termoAgendar() }}
                     </button>
                   </div>
                 </div>
@@ -879,6 +904,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
 export class AdminGestaoComponent implements OnInit {
   private api = inject(ApiService);
   private tenantService = inject(TenantService);
+  setorService = inject(SetorService);
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
 
@@ -998,6 +1024,7 @@ export class AdminGestaoComponent implements OnInit {
 
     this.formIdentidade = this.fb.group({
       nomeEmpresa: ['', [Validators.required, Validators.minLength(2)]],
+      setor: ['CLINICA_ESTETICA', Validators.required],
       logoUrl: [''],
       corPrimaria: ['#e11d48', Validators.required],
       corSecundaria: ['#f43f5e', Validators.required],
@@ -1032,6 +1059,7 @@ export class AdminGestaoComponent implements OnInit {
         if (t) {
           this.formIdentidade.patchValue({
             nomeEmpresa: t.nomeEmpresa || '',
+            setor: t.setor || 'CLINICA_ESTETICA',
             logoUrl: t.logoUrl || '',
             corPrimaria: t.corPrimaria || '#e11d48',
             corSecundaria: t.corSecundaria || '#f43f5e',

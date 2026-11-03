@@ -76,7 +76,8 @@ public class AuthService {
                 usuario.getPrimeiroAcesso(),
                 t != null ? t.getSlug() : null,
                 t != null ? t.getNomeEmpresa() : null,
-                t != null ? t.getLogoUrl() : null
+                t != null ? t.getLogoUrl() : null,
+                t != null && t.getSetor() != null ? t.getSetor().name() : null
         );
     }
 
@@ -116,6 +117,7 @@ public class AuthService {
                 admin.getTelefoneWhatsApp(),
                 admin.getRole(),
                 admin.getPrimeiroAcesso(),
+                null,
                 null,
                 null,
                 null
@@ -228,6 +230,8 @@ public class AuthService {
         String nomeEmp = tenantLojista != null ? tenantLojista.getNomeEmpresa() : (lojista.getNomeEmpresa() != null ? lojista.getNomeEmpresa() : lojista.getNomeResponsavel());
         String logo = tenantLojista != null ? tenantLojista.getLogoUrl() : lojista.getLogoUrl();
 
+        String setorLojista = lojista.getSetor() != null ? lojista.getSetor().name() : (tenantLojista != null && tenantLojista.getSetor() != null ? tenantLojista.getSetor().name() : "CLINICA_ESTETICA");
+
         return new AuthResponse(
                 token,
                 lojista.getId(),
@@ -238,7 +242,8 @@ public class AuthService {
                 false,
                 lojista.getSlug(),
                 nomeEmp,
-                logo
+                logo,
+                setorLojista
         );
     }
 
@@ -303,7 +308,8 @@ public class AuthService {
                 usuario.getPrimeiroAcesso(),
                 t != null ? t.getSlug() : null,
                 t != null ? t.getNomeEmpresa() : null,
-                t != null ? t.getLogoUrl() : null
+                t != null ? t.getLogoUrl() : null,
+                t != null && t.getSetor() != null ? t.getSetor().name() : null
         );
     }
 
@@ -399,7 +405,8 @@ public class AuthService {
                 false,
                 t != null ? t.getSlug() : null,
                 t != null ? t.getNomeEmpresa() : null,
-                t != null ? t.getLogoUrl() : null
+                t != null ? t.getLogoUrl() : null,
+                t != null && t.getSetor() != null ? t.getSetor().name() : null
         );
     }
 }

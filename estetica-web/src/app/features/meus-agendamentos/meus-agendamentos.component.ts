@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { SetorService } from '../../core/services/setor.service';
 import { Agendamento, StatusAgendamento } from '../../core/models';
 
 @Component({
@@ -16,15 +17,15 @@ import { Agendamento, StatusAgendamento } from '../../core/models';
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
-            Área do Cliente
+            Área do {{ setorService.termoCliente() }}
           </span>
           <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-            Minhas Sessões & Agendamentos
+            Meus Agendamentos
           </h1>
         </div>
 
         <a routerLink="/agendar" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-sm">
-          + Novo Agendamento
+          + {{ setorService.termoAgendar() }}
         </a>
       </div>
 
@@ -73,7 +74,7 @@ import { Agendamento, StatusAgendamento } from '../../core/models';
           <p class="text-sm font-serif font-bold text-stone-800">Nenhum agendamento encontrado.</p>
           <p class="text-xs text-stone-500 mt-1 mb-6">Que tal reservar um momento especial para você hoje?</p>
           <a routerLink="/agendar" class="px-5 py-2.5 rounded-2xl bg-rose-500 text-white font-semibold text-xs hover:bg-rose-600 transition-all shadow-md">
-            Agendar Agora
+            {{ setorService.termoAgendar() }}
           </a>
         </div>
       } @else {
@@ -104,7 +105,7 @@ import { Agendamento, StatusAgendamento } from '../../core/models';
                   </h3>
 
                   <p class="text-xs text-stone-600 mt-1">
-                    Especialista: <strong class="text-stone-800">{{ a.profissionalNome }}</strong> • {{ a.valorCobrado | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+                    {{ setorService.termoProfissional() }}: <strong class="text-stone-800">{{ a.profissionalNome }}</strong> • {{ a.valorCobrado | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
                   </p>
 
                   @if (a.observacoesCliente) {
@@ -171,6 +172,7 @@ import { Agendamento, StatusAgendamento } from '../../core/models';
 })
 export class MeusAgendamentosComponent implements OnInit {
   private api = inject(ApiService);
+  public setorService = inject(SetorService);
 
   agendamentos = signal<Agendamento[]>([]);
   abaAtiva = signal<'proximos' | 'historico'>('proximos');

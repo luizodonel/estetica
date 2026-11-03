@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SetorService } from '../../core/services/setor.service';
 import { Categoria, Procedimento } from '../../core/models';
 import { FormsModule } from '@angular/forms';
 
@@ -137,7 +138,7 @@ import { FormsModule } from '@angular/forms';
           [class.bg-white]="categoriaSelecionada() !== null"
           [class.text-stone-700]="categoriaSelecionada() !== null"
           class="px-4 py-2 rounded-2xl text-xs font-semibold border border-nude-200 whitespace-nowrap shadow-sm hover:border-stone-400 transition-all">
-          Todos os Procedimentos
+          Todos os {{ setorService.termoServicos() }}
         </button>
 
         @for (cat of categorias(); track cat.id) {
@@ -235,6 +236,7 @@ export class CatalogoComponent implements OnInit {
   private api = inject(ApiService);
   private router = inject(Router);
   authService = inject(AuthService);
+  setorService = inject(SetorService);
 
   categorias = signal<Categoria[]>([]);
   procedimentos = signal<Procedimento[]>([]);

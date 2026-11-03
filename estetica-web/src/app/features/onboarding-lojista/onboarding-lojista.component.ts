@@ -1,12 +1,13 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TenantService } from '../../core/services/tenant.service';
+import { SetorService } from '../../core/services/setor.service';
 import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive';
-import { TenantPublicDTO } from '../../core/models';
+import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
 
 @Component({
   selector: 'app-onboarding-lojista',
@@ -19,14 +20,16 @@ import { TenantPublicDTO } from '../../core/models';
         
         <!-- Header da Página Privada -->
         <div class="text-center mb-8">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold uppercase tracking-wider mb-3">
-            ✨ Programa de Parceiros Exclusivo
-          </span>
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900 text-white text-xs font-semibold mb-3 shadow-sm">
+            <span class="font-serif font-black text-sm text-rose-400">Agendar.</span>
+            <span class="text-stone-500">•</span>
+            <span class="text-[11px] font-normal text-stone-300">Plataforma Multi-Nicho para Empresas & Autônomos</span>
+          </div>
           <h1 class="font-serif text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight">
-            Crie sua Plataforma de Agendamentos Online
+            Crie sua Plataforma no Agendar.
           </h1>
           <p class="mt-2 text-xs sm:text-sm text-stone-500 max-w-lg mx-auto leading-relaxed">
-            Configure sua marca, escolha seu link personalizado, defina seu usuário administrador e ative sua loja via PIX.
+            Selecione seu setor de atuação, personalize sua marca e tenha um link exclusivo com inteligência sob medida para o seu nicho.
           </p>
         </div>
 
@@ -101,6 +104,61 @@ import { TenantPublicDTO } from '../../core/models';
                     (input)="aoDigitarNomeEmpresa()"
                     placeholder="Ex: Studio Bella, Espaço Vip, Barbearia Nobre"
                     class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                </div>
+
+                <!-- Setor de Atuação (13 Nichos do Agendar.) -->
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-semibold text-stone-700">
+                      Setor de Atuação do seu Negócio *
+                    </label>
+                    <span class="text-[10px] uppercase font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+                      {{ setorSelecionadoConfig().categoriaGeral }}
+                    </span>
+                  </div>
+
+                  <div class="relative">
+                    <select
+                      formControlName="setor"
+                      class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50 font-medium appearance-none cursor-pointer">
+                      @for (s of setorService.listaSetores; track s.id) {
+                        <option [value]="s.id">
+                          {{ s.icone }} {{ s.label }} ({{ s.categoriaGeral }})
+                        </option>
+                      }
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-stone-400 text-xs">
+                      ▼
+                    </div>
+                  </div>
+
+                  <!-- Card com Resumo de Personalização do Setor -->
+                  <div class="mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-rose-50/60 to-stone-50 border border-rose-100 text-xs space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="font-semibold text-stone-800 flex items-center gap-1.5">
+                        <span class="text-base">{{ setorSelecionadoConfig().icone }}</span>
+                        <span>{{ setorSelecionadoConfig().label }}</span>
+                      </span>
+                      <span class="text-[10px] text-stone-400 font-medium">Personalização Automática</span>
+                    </div>
+                    <p class="text-[11px] text-stone-500 leading-relaxed">
+                      {{ setorSelecionadoConfig().descricao }}
+                    </p>
+                    <div class="grid grid-cols-3 gap-2 pt-1.5 border-t border-rose-100/70 text-[11px]">
+                      <div>
+                        <span class="text-stone-400 block text-[9px] uppercase font-bold">Cliente:</span>
+                        <strong class="text-stone-700">{{ setorSelecionadoConfig().termoCliente }}</strong>
+                      </div>
+                      <div>
+                        <span class="text-stone-400 block text-[9px] uppercase font-bold">Serviço:</span>
+                        <strong class="text-stone-700 truncate block">{{ setorSelecionadoConfig().termoServico }}</strong>
+                      </div>
+                      <div>
+                        <span class="text-stone-400 block text-[9px] uppercase font-bold">Botão:</span>
+                        <strong class="text-rose-600 truncate block">{{ setorSelecionadoConfig().termoAgendar }}</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Link Personalizado / Subdomínio -->
@@ -448,6 +506,7 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private authService = inject(AuthService);
   private tenantService = inject(TenantService);
+  setorService = inject(SetorService);
   private router = inject(Router);
 
   passoAtual = signal<number>(1);
@@ -459,6 +518,11 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
   tenantCriado = signal<TenantPublicDTO | null>(null);
   fazendoUploadLogo = signal<boolean>(false);
   erroUploadLogo = signal<string | null>(null);
+
+  setorSelecionado = signal<SetorAtuacao>('CLINICA_ESTETICA');
+  setorSelecionadoConfig = computed(() => {
+    return this.setorService.obterConfig(this.setorSelecionado());
+  });
 
   // PIX Mercado Pago Signals
   pixPaymentId = signal<string | null>(null);
@@ -486,6 +550,7 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
   private iniciarFormulario(): void {
     this.formLojista = this.fb.group({
       nomeEmpresa: ['', [Validators.required, Validators.minLength(3)]],
+      setor: ['CLINICA_ESTETICA', Validators.required],
       slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
       logoUrl: [''],
       corPrimaria: ['#e11d48', Validators.required],
@@ -495,6 +560,10 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
       email: ['', [Validators.required, Validators.email]],
       telefoneWhatsApp: ['', Validators.required],
       senha: ['', [Validators.required, Validators.minLength(6)]]
+    });
+
+    this.formLojista.get('setor')?.valueChanges.subscribe((val) => {
+      if (val) this.setorSelecionado.set(val);
     });
   }
 

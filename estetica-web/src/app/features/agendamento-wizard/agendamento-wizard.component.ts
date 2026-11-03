@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { TenantService } from '../../core/services/tenant.service';
+import { SetorService } from '../../core/services/setor.service';
 import { Procedimento, Profissional, SlotDisponivel, Usuario } from '../../core/models';
 import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 
@@ -17,13 +19,13 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
       <!-- Cabeçalho do Wizard -->
       <div class="text-center mb-8">
         <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
-          Agendamento Online
+          {{ tenantService.nomeEmpresa() }} • {{ setorService.icone() }} {{ setorService.config().label }}
         </span>
         <h1 class="font-serif text-2xl sm:text-4xl font-bold text-stone-900">
-          Reserve Seu Horário
+          {{ setorService.termoAgendar() }}
         </h1>
         <p class="text-xs sm:text-sm text-stone-500 mt-1.5">
-          Conclua em poucos passos o agendamento do cuidado estético.
+          Conclua em poucos passos o agendamento no seu estabelecimento de preferência.
         </p>
 
         <!-- Banner se for Perfil Administrativo/Especialista -->
@@ -31,7 +33,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
           <div class="inline-flex items-center gap-2 mt-3 px-4 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold">
             <span>🛡️ Modo Recepção / Atendimento</span>
             <span class="opacity-60">•</span>
-            <span>Agendando em nome do cliente</span>
+            <span>Agendando em nome do {{ setorService.termoCliente() }}</span>
           </div>
         }
       </div>
@@ -58,7 +60,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               class="w-8 h-8 rounded-full border-2 border-rose-500 flex items-center justify-center font-bold text-xs shadow-sm transition-all">
               1
             </button>
-            <span class="text-[10px] font-semibold mt-1 text-stone-700 hidden sm:block">Serviço</span>
+            <span class="text-[10px] font-semibold mt-1 text-stone-700 hidden sm:block truncate max-w-[80px] text-center">{{ setorService.termoServico() }}</span>
           </div>
 
           <!-- Passo 2 -->
@@ -73,7 +75,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               class="w-8 h-8 rounded-full border-2 border-nude-300 flex items-center justify-center font-bold text-xs shadow-sm transition-all disabled:opacity-50">
               2
             </button>
-            <span class="text-[10px] font-semibold mt-1 text-stone-700 hidden sm:block">Especialista</span>
+            <span class="text-[10px] font-semibold mt-1 text-stone-700 hidden sm:block truncate max-w-[80px] text-center">{{ setorService.termoProfissional() }}</span>
           </div>
 
           <!-- Passo 3 -->
@@ -113,12 +115,12 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
       <div class="bg-white rounded-3xl p-6 sm:p-8 border border-nude-200 shadow-sm transition-all">
         
         <!-- ========================================== -->
-        <!-- PASSO 1: SELEÇÃO DE PROCEDIMENTO -->
+        <!-- PASSO 1: SELEÇÃO DE PROCEDIMENTO / SERVIÇO -->
         <!-- ========================================== -->
         @if (passoAtual() === 1) {
           <div>
-            <h2 class="font-serif text-xl font-bold text-stone-900 mb-2">1. Escolha o Procedimento</h2>
-            <p class="text-xs text-stone-500 mb-6">Selecione o tratamento estético que será realizado.</p>
+            <h2 class="font-serif text-xl font-bold text-stone-900 mb-2">1. Escolha o {{ setorService.termoServico() }}</h2>
+            <p class="text-xs text-stone-500 mb-6">Selecione a opção desejada para o seu atendimento.</p>
 
             <div class="space-y-3">
               @for (proc of procedimentos(); track proc.id) {
@@ -157,7 +159,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 [disabled]="!procedimentoSelecionado()"
                 (click)="avancarParaPasso2()"
                 class="px-6 py-3 rounded-2xl bg-stone-900 text-white font-semibold text-xs sm:text-sm hover:bg-stone-800 disabled:opacity-40 transition-all shadow-md">
-                Próximo: Escolher Especialista →
+                Próximo: Escolher {{ setorService.termoProfissional() }} →
               </button>
             </div>
           </div>
@@ -168,8 +170,8 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
         <!-- ========================================== -->
         @if (passoAtual() === 2) {
           <div>
-            <h2 class="font-serif text-xl font-bold text-stone-900 mb-2">2. Escolha o Especialista</h2>
-            <p class="text-xs text-stone-500 mb-6">Prefere atendimento com uma profissional específica ou o horário mais rápido?</p>
+            <h2 class="font-serif text-xl font-bold text-stone-900 mb-2">2. Escolha o {{ setorService.termoProfissional() }}</h2>
+            <p class="text-xs text-stone-500 mb-6">Prefere atendimento com alguém específico ou o horário mais rápido disponível?</p>
 
             <div class="space-y-3">
               <!-- Opção "Primeiro Horário Disponível" -->
@@ -303,13 +305,13 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
             <h2 class="font-serif text-xl font-bold text-stone-900 mb-2">4. Resumo e Confirmação</h2>
             <p class="text-xs text-stone-500 mb-6">Confira os detalhes da sessão antes de confirmar o agendamento.</p>
 
-            <!-- Seletor Obrigatório de Paciente para Administradores e Especialistas -->
+            <!-- Seletor Obrigatório de Paciente/Cliente para Administradores e Especialistas -->
             @if (authService.isAdminOrProfissional()) {
               <div class="mb-6 p-5 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm">
                 <div class="flex items-center gap-2 mb-2">
                   <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
                   <label class="block text-xs font-bold uppercase tracking-wider text-amber-900">
-                    Selecione o Paciente para quem está marcando a consulta:
+                    Selecione o {{ setorService.termoCliente() }} para quem está agendando:
                   </label>
                 </div>
                 
@@ -317,7 +319,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                   [ngModel]="clienteIdSelecionado"
                   (ngModelChange)="onClienteSelecionadoChange($event)"
                   class="w-full p-3 rounded-xl border border-amber-300 text-xs sm:text-sm font-semibold text-stone-800 bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none">
-                  <option [ngValue]="null">-- Selecione o Cliente Cadastrado --</option>
+                  <option [ngValue]="null">-- Selecione o {{ setorService.termoCliente() }} Cadastrado --</option>
                   @for (cli of clientes(); track cli.id) {
                     <option [ngValue]="cli.id">
                       {{ cli.nome }} • WhatsApp: {{ formatarTelefone(cli.telefoneWhatsApp) }} ({{ cli.email }})
@@ -327,13 +329,13 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 
                 @if (clienteIdSelecionado && pacienteSelecionado()) {
                   <div class="mt-3 text-xs text-amber-900 font-medium flex items-center gap-2">
-                    <span>✓ Cliente Selecionado:</span>
+                    <span>✓ {{ setorService.termoCliente() }} Selecionado:</span>
                     <strong>{{ pacienteSelecionado()?.nome }}</strong>
                     <span class="text-stone-500">({{ pacienteSelecionado()?.telefoneWhatsApp }})</span>
                   </div>
                 } @else {
                   <p class="text-xs text-rose-600 mt-2 font-semibold">
-                    * Obrigatório: você deve selecionar o paciente antes de confirmar.
+                    * Obrigatório: você deve selecionar o {{ setorService.termoCliente() }} antes de confirmar.
                   </p>
                 }
               </div>
@@ -344,7 +346,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               
               @if (authService.isAdminOrProfissional() && pacienteSelecionado()) {
                 <div class="border-b border-nude-200/80 pb-3">
-                  <span class="text-[10px] uppercase font-bold tracking-wider text-rose-600 block">Paciente / Beneficiário</span>
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-rose-600 block">{{ setorService.termoCliente() }} / Beneficiário</span>
                   <h4 class="font-serif text-base font-bold text-stone-900">{{ pacienteSelecionado()?.nome }}</h4>
                   <span class="text-xs text-stone-500">WhatsApp: {{ pacienteSelecionado()?.telefoneWhatsApp }} • E-mail: {{ pacienteSelecionado()?.email }}</span>
                 </div>
@@ -352,7 +354,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 
               <div class="flex items-start justify-between border-b border-nude-200/80 pb-4">
                 <div>
-                  <span class="text-[10px] uppercase font-bold tracking-wider text-rose-600 block">Procedimento</span>
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-rose-600 block">{{ setorService.termoServico() }}</span>
                   <h3 class="font-serif text-lg font-bold text-stone-900">{{ procedimentoSelecionado()?.titulo }}</h3>
                   <span class="text-xs text-stone-500">Duração estimada: {{ procedimentoSelecionado()?.duracaoMinutos }} minutos</span>
                 </div>
@@ -363,7 +365,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-nude-200/80 pb-4 text-xs">
                 <div>
-                  <span class="text-[10px] uppercase font-bold tracking-wider text-stone-400 block">Especialista</span>
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-stone-400 block">{{ setorService.termoProfissional() }}</span>
                   <span class="font-semibold text-stone-800 text-sm">{{ slotSelecionado()?.profissionalNome }}</span>
                 </div>
                 <div>
@@ -374,15 +376,78 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 </div>
               </div>
 
+              <!-- Funcionalidade Específica: Estética Automotiva (Modelo e Placa) -->
+              @if (setorService.recursos().temVeiculoPlaca) {
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                  <label class="block text-xs font-semibold text-slate-800">
+                    🚗 Modelo e Placa do Veículo (Obrigatório):
+                  </label>
+                  <input
+                    type="text"
+                    [(ngModel)]="veiculoPlaca"
+                    placeholder="Ex: Honda Civic Preto - Placa ABC-1234"
+                    class="w-full p-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-slate-500 focus:outline-none" />
+                </div>
+              }
+
+              <!-- Funcionalidade Específica: Restaurante (Lugares / Pessoas na Mesa) -->
+              @if (setorService.recursos().temMesaReserva) {
+                <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1">
+                  <label class="block text-xs font-semibold text-amber-900">
+                    👥 Quantidade de Pessoas na Mesa:
+                  </label>
+                  <select
+                    [(ngModel)]="pessoasMesa"
+                    class="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-medium">
+                    <option [value]="1">1 pessoa (Mesa Individual)</option>
+                    <option [value]="2">2 pessoas (Casal / Par)</option>
+                    <option [value]="3">3 pessoas</option>
+                    <option [value]="4">4 pessoas (Família / Grupo)</option>
+                    <option [value]="6">6 pessoas (Mesa Grande)</option>
+                    <option [value]="8">8 pessoas</option>
+                    <option [value]="10">10+ pessoas (Reserva Especial)</option>
+                  </select>
+                </div>
+              }
+
+              <!-- Funcionalidade Específica: Estúdio Fotográfico (Locação Ensaio) -->
+              @if (setorService.recursos().temLocacaoEnsaio) {
+                <div class="p-3.5 rounded-xl bg-violet-50/70 border border-violet-200 space-y-2">
+                  <label class="block text-xs font-semibold text-violet-900">
+                    📸 Locação do Ensaio Fotográfico:
+                  </label>
+                  <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button
+                      type="button"
+                      (click)="locacaoEnsaio = 'Estúdio Interno'"
+                      [class.bg-violet-700]="locacaoEnsaio === 'Estúdio Interno'"
+                      [class.text-white]="locacaoEnsaio === 'Estúdio Interno'"
+                      [class.bg-white]="locacaoEnsaio !== 'Estúdio Interno'"
+                      class="py-2 px-3 rounded-xl border border-violet-300 font-semibold transition-all">
+                      🏢 Estúdio Interno
+                    </button>
+                    <button
+                      type="button"
+                      (click)="locacaoEnsaio = 'Locação Externa'"
+                      [class.bg-violet-700]="locacaoEnsaio === 'Locação Externa'"
+                      [class.text-white]="locacaoEnsaio === 'Locação Externa'"
+                      [class.bg-white]="locacaoEnsaio !== 'Locação Externa'"
+                      class="py-2 px-3 rounded-xl border border-violet-300 font-semibold transition-all">
+                      🌳 Locação Externa
+                    </button>
+                  </div>
+                </div>
+              }
+
               <!-- Observações -->
               <div>
                 <label class="block text-xs font-semibold text-stone-700 mb-1">
-                  Observações ou Recomendações Pré-Consulta (opcional):
+                  Observações ou Recomendações Adicionais (opcional):
                 </label>
                 <textarea 
                   [(ngModel)]="observacoesCliente"
                   rows="2"
-                  placeholder="Ex: Primeira vez fazendo este tratamento, pele com tendência a acne..."
+                  placeholder="Informações adicionais para a sua sessão..."
                   class="w-full p-3 rounded-xl border border-nude-300 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none"></textarea>
               </div>
 
@@ -428,6 +493,8 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 export class AgendamentoWizardComponent implements OnInit {
   private api = inject(ApiService);
   authService = inject(AuthService);
+  tenantService = inject(TenantService);
+  setorService = inject(SetorService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -441,6 +508,12 @@ export class AgendamentoWizardComponent implements OnInit {
   clientes = signal<Usuario[]>([]);
   clienteIdSelecionado: number | null = null;
   pacienteSelecionado = signal<Usuario | null>(null);
+
+  // Campos condicionais por nicho (SaaS Agendar.)
+  veiculoPlaca = '';
+  pessoasMesa: number = 2;
+  locacaoEnsaio: string = 'Estúdio Interno';
+  observacoesCliente = '';
 
   private obterDataLocal(): string {
     const hoje = new Date();
@@ -457,7 +530,6 @@ export class AgendamentoWizardComponent implements OnInit {
   slotSelecionado = signal<SlotDisponivel | null>(null);
   carregandoSlots = signal<boolean>(false);
 
-  observacoesCliente = '';
   salvando = signal<boolean>(false);
   erroAgendamento = signal<string | null>(null);
 
@@ -595,7 +667,7 @@ export class AgendamentoWizardComponent implements OnInit {
     }
 
     if (this.authService.isAdminOrProfissional() && !this.clienteIdSelecionado) {
-      this.erroAgendamento.set('Como administrador ou especialista, selecione o paciente para quem a consulta será agendada.');
+      this.erroAgendamento.set(`Como administrador ou especialista, selecione o ${this.setorService.termoCliente()} para quem o atendimento será agendado.`);
       return;
     }
 
@@ -609,12 +681,23 @@ export class AgendamentoWizardComponent implements OnInit {
     const horaInicioLimpa = slot.horarioInicio.length === 5 ? slot.horarioInicio + ':00' : slot.horarioInicio;
     const dataHoraInicio = `${this.dataSelecionada()}T${horaInicioLimpa}`;
 
+    let obsFinais = this.observacoesCliente ? this.observacoesCliente.trim() : '';
+    if (this.setorService.recursos().temVeiculoPlaca && this.veiculoPlaca) {
+      obsFinais = `[Veículo: ${this.veiculoPlaca.trim()}] ` + obsFinais;
+    }
+    if (this.setorService.recursos().temMesaReserva && this.pessoasMesa) {
+      obsFinais = `[Mesa para ${this.pessoasMesa} pessoas] ` + obsFinais;
+    }
+    if (this.setorService.recursos().temLocacaoEnsaio && this.locacaoEnsaio) {
+      obsFinais = `[Locação: ${this.locacaoEnsaio}] ` + obsFinais;
+    }
+
     this.api.criarAgendamento({
       clienteId: this.authService.isAdminOrProfissional() ? (this.clienteIdSelecionado || undefined) : undefined,
       procedimentoId: proc.id,
       profissionalId: slot.profissionalId,
       dataHoraInicio: dataHoraInicio,
-      observacoesCliente: this.observacoesCliente
+      observacoesCliente: obsFinais.trim() || undefined
     }).subscribe({
       next: (agendamento) => {
         this.salvando.set(false);

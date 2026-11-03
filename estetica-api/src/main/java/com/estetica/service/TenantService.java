@@ -82,9 +82,19 @@ public class TenantService {
         String linkPersonalizado = "https://" + cleanSlug + ".logistadigital.com.br/";
         String linkLogin = "https://" + cleanSlug + ".logistadigital.com.br/login";
 
+        com.estetica.model.SetorAtuacao setorAtuacao = com.estetica.model.SetorAtuacao.CLINICA_ESTETICA;
+        if (request.setor() != null && !request.setor().isBlank()) {
+            try {
+                setorAtuacao = com.estetica.model.SetorAtuacao.valueOf(request.setor().trim().toUpperCase());
+            } catch (Exception ignored) {
+                setorAtuacao = com.estetica.model.SetorAtuacao.CLINICA_ESTETICA;
+            }
+        }
+
         // 1. Salva o Lojista na tabela dedicada tb_lojista (separado de usuários comuns)
         com.estetica.model.Lojista lojista = com.estetica.model.Lojista.builder()
                 .nomeEmpresa(request.nomeEmpresa().trim())
+                .setor(setorAtuacao)
                 .slug(cleanSlug)
                 .linkPersonalizado(linkPersonalizado)
                 .linkLogin(linkLogin)
@@ -102,9 +112,10 @@ public class TenantService {
                 .build();
         lojista = lojistaRepository.save(lojista);
 
-        // 2. Salva a Clínica / Tenant da Loja vinculada ao Lojista
+        // 2. Salva o Estabelecimento / Tenant da Loja vinculada ao Lojista
         ClinicaTenant tenant = ClinicaTenant.builder()
                 .nomeEmpresa(request.nomeEmpresa().trim())
+                .setor(setorAtuacao)
                 .slug(cleanSlug)
                 .linkPersonalizado(linkPersonalizado)
                 .logoUrl(request.logoUrl() != null && !request.logoUrl().isBlank() ? request.logoUrl().trim() : null)
@@ -327,9 +338,11 @@ public class TenantService {
         if (t.getDataVencimento() != null) {
             diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(LocalDateTime.now().toLocalDate(), t.getDataVencimento().toLocalDate());
         }
+        String setorNome = t.getSetor() != null ? t.getSetor().name() : "CLINICA_ESTETICA";
         return new TenantPublicDTO(
                 t.getId(),
                 t.getNomeEmpresa(),
+                setorNome,
                 t.getSlug(),
                 t.getLinkPersonalizado(),
                 t.getLogoUrl(),
@@ -385,6 +398,17 @@ public class TenantService {
 
         if (req.nomeEmpresa() != null && !req.nomeEmpresa().isBlank()) {
             tenant.setNomeEmpresa(req.nomeEmpresa().trim());
+        }
+
+        if (req.setor() != null && !req.setor().isBlank()) {
+            try {
+                com.estetica.model.SetorAtuacao st = com.estetica.model.SetorAtuacao.valueOf(req.setor().trim().toUpperCase());
+                tenant.setSetor(st);
+                if (tenant.getLojista() != null) {
+                    tenant.getLojista().setSetor(st);
+                    lojistaRepository.save(tenant.getLojista());
+                }
+            } catch (Exception ignored) {}
         }
 
         if (req.logoUrl() != null) {

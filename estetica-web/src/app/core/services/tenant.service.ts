@@ -24,7 +24,7 @@ export class TenantService {
         } catch {}
       }
     }
-    return 'Portal de Agendamento';
+    return 'Agendar.';
   });
 
   logoUrl = computed(() => {
@@ -109,7 +109,7 @@ export class TenantService {
 
     // Atualiza o título da página
     if (tenant.nomeEmpresa) {
-      document.title = `${tenant.nomeEmpresa} | Agendamento Online`;
+      document.title = `${tenant.nomeEmpresa} | Agendar.`;
     }
 
     // Injeta as cores originais da identidade da plataforma no elemento raiz (:root)

@@ -45,3 +45,4 @@ public class RelatorioDTOs {
         List<RelatorioEspecialistaDTO> especialistas
     ) {}
 }
+
