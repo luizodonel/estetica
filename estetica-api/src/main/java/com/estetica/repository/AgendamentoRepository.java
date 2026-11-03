@@ -99,5 +99,23 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.dataHoraInicio BETWEEN :inicio AND :fim")
     long countAgendamentosNoPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim);
+
+    // Consulta consolidada para Relatórios Financeiros e Operacionais por Especialista
+    @Query("SELECT a FROM Agendamento a " +
+           "JOIN FETCH a.procedimento p " +
+           "LEFT JOIN FETCH p.categoria " +
+           "JOIN FETCH a.profissional prof " +
+           "JOIN FETCH a.cliente c " +
+           "WHERE (:tenantId IS NULL OR a.tenant.id = :tenantId) " +
+           "AND (:profissionalId IS NULL OR prof.id = :profissionalId) " +
+           "AND a.dataHoraInicio >= :inicio " +
+           "AND a.dataHoraInicio <= :fim " +
+           "AND (:status IS NULL OR a.status = :status) " +
+           "ORDER BY prof.nome ASC, a.dataHoraInicio ASC")
+    List<Agendamento> findAgendamentosParaRelatorio(@Param("tenantId") Long tenantId,
+                                                   @Param("profissionalId") Long profissionalId,
+                                                   @Param("inicio") LocalDateTime inicio,
+                                                   @Param("fim") LocalDateTime fim,
+                                                   @Param("status") StatusAgendamento status);
 }
 

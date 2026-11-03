@@ -11,10 +11,36 @@ export class TenantService {
   tenant = signal<TenantPublicDTO | null>(null);
   carregando = signal<boolean>(false);
 
-  nomeEmpresa = computed(() => this.tenant()?.nomeEmpresa || "L'Élégance");
+  nomeEmpresa = computed(() => {
+    const tNome = this.tenant()?.nomeEmpresa;
+    if (tNome) return tNome;
+
+    if (typeof localStorage !== 'undefined') {
+      const storedUser = localStorage.getItem('estetica_user_data');
+      if (storedUser) {
+        try {
+          const u = JSON.parse(storedUser);
+          if (u.nomeEmpresa) return u.nomeEmpresa;
+        } catch {}
+      }
+    }
+    return 'Portal de Agendamento';
+  });
+
   logoUrl = computed(() => {
     const raw = this.tenant()?.logoUrl;
-    return raw ? this.api.formatarUrlImagem(raw) : null;
+    if (raw) return this.api.formatarUrlImagem(raw);
+
+    if (typeof localStorage !== 'undefined') {
+      const storedUser = localStorage.getItem('estetica_user_data');
+      if (storedUser) {
+        try {
+          const u = JSON.parse(storedUser);
+          if (u.logoUrl) return this.api.formatarUrlImagem(u.logoUrl);
+        } catch {}
+      }
+    }
+    return null;
   });
   corPrimaria = computed(() => '#e11d48');
   corSecundaria = computed(() => '#f43f5e');
@@ -45,6 +71,20 @@ export class TenantService {
       if (subdominio && !['estetica', 'www', 'api', 'app', 'painel'].includes(subdominio)) {
         this.carregarTenant(subdominio);
         return;
+      }
+    }
+
+    // 3. Tenta extrair do usuário logado armazenado localmente
+    if (typeof localStorage !== 'undefined') {
+      const storedUser = localStorage.getItem('estetica_user_data');
+      if (storedUser) {
+        try {
+          const u = JSON.parse(storedUser);
+          if (u.tenantSlug) {
+            this.carregarTenant(u.tenantSlug);
+            return;
+          }
+        } catch {}
       }
     }
   }

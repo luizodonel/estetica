@@ -15,13 +15,13 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
-            {{ resumo()?.isAdmin ? 'Gestão Operacional da Clínica' : 'Meu Painel de Especialista' }}
+            {{ resumo()?.isAdmin ? 'Gestão Operacional' : 'Meu Painel de Especialista' }}
           </span>
           <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
             {{ resumo()?.isAdmin ? 'Painel Geral & Faturamento' : 'Meus Atendimentos & Faturamento' }}
           </h1>
           <p class="text-xs text-stone-500 mt-1">
-            {{ resumo()?.isAdmin ? 'Métricas da clínica e faturamento de todos os especialistas em tempo real.' : 'Consulte seus agendamentos e faturamento das suas sessões realizadas.' }}
+            {{ resumo()?.isAdmin ? 'Métricas e faturamento de todos os especialistas em tempo real.' : 'Consulte seus agendamentos e faturamento das suas sessões realizadas.' }}
           </p>
         </div>
 
@@ -29,6 +29,9 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
           @if (resumo()?.isAdmin) {
             <a routerLink="/admin/gestao" class="px-4 py-2 rounded-xl bg-white border border-nude-300 text-stone-700 font-semibold text-xs hover:bg-stone-50 transition-all shadow-sm">
               ⚙️ Cadastros & Gestão
+            </a>
+            <a routerLink="/admin/relatorios" class="px-4 py-2 rounded-xl bg-white border border-rose-300 text-rose-700 font-semibold text-xs hover:bg-rose-50 transition-all shadow-sm">
+              📈 Relatórios & PDF
             </a>
           }
           <a routerLink="/admin/agenda" class="px-4 py-2 rounded-xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-sm">
@@ -105,7 +108,7 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
         <!-- Card 4: Faturamento (Geral para Admin ou Individual para Especialista) -->
         <div class="bg-gradient-to-br from-rose-50 to-champagne-50 rounded-3xl p-5 border border-rose-200 shadow-sm">
           <span class="text-[10px] uppercase tracking-wider font-bold text-rose-700 block mb-1">
-            {{ resumo()?.isAdmin ? 'Faturamento Total da Clínica' : 'Meu Faturamento Hoje' }}
+            {{ resumo()?.isAdmin ? 'Faturamento Total' : 'Meu Faturamento Hoje' }}
           </span>
           <div class="flex items-baseline gap-2">
             <span class="text-xl sm:text-2xl font-serif font-black text-rose-900">
@@ -165,7 +168,7 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
       <!-- Próximos Atendimentos Programados -->
       <div class="bg-white rounded-3xl p-6 sm:p-8 border border-nude-200 shadow-sm">
         <h2 class="font-serif text-lg font-bold text-stone-900 mb-4">
-          {{ resumo()?.isAdmin ? 'Próximos Atendimentos da Clínica' : 'Minhas Próximas Sessões' }}
+          {{ resumo()?.isAdmin ? 'Próximos Atendimentos' : 'Minhas Próximas Sessões' }}
         </h2>
 
         @if (carregando()) {

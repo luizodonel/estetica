@@ -10,6 +10,9 @@ export interface Usuario {
   role: Role;
   ativo?: boolean;
   primeiroAcesso?: boolean;
+  tenantSlug?: string;
+  nomeEmpresa?: string;
+  logoUrl?: string;
 }
 
 export interface AuthResponse {
@@ -20,6 +23,9 @@ export interface AuthResponse {
   telefoneWhatsApp: string;
   role: Role;
   primeiroAcesso?: boolean;
+  tenantSlug?: string;
+  nomeEmpresa?: string;
+  logoUrl?: string;
 }
 
 export interface PrimeiroAcessoRequest {
@@ -242,6 +248,43 @@ export interface AssinaturaStatusResponse {
   paymentId?: string;
   pixCopiaCola?: string;
   pixQrCodeBase64?: string;
+}
+
+export interface RelatorioEspecialistaItem {
+  agendamentoId: number;
+  dataHoraInicio: string;
+  dataHoraFim: string;
+  clienteNome: string;
+  clienteWhatsApp: string;
+  procedimentoTitulo: string;
+  categoriaNome: string;
+  duracaoMinutos: number;
+  valorCobrado: number;
+  status: string;
+  notasInternas?: string;
+}
+
+export interface RelatorioEspecialista {
+  profissionalId: number;
+  profissionalNome: string;
+  especialidade: string;
+  fotoUrl?: string;
+  corIdentificacao?: string;
+  totalAtendimentos: number;
+  totalFaturado: number;
+  ticketMedio: number;
+  atendimentos: RelatorioEspecialistaItem[];
+}
+
+export interface RelatorioGeralResponse {
+  nomeEmpresa: string;
+  logoUrl?: string;
+  dataInicio: string;
+  dataFim: string;
+  totalAtendimentosGeral: number;
+  totalFaturadoGeral: number;
+  ticketMedioGeral: number;
+  especialistas: RelatorioEspecialista[];
 }
 
 

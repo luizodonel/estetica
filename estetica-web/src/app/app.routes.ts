@@ -41,6 +41,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/admin/admin-gestao/admin-gestao.component').then(m => m.AdminGestaoComponent)
   },
   {
+    path: 'admin/relatorios',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/admin-relatorios/admin-relatorios.component').then(m => m.AdminRelatoriosComponent)
+  },
+  {
     path: 'admin/assinatura',
     canActivate: [adminGuard],
     loadComponent: () => import('./features/admin/admin-assinatura/admin-assinatura.component').then(m => m.AdminAssinaturaComponent)

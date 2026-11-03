@@ -66,7 +66,10 @@ export class AuthService {
       email: res.email,
       telefoneWhatsApp: res.telefoneWhatsApp,
       role: res.role,
-      ativo: true
+      ativo: true,
+      tenantSlug: res.tenantSlug,
+      nomeEmpresa: res.nomeEmpresa,
+      logoUrl: res.logoUrl
     };
     localStorage.setItem(this.TOKEN_KEY, res.token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));

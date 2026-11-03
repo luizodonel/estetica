@@ -31,12 +31,12 @@ public class MercadoPagoService {
     }
 
     public Map<String, Object> criarPagamentoPix(ClinicaTenant tenant, com.estetica.model.Lojista lojista, BigDecimal valor) {
-        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Clínica");
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Estabelecimento");
         return criarPagamentoPix(tenant, lojista, valor, "Ativação Sistema Lojista Digital - " + nomeEmpresa);
     }
 
     public Map<String, Object> criarPagamentoPix(ClinicaTenant tenant, com.estetica.model.Lojista lojista, BigDecimal valor, String descricao) {
-        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Clínica");
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Estabelecimento");
         String slug = lojista != null ? lojista.getSlug() : (tenant != null ? tenant.getSlug() : "clinica");
         String externalRef = lojista != null ? "LOJISTA-" + lojista.getId() : (tenant != null ? "TENANT-" + tenant.getId() : "REF-PIX");
 

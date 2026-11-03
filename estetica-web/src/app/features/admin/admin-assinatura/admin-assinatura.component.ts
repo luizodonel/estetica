@@ -34,7 +34,7 @@ import { AssinaturaStatusResponse } from '../../../core/models';
                 Minha Assinatura & Renovação
               </h1>
               <p class="text-xs sm:text-sm text-stone-500 mt-1">
-                Acompanhe o status do plano da clínica <strong class="text-stone-800">{{ dados()?.nomeEmpresa || tenantService.nomeEmpresa() }}</strong>.
+                Acompanhe o status do plano de <strong class="text-stone-800">{{ dados()?.nomeEmpresa || tenantService.nomeEmpresa() }}</strong>.
               </p>
             </div>
 
@@ -410,3 +410,4 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
     }
   }
 }
+

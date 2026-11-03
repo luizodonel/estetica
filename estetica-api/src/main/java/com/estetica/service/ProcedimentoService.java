@@ -94,7 +94,7 @@ public class ProcedimentoService {
 
         ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         if (tenant != null && p.getTenant() != null && !p.getTenant().getId().equals(tenant.getId())) {
-            throw new com.estetica.exception.RegraNegocioException("Acesso negado: Este procedimento pertence a outra clínica.");
+            throw new com.estetica.exception.RegraNegocioException("Acesso negado: Este procedimento pertence a outro estabelecimento.");
         }
 
         Categoria cat = categoriaRepository.findById(request.categoriaId())

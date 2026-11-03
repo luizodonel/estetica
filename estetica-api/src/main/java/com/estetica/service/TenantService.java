@@ -296,7 +296,7 @@ public class TenantService {
     public TenantPublicDTO buscarPorSlug(String slug) {
         String cleanSlug = normalizarSlug(slug);
         ClinicaTenant tenant = tenantRepository.findBySlugIgnoreCase(cleanSlug)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Loja ou clínica parceira não encontrada com o link: " + slug));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado com o link: " + slug));
         return toPublicDTO(tenant);
     }
 
@@ -364,7 +364,7 @@ public class TenantService {
         ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         if (tenant == null) {
             tenant = tenantRepository.findAll().stream().findFirst()
-                    .orElseThrow(() -> new RecursoNaoEncontradoException("Clínica não encontrada."));
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado."));
         }
         if (req.bannerTag() != null) tenant.setBannerTag(req.bannerTag().trim());
         if (req.bannerTitulo() != null) tenant.setBannerTitulo(req.bannerTitulo().trim());
@@ -380,7 +380,7 @@ public class TenantService {
         ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         if (tenant == null) {
             tenant = tenantRepository.findAll().stream().findFirst()
-                    .orElseThrow(() -> new RecursoNaoEncontradoException("Clínica não encontrada."));
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado."));
         }
 
         if (req.nomeEmpresa() != null && !req.nomeEmpresa().isBlank()) {
@@ -587,7 +587,7 @@ public class TenantService {
             }
         }
 
-        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Clínica");
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Estabelecimento");
         LocalDateTime agora = LocalDateTime.now();
 
         // Força a geração imediata do Pix no Mercado Pago

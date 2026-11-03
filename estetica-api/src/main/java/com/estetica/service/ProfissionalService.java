@@ -182,7 +182,7 @@ public class ProfissionalService {
 
         ClinicaTenant adminTenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         if (adminTenant != null && prof.getTenant() != null && !prof.getTenant().getId().equals(adminTenant.getId())) {
-            throw new RegraNegocioException("Acesso negado: Este especialista pertence a outra clínica parceira.");
+            throw new RegraNegocioException("Acesso negado: Este especialista pertence a outro estabelecimento parceiro.");
         }
 
         prof.setNome(request.nome().trim());

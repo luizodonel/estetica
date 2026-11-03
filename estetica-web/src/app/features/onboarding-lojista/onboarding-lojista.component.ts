@@ -23,7 +23,7 @@ import { TenantPublicDTO } from '../../core/models';
             ✨ Programa de Parceiros Exclusivo
           </span>
           <h1 class="font-serif text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight">
-            Crie sua Clínica de Estética Online
+            Crie sua Plataforma de Agendamentos Online
           </h1>
           <p class="mt-2 text-xs sm:text-sm text-stone-500 max-w-lg mx-auto leading-relaxed">
             Configure sua marca, escolha seu link personalizado, defina seu usuário administrador e ative sua loja via PIX.
@@ -87,19 +87,19 @@ import { TenantPublicDTO } from '../../core/models';
               <div class="space-y-6 animate-fade-in">
                 <div>
                   <h2 class="font-serif text-xl font-bold text-stone-900 mb-1">Identidade da sua Empresa</h2>
-                  <p class="text-xs text-stone-500">Defina o nome da sua clínica e o endereço web exclusivo que seus clientes irão acessar.</p>
+                  <p class="text-xs text-stone-500">Defina o nome do seu estabelecimento e o endereço web exclusivo que seus clientes irão acessar.</p>
                 </div>
 
                 <!-- Nome da Empresa -->
                 <div>
                   <label class="block text-xs font-semibold text-stone-700 mb-1.5">
-                    Nome da Clínica ou Estética *
+                    Nome do Estabelecimento / Espaço *
                   </label>
                   <input
                     type="text"
                     formControlName="nomeEmpresa"
                     (input)="aoDigitarNomeEmpresa()"
-                    placeholder="Ex: Clínica Bela Vida"
+                    placeholder="Ex: Studio Bella, Espaço Vip, Barbearia Nobre"
                     class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                 </div>
 
@@ -213,7 +213,7 @@ import { TenantPublicDTO } from '../../core/models';
               <div class="space-y-5 animate-fade-in">
                 <div>
                   <h2 class="font-serif text-xl font-bold text-stone-900 mb-1">Seus Dados de Acesso</h2>
-                  <p class="text-xs text-stone-500">Crie sua conta de administrador da clínica para gerenciar sua agenda, equipe e clientes.</p>
+                  <p class="text-xs text-stone-500">Crie sua conta de administrador para gerenciar sua agenda, equipe e clientes.</p>
                 </div>
 
                 <div>
@@ -221,7 +221,7 @@ import { TenantPublicDTO } from '../../core/models';
                   <input
                     type="text"
                     formControlName="nomeResponsavel"
-                    placeholder="Ex: Dra. Mariana Costa"
+                    placeholder="Ex: Mariana Costa"
                     class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                 </div>
 
@@ -233,7 +233,7 @@ import { TenantPublicDTO } from '../../core/models';
                   <input
                     type="text"
                     formControlName="usuarioLogin"
-                    placeholder="Ex: admin, luiz, clinicamar"
+                    placeholder="Ex: admin, luiz, gestor"
                     class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                   <span class="text-[11px] text-stone-400 mt-1 block">
                     Defina seu nome de usuário preferido para login (letras ou números, sem espaços).
@@ -246,7 +246,7 @@ import { TenantPublicDTO } from '../../core/models';
                     <input
                       type="email"
                       formControlName="email"
-                      placeholder="mariana@clinica.com"
+                      placeholder="contato@seunegocio.com"
                       class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                   </div>
                   <div>
@@ -395,7 +395,7 @@ import { TenantPublicDTO } from '../../core/models';
                         Pagamento Aprovado!
                       </span>
                       <h2 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-                        Parabéns! Sua Clínica Foi Ativada!
+                        Parabéns! Seu Espaço Foi Ativado!
                       </h2>
                       <p class="text-xs sm:text-sm text-stone-500 mt-2 max-w-md mx-auto">
                         Identificamos seu pagamento PIX de R$ 149,90 no Mercado Pago. O acesso administrativo da sua loja está 100% liberado!

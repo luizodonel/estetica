@@ -65,6 +65,7 @@ public class AuthService {
         usuario = usuarioRepository.save(usuario);
         String token = jwtService.gerarToken(usuario);
 
+        ClinicaTenant t = usuario.getTenant();
         return new AuthResponse(
                 token,
                 usuario.getId(),
@@ -72,7 +73,10 @@ public class AuthService {
                 usuario.getEmail(),
                 usuario.getTelefoneWhatsApp(),
                 usuario.getRole(),
-                usuario.getPrimeiroAcesso()
+                usuario.getPrimeiroAcesso(),
+                t != null ? t.getSlug() : null,
+                t != null ? t.getNomeEmpresa() : null,
+                t != null ? t.getLogoUrl() : null
         );
     }
 
@@ -111,7 +115,10 @@ public class AuthService {
                 admin.getEmail(),
                 admin.getTelefoneWhatsApp(),
                 admin.getRole(),
-                admin.getPrimeiroAcesso()
+                admin.getPrimeiroAcesso(),
+                null,
+                null,
+                null
         );
     }
 
@@ -162,7 +169,7 @@ public class AuthService {
         }
 
         if (usuario == null) {
-            throw new BadCredentialsException("Credenciais inválidas: usuário ou telefone não encontrado.");
+            throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
         return autenticarUsuario(usuario, request, slugAmbiente);
@@ -207,7 +214,7 @@ public class AuthService {
             }
 
             throw new PagamentoPendenteException(
-                    "O acesso da clínica está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).",
+                    "O seu acesso está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).",
                     lojista.getMercadoPagoPaymentId(),
                     lojista.getPixCopiaCola(),
                     lojista.getPixQrCodeBase64(),
@@ -217,6 +224,10 @@ public class AuthService {
 
         String token = jwtService.gerarToken(lojista);
 
+        ClinicaTenant tenantLojista = tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
+        String nomeEmp = tenantLojista != null ? tenantLojista.getNomeEmpresa() : (lojista.getNomeEmpresa() != null ? lojista.getNomeEmpresa() : lojista.getNomeResponsavel());
+        String logo = tenantLojista != null ? tenantLojista.getLogoUrl() : lojista.getLogoUrl();
+
         return new AuthResponse(
                 token,
                 lojista.getId(),
@@ -224,7 +235,10 @@ public class AuthService {
                 lojista.getEmail(),
                 lojista.getTelefoneWhatsApp(),
                 Role.ROLE_ADMIN,
-                false
+                false,
+                lojista.getSlug(),
+                nomeEmp,
+                logo
         );
     }
 
@@ -269,15 +283,16 @@ public class AuthService {
 
         ClinicaTenant tenant = usuario.getTenant();
         if (tenant != null && Boolean.FALSE.equals(tenant.getAtivo())) {
-            throw new RegraNegocioException("Esta clínica está temporariamente desativada. Entre em contato com o suporte.");
+            throw new RegraNegocioException("Este estabelecimento está temporariamente desativado. Entre em contato com o suporte.");
         }
 
         if (!usuario.isEnabled()) {
-            throw new RegraNegocioException("Usuário inativo. Entre em contato com a clínica.");
+            throw new RegraNegocioException("Usuário inativo. Entre em contato com o responsável.");
         }
 
         String token = jwtService.gerarToken(usuario);
 
+        ClinicaTenant t = usuario.getTenant();
         return new AuthResponse(
                 token,
                 usuario.getId(),
@@ -285,7 +300,10 @@ public class AuthService {
                 usuario.getEmail(),
                 usuario.getTelefoneWhatsApp(),
                 usuario.getRole(),
-                usuario.getPrimeiroAcesso()
+                usuario.getPrimeiroAcesso(),
+                t != null ? t.getSlug() : null,
+                t != null ? t.getNomeEmpresa() : null,
+                t != null ? t.getLogoUrl() : null
         );
     }
 
@@ -361,7 +379,7 @@ public class AuthService {
                         .orElseThrow(() -> new RegraNegocioException("Nenhum cadastro encontrado com o WhatsApp: " + request.telefoneWhatsApp())));
 
         if (!usuario.isEnabled()) {
-            throw new RegraNegocioException("Usuário inativo. Entre em contato com a clínica.");
+            throw new RegraNegocioException("Usuário inativo. Entre em contato com o responsável.");
         }
 
         usuario.setSenhaHash(passwordEncoder.encode(request.novaSenha()));
@@ -370,6 +388,7 @@ public class AuthService {
 
         String token = jwtService.gerarToken(usuario);
 
+        ClinicaTenant t = usuario.getTenant();
         return new AuthResponse(
                 token,
                 usuario.getId(),
@@ -377,7 +396,10 @@ public class AuthService {
                 usuario.getEmail(),
                 usuario.getTelefoneWhatsApp(),
                 usuario.getRole(),
-                false
+                false,
+                t != null ? t.getSlug() : null,
+                t != null ? t.getNomeEmpresa() : null,
+                t != null ? t.getLogoUrl() : null
         );
     }
 }

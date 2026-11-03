@@ -188,7 +188,7 @@ interface PixPendenteInfo {
         @if (modo() === 'primeiro-acesso') {
           <form (ngSubmit)="confirmarPrimeiroAcesso()" class="space-y-4">
             <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
-              💡 <strong>Cadastrado pela clínica?</strong> Se o administrador cadastrou você como especialista ou paciente, informe seu WhatsApp abaixo para definir sua senha de acesso.
+              💡 <strong>Já possui cadastro?</strong> Se o administrador cadastrou você como especialista ou cliente, informe seu WhatsApp abaixo para definir sua senha de acesso.
             </div>
 
             <div>
@@ -237,7 +237,7 @@ interface PixPendenteInfo {
         }
 
         <p class="text-center text-xs text-stone-500 mt-6">
-          Ainda não possui cadastro na clínica? 
+          Ainda não possui cadastro? 
           <a routerLink="/registrar" class="text-rose-600 font-bold hover:underline">Cadastre-se online</a>
         </p>
 
@@ -333,7 +333,7 @@ export class LoginComponent implements OnDestroy {
             pixQrCodeBase64: errData?.pixQrCodeBase64,
             pixCopiaCola: errData?.pixCopiaCola,
             valor: errData?.valor || 149.90,
-            mensagem: msg || 'O acesso da clínica está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).'
+            mensagem: msg || 'O seu acesso está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).'
           });
 
           if (errData?.paymentId) {
@@ -346,6 +346,8 @@ export class LoginComponent implements OnDestroy {
           this.telefonePrimeiroAcesso = this.loginIdentificador;
           this.setModo('primeiro-acesso');
           this.erro.set(msg);
+        } else if (msg && (msg.includes('não pertence') || msg.includes('Credenciais') || msg.includes('Bad credentials') || msg.includes('não encontrado') || msg.includes('inválid') || msg.includes('pertence'))) {
+          this.erro.set('Login ou usuário inválido.');
         } else {
           this.erro.set(msg || 'Login ou usuário inválido.');
         }

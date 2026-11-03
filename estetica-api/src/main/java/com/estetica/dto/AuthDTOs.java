@@ -62,7 +62,10 @@ public class AuthDTOs {
         String email,
         String telefoneWhatsApp,
         Role role,
-        Boolean primeiroAcesso
+        Boolean primeiroAcesso,
+        String tenantSlug,
+        String nomeEmpresa,
+        String logoUrl
     ) {}
 
     public record CriarClienteRequest(

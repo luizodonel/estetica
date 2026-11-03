@@ -20,6 +20,7 @@ import {
   CadastroLojistaResponse,
   StatusPagamentoResponse,
   AssinaturaStatusResponse,
+  RelatorioGeralResponse,
   PrimeiroAcessoRequest,
   VerificarPrimeiroAcessoResponse,
   AuthResponse
@@ -319,5 +320,20 @@ export class ApiService {
     let params = new HttpParams();
     if (slug) params = params.set('slug', slug);
     return this.http.post<AssinaturaStatusResponse>(`${this.baseUrl}/onboarding/assinatura/gerar-pix`, null, { params });
+  }
+
+  // Relatórios Financeiros e Operacionais por Especialista
+  getRelatorioEspecialistas(filtros?: {
+    dataInicio?: string;
+    dataFim?: string;
+    profissionalId?: number | null;
+    status?: string | null;
+  }): Observable<RelatorioGeralResponse> {
+    let params = new HttpParams();
+    if (filtros?.dataInicio) params = params.set('dataInicio', filtros.dataInicio);
+    if (filtros?.dataFim) params = params.set('dataFim', filtros.dataFim);
+    if (filtros?.profissionalId) params = params.set('profissionalId', filtros.profissionalId.toString());
+    if (filtros?.status) params = params.set('status', filtros.status);
+    return this.http.get<RelatorioGeralResponse>(`${this.baseUrl}/relatorios/especialistas`, { params });
   }
 }

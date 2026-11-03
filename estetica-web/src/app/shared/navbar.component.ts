@@ -30,7 +30,7 @@ import { TenantService } from '../core/services/tenant.service';
               {{ tenantService.nomeEmpresa() }}
             </span>
             <span class="text-[9px] uppercase tracking-widest text-nude-500 font-semibold block mt-1">
-              {{ tenantService.tenant() ? 'Portal Oficial' : 'Clínica de Estética' }}
+              {{ tenantService.tenant() ? 'Portal Oficial' : 'Portal de Agendamento' }}
             </span>
           </div>
         </a>
@@ -95,6 +95,14 @@ import { TenantService } from '../core/services/tenant.service';
                 class="px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-600 hover:text-stone-900 transition-all whitespace-nowrap flex items-center gap-1.5">
                 <span>📋</span>
                 <span>Prontuários</span>
+              </a>
+
+              <a 
+                routerLink="/admin/relatorios" 
+                routerLinkActive="bg-white text-stone-900 shadow-sm" 
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-600 hover:text-stone-900 transition-all whitespace-nowrap flex items-center gap-1.5">
+                <span>📈</span>
+                <span>Relatórios</span>
               </a>
 
               @if (authService.isAdmin()) {
@@ -185,7 +193,7 @@ import { TenantService } from '../core/services/tenant.service';
             <a routerLink="/agendar" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600">Agendar Consulta</a>
           </div>
 
-          <div class="text-[10px] uppercase font-bold text-stone-400 tracking-wider pt-2">Gestão Clínica</div>
+          <div class="text-[10px] uppercase font-bold text-stone-400 tracking-wider pt-2">Módulo de Gestão</div>
           <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
             <a routerLink="/admin/dashboard" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-1.5">
               <span>📊</span> Dashboard
@@ -195,6 +203,9 @@ import { TenantService } from '../core/services/tenant.service';
             </a>
             <a routerLink="/admin/prontuarios" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-1.5">
               <span>📋</span> Prontuários
+            </a>
+            <a routerLink="/admin/relatorios" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-1.5">
+              <span>📈</span> Relatórios
             </a>
             <a routerLink="/admin/gestao" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-stone-50 text-stone-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-1.5">
               <span>⚙️</span> Cadastros

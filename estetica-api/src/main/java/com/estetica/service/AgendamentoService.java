@@ -175,7 +175,7 @@ public class AgendamentoService {
             long horasAteInicio = ChronoUnit.HOURS.between(LocalDateTime.now(), agendamento.getDataHoraInicio());
             if (horasAteInicio < HORAS_MINIMAS_CANCELAMENTO) {
                 throw new RegraNegocioException("O cancelamento só pode ser realizado com no mínimo " +
-                        HORAS_MINIMAS_CANCELAMENTO + " horas de antecedência. Entre em contato com a clínica.");
+                        HORAS_MINIMAS_CANCELAMENTO + " horas de antecedência. Entre em contato com o estabelecimento.");
             }
         }
 

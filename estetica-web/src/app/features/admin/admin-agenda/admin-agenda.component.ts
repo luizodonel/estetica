@@ -20,7 +20,7 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
             Recepção & Operação
           </span>
           <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-            Agenda Clínica de Atendimentos
+            Agenda de Atendimentos
           </h1>
         </div>
 
@@ -73,14 +73,14 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
             <span>👩‍⚕️</span>
             <span>Exibindo sua agenda exclusiva de atendimentos</span>
           </div>
-          <span class="text-[11px] text-rose-700 font-normal">Apenas seus pacientes e agendamentos</span>
+          <span class="text-[11px] text-rose-700 font-normal">Apenas seus clientes e agendamentos</span>
         </div>
       }
 
       <!-- Lista / Grade de Agendamentos da Data -->
       @if (carregando()) {
         <div class="py-20 text-center text-stone-400 text-xs animate-pulse">
-          Consultando atendimentos da clínica...
+          Consultando agendamentos...
         </div>
       } @else if (agendamentosFiltrados().length === 0) {
         <div class="bg-white rounded-3xl p-12 text-center border border-nude-200">
@@ -122,7 +122,7 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
                     <p class="text-[11px] text-stone-400 italic mt-0.5">Obs: "{{ a.observacoesCliente }}"</p>
                   }
                   @if (a.notasInternas) {
-                    <p class="text-[11px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded mt-1 inline-block">Nota Clínica: {{ a.notasInternas }}</p>
+                    <p class="text-[11px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded mt-1 inline-block">Nota Interna: {{ a.notasInternas }}</p>
                   }
                 </div>
               </div>

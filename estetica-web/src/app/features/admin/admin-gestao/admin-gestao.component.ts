@@ -25,9 +25,9 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
             Módulo Administrativo
           </span>
           <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-            Cadastros & Gestão da Clínica
+            Cadastros & Configurações
           </h1>
-          <p class="text-xs text-stone-500 mt-1">Gerencie os procedimentos oferecidos, equipe de especialistas e ficha de clientes.</p>
+          <p class="text-xs text-stone-500 mt-1">Gerencie os procedimentos oferecidos, equipe de especialistas e clientes.</p>
         </div>
 
         <div class="flex items-center gap-2">
@@ -131,23 +131,23 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
                 Personalização Visual Whitelabel
               </span>
               <h2 class="font-serif text-2xl font-bold text-stone-900">
-                Logotipo da Clínica & Dados Cadastrais
+                Logotipo & Dados do Estabelecimento
               </h2>
               <p class="text-xs text-stone-500 mt-1">
-                Altere a logomarca e o nome de exibição da sua clínica a qualquer momento.
+                Altere a logomarca e o nome de exibição do seu espaço a qualquer momento.
               </p>
             </div>
 
             <form [formGroup]="formIdentidade" (ngSubmit)="salvarIdentidadeVisual()" class="space-y-6">
               
-              <!-- Nome e WhatsApp da Clínica -->
+              <!-- Nome e WhatsApp do Estabelecimento -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">Nome da Clínica / Estética *</label>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">Nome do Estabelecimento / Espaço *</label>
                   <input
                     type="text"
                     formControlName="nomeEmpresa"
-                    placeholder="Ex: Clínica L'Élégance"
+                    placeholder="Ex: Studio Bella, Espaço Vip, Barbearia Nobre"
                     class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                 </div>
                 <div>
@@ -164,7 +164,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
               <!-- Upload de Logomarca Oficial -->
               <div>
                 <label class="block text-xs font-semibold text-stone-700 mb-1.5">
-                  Logomarca Oficial da Clínica (Exibida no topo e cabeçalho)
+                  Logomarca Oficial (Exibida no topo e cabeçalho)
                 </label>
 
                 @if (!formIdentidade.get('logoUrl')?.value) {
@@ -175,7 +175,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
                       📁
                     </div>
                     <div>
-                      <span class="text-xs font-semibold text-stone-800 block">Clique para enviar a Logomarca da clínica</span>
+                      <span class="text-xs font-semibold text-stone-800 block">Clique para enviar a Logomarca</span>
                       <span class="text-[10px] text-stone-400">Formatos aceitos: PNG, JPG, WEBP ou SVG (até 15MB)</span>
                     </div>
                     @if (fazendoUploadLogo()) {
@@ -227,7 +227,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
                       </div>
                       <div>
                         <span class="font-serif font-bold text-xs text-stone-900 block leading-tight">
-                          {{ formIdentidade.get('nomeEmpresa')?.value || 'Sua Clínica' }}
+                          {{ formIdentidade.get('nomeEmpresa')?.value || 'Seu Espaço' }}
                         </span>
                         <span class="text-[9px] uppercase tracking-wider text-stone-400 font-semibold">Portal Oficial</span>
                       </div>
@@ -697,14 +697,14 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
 
               <div>
                 <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail (opcional)</label>
-                <input type="email" formControlName="email" placeholder="juliana@clinica.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <input type="email" formControlName="email" placeholder="profissional@email.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                 <span class="text-[10px] text-stone-400 mt-0.5 block">Opcional</span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Especialidade Clínica *</label>
-                  <input type="text" formControlName="especialidade" placeholder="Biomédica Esteta" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Especialidade / Profissão *</label>
+                  <input type="text" formControlName="especialidade" placeholder="Ex: Cabeleireiro, Esteticista, Barbeiro..." class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-stone-700 mb-1">Cor na Agenda</label>
@@ -771,7 +771,7 @@ type TabTipo = 'procedimentos' | 'profissionais' | 'clientes' | 'identidade';
 
               <div>
                 <label class="block text-xs font-semibold text-stone-700 mb-1">
-                  {{ profissionalEmEdicao() ? 'Alterar Senha de Acesso (opcional)' : 'Senha de Acesso (padrão Clinica@123)' }}
+                  {{ profissionalEmEdicao() ? 'Alterar Senha de Acesso (opcional)' : 'Senha de Acesso (padrão 123456)' }}
                 </label>
                 <input type="password" formControlName="senha" placeholder="Mínimo 6 caracteres" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
               </div>
@@ -1388,7 +1388,7 @@ export class AdminGestaoComponent implements OnInit {
 
   salvarIdentidadeVisual(): void {
     if (this.formIdentidade.invalid) {
-      this.mensagemErro.set('Preencha os campos obrigatórios da clínica.');
+      this.mensagemErro.set('Preencha os campos obrigatórios.');
       return;
     }
 
@@ -1402,7 +1402,7 @@ export class AdminGestaoComponent implements OnInit {
       next: (res) => {
         this.salvandoIdentidade.set(false);
         this.tenantService.setTenantManual(res);
-        this.mensagemSucesso.set('✓ Logotipo, cores e dados da clínica atualizados com sucesso!');
+        this.mensagemSucesso.set('✓ Logotipo e dados atualizados com sucesso!');
       },
       error: (err) => {
         this.salvandoIdentidade.set(false);

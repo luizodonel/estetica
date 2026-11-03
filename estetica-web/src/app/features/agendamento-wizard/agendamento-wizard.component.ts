@@ -29,9 +29,9 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
         <!-- Banner se for Perfil Administrativo/Especialista -->
         @if (authService.isAdminOrProfissional()) {
           <div class="inline-flex items-center gap-2 mt-3 px-4 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold">
-            <span>🛡️ Modo Recepção / Clínica</span>
+            <span>🛡️ Modo Recepção / Atendimento</span>
             <span class="opacity-60">•</span>
-            <span>Agendando em nome do paciente</span>
+            <span>Agendando em nome do cliente</span>
           </div>
         }
       </div>
@@ -317,7 +317,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                   [ngModel]="clienteIdSelecionado"
                   (ngModelChange)="onClienteSelecionadoChange($event)"
                   class="w-full p-3 rounded-xl border border-amber-300 text-xs sm:text-sm font-semibold text-stone-800 bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none">
-                  <option [ngValue]="null">-- Selecione o Paciente Cadastrado na Clínica --</option>
+                  <option [ngValue]="null">-- Selecione o Cliente Cadastrado --</option>
                   @for (cli of clientes(); track cli.id) {
                     <option [ngValue]="cli.id">
                       {{ cli.nome }} • WhatsApp: {{ formatarTelefone(cli.telefoneWhatsApp) }} ({{ cli.email }})
@@ -327,7 +327,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 
                 @if (clienteIdSelecionado && pacienteSelecionado()) {
                   <div class="mt-3 text-xs text-amber-900 font-medium flex items-center gap-2">
-                    <span>✓ Paciente Selecionado:</span>
+                    <span>✓ Cliente Selecionado:</span>
                     <strong>{{ pacienteSelecionado()?.nome }}</strong>
                     <span class="text-stone-500">({{ pacienteSelecionado()?.telefoneWhatsApp }})</span>
                   </div>

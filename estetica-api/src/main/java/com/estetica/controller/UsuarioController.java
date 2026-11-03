@@ -96,7 +96,7 @@ public class UsuarioController {
 
         com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         if (tenant != null && cliente.getTenant() != null && !cliente.getTenant().getId().equals(tenant.getId())) {
-            throw new RegraNegocioException("Acesso negado: Este cliente pertence a outra clínica parceira.");
+            throw new RegraNegocioException("Acesso negado: Este cliente pertence a outro estabelecimento parceiro.");
         }
 
         cliente.setNome(request.nome().trim());
@@ -134,7 +134,7 @@ public class UsuarioController {
 
         com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         if (tenant != null && cliente.getTenant() != null && !cliente.getTenant().getId().equals(tenant.getId())) {
-            throw new RegraNegocioException("Acesso negado: Este cliente pertence a outra clínica parceira.");
+            throw new RegraNegocioException("Acesso negado: Este cliente pertence a outro estabelecimento parceiro.");
         }
 
         cliente.setAtivo(!Boolean.TRUE.equals(cliente.getAtivo()));

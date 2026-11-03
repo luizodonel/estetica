@@ -15,18 +15,18 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
       <!-- Cabeçalho -->
       <div class="mb-8">
         <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
-          Prontuário Eletrônico & Anamnese
+          Prontuário & Histórico de Atendimentos
         </span>
         <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-          Ficha Clínica do Paciente
+          Ficha & Histórico do Cliente
         </h1>
-        <p class="text-xs text-stone-500 mt-1">Consulte o histórico clínico e registre novas notas de atendimento.</p>
+        <p class="text-xs text-stone-500 mt-1">Consulte o histórico e registre novas anotações de atendimento.</p>
       </div>
 
       <!-- Seleção de Paciente Cadastrado -->
       <div class="bg-white rounded-3xl p-6 border border-nude-200 mb-8 shadow-sm">
         <label class="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-2">
-          Selecione o Paciente Cadastrado:
+          Selecione o Cliente Cadastrado:
         </label>
         
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -34,7 +34,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
             [ngModel]="clienteId" 
             (ngModelChange)="onClienteChange($event)"
             class="flex-1 p-3 rounded-2xl border border-nude-300 text-xs sm:text-sm font-medium text-stone-800 focus:ring-2 focus:ring-rose-400 focus:outline-none bg-white">
-            <option [ngValue]="null">-- Selecione um Paciente Cadastrado na Clínica --</option>
+            <option [ngValue]="null">-- Selecione um Cliente Cadastrado --</option>
             @for (p of clientes(); track p.id) {
               <option [ngValue]="p.id">
                 {{ p.nome }} • WhatsApp: {{ formatarTelefone(p.telefoneWhatsApp) }} ({{ p.email }})
@@ -68,7 +68,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
       <!-- Formulário de Nova Anamnese / Registro de Atendimento -->
       @if (clienteId) {
         <div class="bg-white rounded-3xl p-6 sm:p-8 border border-nude-200 shadow-sm mb-8">
-          <h3 class="font-serif text-lg font-bold text-stone-900 mb-4">+ Nova Anotação Clínica / Anamnese</h3>
+          <h3 class="font-serif text-lg font-bold text-stone-900 mb-4">+ Nova Anotação / Histórico de Atendimento</h3>
 
           @if (mensagemSucesso()) {
             <div class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
@@ -90,7 +90,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
               <textarea 
                 [(ngModel)]="notasAnamnese" 
                 rows="3" 
-                placeholder="Descreva o estado da pele, histórico alérgico, queixa principal, evolução clínica..."
+                placeholder="Descreva observações do atendimento, preferências do cliente, evolução e histórico..."
                 class="w-full p-3 rounded-xl border border-nude-300 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none"></textarea>
             </div>
 
