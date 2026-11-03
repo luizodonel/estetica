@@ -14,6 +14,7 @@ public interface ProcedimentoRepository extends JpaRepository<Procedimento, Long
     List<Procedimento> findByTenantIdAndAtivoTrueOrderByTituloAsc(Long tenantId);
     List<Procedimento> findByTenantIdOrderByTituloAsc(Long tenantId);
     List<Procedimento> findByTenantIdAndCategoriaIdAndAtivoTrueOrderByTituloAsc(Long tenantId, Long categoriaId);
+    long countByTenantId(Long tenantId);
 
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.data.jpa.repository.Query("DELETE FROM Procedimento p WHERE p.tenant.id = :tenantId")

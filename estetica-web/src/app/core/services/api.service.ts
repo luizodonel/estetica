@@ -49,11 +49,11 @@ export class ApiService {
     return this.http.get<Categoria[]>(`${this.baseUrl}/procedimentos/categorias/todas`);
   }
 
-  criarCategoria(payload: { nome: string; descricao?: string; icone?: string; ativo?: boolean; ordemExibicao?: number }): Observable<Categoria> {
+  criarCategoria(payload: { nome: string; descricao?: string; icone?: string; ativo?: boolean; ordemExibicao?: number; duracaoMinutosPadrao?: number; precoPadrao?: number }): Observable<Categoria> {
     return this.http.post<Categoria>(`${this.baseUrl}/procedimentos/categorias`, payload);
   }
 
-  atualizarCategoria(id: number, payload: { nome: string; descricao?: string; icone?: string; ativo?: boolean; ordemExibicao?: number }): Observable<Categoria> {
+  atualizarCategoria(id: number, payload: { nome: string; descricao?: string; icone?: string; ativo?: boolean; ordemExibicao?: number; duracaoMinutosPadrao?: number; precoPadrao?: number }): Observable<Categoria> {
     return this.http.put<Categoria>(`${this.baseUrl}/procedimentos/categorias/${id}`, payload);
   }
 

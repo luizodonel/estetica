@@ -15,7 +15,9 @@ public class ProcedimentoDTOs {
         String descricao,
         String icone,
         Boolean ativo,
-        Integer ordemExibicao
+        Integer ordemExibicao,
+        Integer duracaoMinutosPadrao,
+        BigDecimal precoPadrao
     ) {}
 
     public record SalvarCategoriaRequest(
@@ -24,7 +26,9 @@ public class ProcedimentoDTOs {
         String descricao,
         String icone,
         Boolean ativo,
-        Integer ordemExibicao
+        Integer ordemExibicao,
+        Integer duracaoMinutosPadrao,
+        BigDecimal precoPadrao
     ) {}
 
     public record ProcedimentoDTO(

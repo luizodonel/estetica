@@ -63,6 +63,8 @@ export interface Categoria {
   icone?: string;
   ativo: boolean;
   ordemExibicao: number;
+  duracaoMinutosPadrao?: number;
+  precoPadrao?: number;
 }
 
 export interface Procedimento {

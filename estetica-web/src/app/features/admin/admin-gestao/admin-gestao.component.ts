@@ -443,9 +443,17 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                               {{ cat.ativo ? 'Ativo' : 'Inativo' }}
                             </span>
                           </div>
-                          <span class="text-[11px] text-stone-400 block mt-0.5">
-                            Ordem de exibição: #{{ cat.ordemExibicao || 0 }}
-                          </span>
+                          <div class="flex items-center flex-wrap gap-1.5 mt-1">
+                            <span class="text-[10px] font-semibold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              ⏱️ {{ cat.duracaoMinutosPadrao || 45 }} min
+                            </span>
+                            <span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              💰 {{ (cat.precoPadrao || 0) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+                            </span>
+                            <span class="text-[10px] text-stone-400">
+                              #{{ cat.ordemExibicao || 0 }}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1137,6 +1145,31 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Duração Padrão (Minutos) *</label>
+                  <input
+                    type="number"
+                    step="5"
+                    min="5"
+                    formControlName="duracaoMinutosPadrao"
+                    placeholder="Ex: 45"
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50 font-semibold" />
+                  <span class="text-[10px] text-stone-400 mt-0.5 block">Tempo sugerido nos serviços</span>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Preço / Valor Médio (R$) *</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    formControlName="precoPadrao"
+                    placeholder="Ex: 50.00"
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50 font-semibold" />
+                  <span class="text-[10px] text-stone-400 mt-0.5 block">Preço base do procedimento</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
                   <label class="block text-xs font-semibold text-stone-700 mb-1">Ordem de Exibição *</label>
                   <input
                     type="number"
@@ -1299,6 +1332,8 @@ export class AdminGestaoComponent implements OnInit {
       descricao: [''],
       icone: ['🏷️'],
       ordemExibicao: [1, [Validators.required, Validators.min(1)]],
+      duracaoMinutosPadrao: [45, [Validators.required, Validators.min(5)]],
+      precoPadrao: [50, [Validators.required, Validators.min(0)]],
       ativo: [true]
     });
 
@@ -1307,8 +1342,22 @@ export class AdminGestaoComponent implements OnInit {
       titulo: ['', [Validators.required, Validators.minLength(3)]],
       descricao: [''],
       duracaoMinutos: [60, [Validators.required, Validators.min(10)]],
-      preco: [150, [Validators.required, Validators.min(1)]],
+      preco: [150, [Validators.required, Validators.min(0)]],
       imagemUrl: ['']
+    });
+
+    this.formProcedimento.get('categoriaId')?.valueChanges.subscribe(catId => {
+      if (catId) {
+        const selCat = this.categorias().find(c => c.id == catId);
+        if (selCat) {
+          if (selCat.duracaoMinutosPadrao) {
+            this.formProcedimento.patchValue({ duracaoMinutos: selCat.duracaoMinutosPadrao });
+          }
+          if (selCat.precoPadrao !== undefined && selCat.precoPadrao !== null) {
+            this.formProcedimento.patchValue({ preco: selCat.precoPadrao });
+          }
+        }
+      }
     });
 
     this.formProfissional = this.fb.group({
@@ -1425,6 +1474,8 @@ export class AdminGestaoComponent implements OnInit {
         descricao: cat.descricao || '',
         icone: cat.icone || '🏷️',
         ordemExibicao: cat.ordemExibicao ?? 1,
+        duracaoMinutosPadrao: cat.duracaoMinutosPadrao ?? 45,
+        precoPadrao: cat.precoPadrao ?? 50,
         ativo: cat.ativo !== false
       });
     } else {
@@ -1434,6 +1485,8 @@ export class AdminGestaoComponent implements OnInit {
         descricao: '',
         icone: '🏷️',
         ordemExibicao: (this.categorias().length + 1),
+        duracaoMinutosPadrao: 45,
+        precoPadrao: 50,
         ativo: true
       });
     }
@@ -1459,6 +1512,8 @@ export class AdminGestaoComponent implements OnInit {
       descricao: val.descricao,
       icone: val.icone,
       ordemExibicao: val.ordemExibicao,
+      duracaoMinutosPadrao: val.duracaoMinutosPadrao,
+      precoPadrao: val.precoPadrao,
       ativo: val.ativo !== false
     };
 

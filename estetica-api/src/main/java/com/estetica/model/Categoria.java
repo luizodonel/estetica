@@ -32,6 +32,12 @@ public class Categoria {
     @Column(name = "ordem_exibicao")
     private Integer ordemExibicao;
 
+    @Column(name = "duracao_minutos_padrao")
+    private Integer duracaoMinutosPadrao;
+
+    @Column(name = "preco_padrao", precision = 10, scale = 2)
+    private java.math.BigDecimal precoPadrao;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "setor", length = 50)
     private SetorAtuacao setor;
