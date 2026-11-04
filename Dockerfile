@@ -35,7 +35,9 @@ WORKDIR /app
 RUN apk add --no-cache tzdata \
     && cp /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime \
     && echo "America/Sao_Paulo" > /etc/timezone \
-    && addgroup -S spring && adduser -S spring -G spring
+    && addgroup -S spring && adduser -S spring -G spring \
+    && mkdir -p /app/uploads \
+    && chown -R spring:spring /app
 USER spring:spring
 
 COPY --from=build-backend /app/backend/target/*.jar app.jar

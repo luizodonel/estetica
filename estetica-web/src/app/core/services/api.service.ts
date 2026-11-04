@@ -172,7 +172,7 @@ export class ApiService {
 
   criarCliente(payload: {
     nome: string;
-    email: string;
+    email?: string;
     telefoneWhatsApp: string;
     senha?: string;
   }): Observable<Usuario> {
@@ -181,7 +181,7 @@ export class ApiService {
 
   atualizarCliente(id: number, payload: {
     nome: string;
-    email: string;
+    email?: string;
     telefoneWhatsApp: string;
     senha?: string;
   }): Observable<Usuario> {

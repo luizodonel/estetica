@@ -33,22 +33,29 @@ const DIAS_PADRAO: { diaSemana: DiaSemanaTipo; label: string }[] = [
   imports: [CommonModule, FormsModule],
   template: `
     @if (aberto) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-scale-up my-8 max-h-[90vh] overflow-y-auto font-sans">
+      <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start sm:items-center">
+        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 animate-scale-up my-auto flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden font-sans">
           
-          <!-- Cabeçalho -->
-          <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-6">
+          <!-- Cabeçalho Fixo / Sticky Header -->
+          <div class="px-6 py-4 sm:py-5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
             <div>
               <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Disponibilidade & Agenda</span>
-              <h3 class="font-extrabold text-xl text-slate-900">
+              <h3 class="font-extrabold text-lg sm:text-xl text-slate-900">
                 Horários de Atendimento & Trava de Agenda
               </h3>
             </div>
-            <button (click)="fecharModal()" class="text-slate-400 hover:text-slate-600 p-2 text-xl font-bold">✕</button>
+            <button 
+              (click)="fecharModal()" 
+              class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-base font-bold transition-colors">
+              ✕
+            </button>
           </div>
 
-          <!-- Seletor de Especialista -->
-          <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <!-- Corpo com Rolagem -->
+          <div class="p-6 overflow-y-auto flex-1">
+
+            <!-- Seletor de Especialista -->
+            <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
             @if (auth.isAdmin()) {
               <label class="block text-xs font-semibold text-slate-700 mb-1.5">
                 Selecione o Especialista para Configurar:
@@ -310,11 +317,11 @@ const DIAS_PADRAO: { diaSemana: DiaSemanaTipo; label: string }[] = [
                 }
               </div>
 
-              <div class="flex items-center justify-end pt-4 border-t border-nude-200">
+              <div class="flex items-center justify-end pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   (click)="fecharModal()"
-                  class="px-4 py-2.5 rounded-xl border border-nude-300 text-stone-600 text-xs font-semibold hover:bg-stone-50">
+                  class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-colors">
                   Fechar
                 </button>
               </div>
@@ -322,6 +329,7 @@ const DIAS_PADRAO: { diaSemana: DiaSemanaTipo; label: string }[] = [
             </div>
           }
 
+          </div>
         </div>
       </div>
     }

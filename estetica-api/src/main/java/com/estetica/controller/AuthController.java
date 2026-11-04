@@ -1,6 +1,7 @@
 package com.estetica.controller;
 
 import com.estetica.dto.AuthDTOs.*;
+import com.estetica.model.Role;
 import com.estetica.model.Usuario;
 import com.estetica.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,19 +53,29 @@ public class AuthController {
 
     @GetMapping("/me")
     @Operation(summary = "Obtém dados do usuário autenticado atual")
-    public ResponseEntity<UsuarioDTO> me(@AuthenticationPrincipal Usuario usuario) {
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<UsuarioDTO> me(@AuthenticationPrincipal Object principal) {
+        if (principal instanceof Usuario usuario) {
+            return ResponseEntity.ok(new UsuarioDTO(
+                    usuario.getId(),
+                    usuario.getNome(),
+                    usuario.getEmail(),
+                    usuario.getTelefoneWhatsApp(),
+                    usuario.getRole(),
+                    usuario.getAtivo(),
+                    usuario.getPrimeiroAcesso()
+            ));
+        } else if (principal instanceof com.estetica.model.Lojista lojista) {
+            return ResponseEntity.ok(new UsuarioDTO(
+                    lojista.getId(),
+                    lojista.getNomeResponsavel(),
+                    lojista.getEmail(),
+                    lojista.getTelefoneWhatsApp(),
+                    Role.ROLE_ADMIN,
+                    lojista.getAtivo(),
+                    false
+            ));
         }
-        return ResponseEntity.ok(new UsuarioDTO(
-                usuario.getId(),
-                usuario.getNome(),
-                usuario.getEmail(),
-                usuario.getTelefoneWhatsApp(),
-                usuario.getRole(),
-                usuario.getAtivo(),
-                usuario.getPrimeiroAcesso()
-        ));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 }
 

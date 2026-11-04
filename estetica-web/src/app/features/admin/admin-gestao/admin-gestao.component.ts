@@ -684,37 +684,45 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
       <!-- MODAL: CADASTRAR / EDITAR PROCEDIMENTO -->
       <!-- ========================================================================================= -->
       @if (modalProcedimentoAberto()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-nude-200 animate-scale-up my-8">
-            <div class="flex items-center justify-between mb-6">
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start sm:items-center">
+          <form [formGroup]="formProcedimento" (ngSubmit)="salvarProcedimento()" class="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 animate-scale-up my-auto flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden font-sans">
+            
+            <!-- Cabeçalho Fixo / Sticky Header -->
+            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
               <div>
-                <span class="text-[10px] uppercase tracking-wider font-bold text-rose-600">Catálogo de Serviços</span>
-                <h3 class="font-serif font-bold text-xl text-stone-900">
+                <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Catálogo de Serviços</span>
+                <h3 class="font-extrabold text-lg sm:text-xl text-slate-900">
                   {{ procedimentoEmEdicao() ? 'Editar Procedimento' : 'Novo Procedimento' }}
                 </h3>
               </div>
-              <button (click)="fecharModalProcedimento()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
+              <button 
+                type="button"
+                (click)="fecharModalProcedimento()" 
+                class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-base font-bold transition-colors">
+                ✕
+              </button>
             </div>
 
-            @if (mensagemErro()) {
-              <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
-                <span>{{ mensagemErro() }}</span>
-                <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
-              </div>
-            }
+            <!-- Corpo com rolagem interna -->
+            <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              @if (mensagemErro()) {
+                <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                  <span>{{ mensagemErro() }}</span>
+                  <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
+                </div>
+              }
 
-            <form [formGroup]="formProcedimento" (ngSubmit)="salvarProcedimento()" class="space-y-4">
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <label class="block text-xs font-semibold text-stone-700">Categoria / Tipo de Serviço *</label>
+                  <label class="block text-xs font-semibold text-slate-700">Categoria / Tipo de Serviço *</label>
                   <button
                     type="button"
                     (click)="irParaGerenciarCategorias()"
-                    class="text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1">
+                    class="text-[11px] font-semibold text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
                     <span>⚙️ Gerenciar Tipos</span>
                   </button>
                 </div>
-                <select formControlName="categoriaId" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50">
+                <select formControlName="categoriaId" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50">
                   <option value="">-- Selecione uma Categoria --</option>
                   @for (cat of categorias(); track cat.id) {
                     <option [value]="cat.id">{{ cat.icone ? cat.icone + ' ' : '' }}{{ cat.nome }}</option>
@@ -723,55 +731,55 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Título do Procedimento *</label>
-                <input type="text" formControlName="titulo" placeholder="Ex: Limpeza de Pele Profunda com Fototerapia" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Título do Procedimento *</label>
+                <input type="text" formControlName="titulo" placeholder="Ex: Limpeza de Pele Profunda com Fototerapia" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Descrição Comercial</label>
-                <textarea formControlName="descricao" rows="2" placeholder="Descreva os benefícios e técnicas utilizadas..." class="w-full text-xs px-3.5 py-2 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50"></textarea>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição Comercial</label>
+                <textarea formControlName="descricao" rows="2" placeholder="Descreva os benefícios e técnicas utilizadas..." class="w-full text-xs px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50"></textarea>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Duração (Minutos) *</label>
-                  <input type="number" step="10" min="10" formControlName="duracaoMinutos" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Duração (Minutos) *</label>
+                  <input type="number" step="10" min="10" formControlName="duracaoMinutos" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Valor / Preço (R$) *</label>
-                  <input type="number" step="0.50" min="0" formControlName="preco" placeholder="180.00" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Valor / Preço (R$) *</label>
+                  <input type="number" step="0.50" min="0" formControlName="preco" placeholder="180.00" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
                 </div>
               </div>
 
               <!-- Upload da Imagem de Capa do Procedimento -->
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
                   Foto / Imagem de Capa do Procedimento
                 </label>
 
                 @if (!formProcedimento.get('imagemUrl')?.value) {
                   <div
                     (click)="fileInputProcedimento.click()"
-                    class="border-2 border-dashed border-nude-300 hover:border-rose-400 bg-stone-50 hover:bg-rose-50/20 rounded-2xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 group">
-                    <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                    class="border-2 border-dashed border-slate-300 hover:border-slate-500 bg-slate-50 hover:bg-slate-100/70 rounded-2xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 group">
+                    <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
                       📸
                     </div>
                     <div>
-                      <span class="text-xs font-semibold text-stone-800 block">Clique para fazer upload da foto de capa</span>
-                      <span class="text-[10px] text-stone-400">PNG, JPG, WEBP ou SVG (até 15MB)</span>
+                      <span class="text-xs font-semibold text-slate-800 block">Clique para fazer upload da foto de capa</span>
+                      <span class="text-[10px] text-slate-400">PNG, JPG, WEBP ou SVG (até 15MB)</span>
                     </div>
                     @if (fazendoUploadProcedimento()) {
-                      <span class="text-xs font-bold text-rose-600 animate-pulse">Enviando imagem...</span>
+                      <span class="text-xs font-bold text-slate-700 animate-pulse">Enviando imagem...</span>
                     }
                   </div>
                 } @else {
-                  <div class="p-3 rounded-2xl bg-stone-50 border border-nude-200 flex items-center justify-between gap-3">
+                  <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
-                      <div class="w-16 h-12 rounded-xl overflow-hidden border border-nude-300 bg-white shadow-sm flex items-center justify-center">
+                      <div class="w-16 h-12 rounded-xl overflow-hidden border border-slate-300 bg-white shadow-sm flex items-center justify-center">
                         <img [src]="obterImagemUrl(formProcedimento.get('imagemUrl')?.value)" alt="Capa" class="w-full h-full object-cover" />
                       </div>
                       <div>
-                        <span class="text-xs font-semibold text-stone-800 block">Foto selecionada</span>
+                        <span class="text-xs font-semibold text-slate-800 block">Foto selecionada</span>
                         <span class="text-[10px] text-emerald-600 font-medium">✓ Imagem anexada com sucesso</span>
                       </div>
                     </div>
@@ -779,7 +787,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                       <button
                         type="button"
                         (click)="fileInputProcedimento.click()"
-                        class="px-2.5 py-1.5 rounded-lg border border-nude-300 bg-white text-[11px] font-semibold text-stone-700 hover:bg-stone-100">
+                        class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-semibold text-slate-700 hover:bg-slate-100">
                         Trocar Foto
                       </button>
                       <button
@@ -794,17 +802,25 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
 
                 <input #fileInputProcedimento type="file" accept="image/*" (change)="aoSelecionarFotoProcedimento($event)" class="hidden" />
               </div>
+            </div>
 
-              <div class="pt-4 flex items-center justify-end gap-3">
-                <button type="button" (click)="fecharModalProcedimento()" class="px-4 py-2.5 rounded-xl border border-nude-300 text-stone-600 text-xs font-semibold hover:bg-stone-50">
-                  Cancelar
-                </button>
-                <button type="submit" [disabled]="formProcedimento.invalid || salvando()" class="px-6 py-2.5 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 disabled:opacity-50">
-                  {{ salvando() ? 'Salvando...' : 'Salvar Procedimento' }}
-                </button>
-              </div>
-            </form>
-          </div>
+            <!-- Rodapé Fixo / Sticky Footer -->
+            <div class="px-5 py-3.5 sm:px-6 sm:py-4 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0 bg-slate-50">
+              <button 
+                type="button" 
+                (click)="fecharModalProcedimento()" 
+                class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-colors">
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                [disabled]="formProcedimento.invalid || salvando()" 
+                class="px-6 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 disabled:opacity-50 transition-colors shadow">
+                {{ salvando() ? 'Salvando...' : 'Salvar Procedimento' }}
+              </button>
+            </div>
+
+          </form>
         </div>
       }
 
@@ -812,95 +828,103 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
       <!-- MODAL: CADASTRAR / EDITAR PROFISSIONAL -->
       <!-- ========================================================================================= -->
       @if (modalProfissionalAberto()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-nude-200 animate-scale-up my-8">
-            <div class="flex items-center justify-between mb-6">
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start sm:items-center">
+          <form [formGroup]="formProfissional" (ngSubmit)="salvarProfissional()" class="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 animate-scale-up my-auto flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden font-sans">
+            
+            <!-- Cabeçalho Fixo / Sticky Header -->
+            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
               <div>
-                <span class="text-[10px] uppercase tracking-wider font-bold text-rose-600">Corpo Clínico</span>
-                <h3 class="font-serif font-bold text-xl text-stone-900">
+                <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Corpo Clínico</span>
+                <h3 class="font-extrabold text-lg sm:text-xl text-slate-900">
                   {{ profissionalEmEdicao() ? 'Editar Especialista' : 'Novo Especialista' }}
                 </h3>
               </div>
-              <button (click)="fecharModalProfissional()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
+              <button 
+                type="button"
+                (click)="fecharModalProfissional()" 
+                class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-base font-bold transition-colors">
+                ✕
+              </button>
             </div>
 
-            @if (mensagemErro()) {
-              <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
-                <span>{{ mensagemErro() }}</span>
-                <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
-              </div>
-            }
+            <!-- Corpo com rolagem interna -->
+            <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              @if (mensagemErro()) {
+                <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                  <span>{{ mensagemErro() }}</span>
+                  <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
+                </div>
+              }
 
-            <form [formGroup]="formProfissional" (ngSubmit)="salvarProfissional()" class="space-y-4">
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Nome Completo *</label>
-                <input type="text" formControlName="nome" placeholder="Dra. Juliana Mendes" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Completo *</label>
+                <input type="text" formControlName="nome" placeholder="Dra. Juliana Mendes" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Usuário / Login do Especialista</label>
-                  <input type="text" formControlName="login" placeholder="Ex: judite, dra.paula" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                  <span class="text-[10px] text-stone-400 mt-0.5 block">Campo livre de acesso para o especialista</span>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Usuário / Login do Especialista</label>
+                  <input type="text" formControlName="login" placeholder="Ex: judite, dra.paula" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+                  <span class="text-[10px] text-slate-400 mt-0.5 block">Campo livre de acesso para o especialista</span>
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp do Especialista *</label>
-                  <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98888-7777" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                  <span class="text-[10px] text-stone-400 mt-0.5 block">WhatsApp com DDD</span>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp do Especialista *</label>
+                  <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98888-7777" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+                  <span class="text-[10px] text-slate-400 mt-0.5 block">WhatsApp com DDD</span>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail (opcional)</label>
-                <input type="email" formControlName="email" placeholder="profissional@email.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                <span class="text-[10px] text-stone-400 mt-0.5 block">Opcional</span>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail (opcional)</label>
+                <input type="email" formControlName="email" placeholder="profissional@email.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+                <span class="text-[10px] text-slate-400 mt-0.5 block">Opcional</span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Especialidade / Profissão *</label>
-                  <input type="text" formControlName="especialidade" placeholder="Ex: Cabeleireiro, Esteticista, Barbeiro..." class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Especialidade / Profissão *</label>
+                  <input type="text" formControlName="especialidade" placeholder="Ex: Cabeleireiro, Esteticista, Barbeiro..." class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Cor na Agenda</label>
-                  <input type="color" formControlName="corIdentificacao" class="w-full h-10 p-1 rounded-xl border border-nude-300 bg-stone-50 cursor-pointer" />
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Cor na Agenda</label>
+                  <input type="color" formControlName="corIdentificacao" class="w-full h-10 p-1 rounded-xl border border-slate-300 bg-slate-50 cursor-pointer" />
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Biografia Resumida</label>
-                <textarea formControlName="bio" rows="2" placeholder="Especialista em tratamentos faciais e laser..." class="w-full text-xs px-3.5 py-2 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50"></textarea>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Biografia Resumida</label>
+                <textarea formControlName="bio" rows="2" placeholder="Especialista em tratamentos faciais e laser..." class="w-full text-xs px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50"></textarea>
               </div>
 
               <!-- Upload da Foto de Perfil do Profissional -->
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
                   Foto de Perfil do Especialista
                 </label>
 
                 @if (!formProfissional.get('fotoUrl')?.value) {
                   <div
                     (click)="fileInputProfissional.click()"
-                    class="border-2 border-dashed border-nude-300 hover:border-rose-400 bg-stone-50 hover:bg-rose-50/20 rounded-2xl p-4 text-center cursor-pointer transition-all flex items-center justify-center gap-3 group">
-                    <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                    class="border-2 border-dashed border-slate-300 hover:border-slate-500 bg-slate-50 hover:bg-slate-100/70 rounded-2xl p-4 text-center cursor-pointer transition-all flex items-center justify-center gap-3 group">
+                    <div class="w-12 h-12 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
                       👤
                     </div>
                     <div class="text-left">
-                      <span class="text-xs font-semibold text-stone-800 block">Clique para fazer upload da foto</span>
-                      <span class="text-[10px] text-stone-400">JPG, PNG, WEBP (foto de rosto recomendada)</span>
+                      <span class="text-xs font-semibold text-slate-800 block">Clique para fazer upload da foto</span>
+                      <span class="text-[10px] text-slate-400">JPG, PNG, WEBP (foto de rosto recomendada)</span>
                     </div>
                     @if (fazendoUploadProfissional()) {
-                      <span class="text-xs font-bold text-rose-600 animate-pulse ml-auto">Enviando...</span>
+                      <span class="text-xs font-bold text-slate-700 animate-pulse ml-auto">Enviando...</span>
                     }
                   </div>
                 } @else {
-                  <div class="p-3 rounded-2xl bg-stone-50 border border-nude-200 flex items-center justify-between gap-3">
+                  <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
-                      <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-rose-300 bg-white shadow-sm flex items-center justify-center">
+                      <div class="w-12 h-12 rounded-full overflow-hidden border border-slate-300 bg-white shadow-sm flex items-center justify-center">
                         <img [src]="obterImagemUrl(formProfissional.get('fotoUrl')?.value)" alt="Perfil" class="w-full h-full object-cover" />
                       </div>
                       <div>
-                        <span class="text-xs font-semibold text-stone-800 block">Foto de perfil definida</span>
+                        <span class="text-xs font-semibold text-slate-800 block">Foto de perfil definida</span>
                         <span class="text-[10px] text-emerald-600 font-medium">✓ Exibida aos clientes no catálogo</span>
                       </div>
                     </div>
@@ -908,7 +932,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                       <button
                         type="button"
                         (click)="fileInputProfissional.click()"
-                        class="px-2.5 py-1.5 rounded-lg border border-nude-300 bg-white text-[11px] font-semibold text-stone-700 hover:bg-stone-100">
+                        class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-semibold text-slate-700 hover:bg-slate-100">
                         Trocar Foto
                       </button>
                       <button
@@ -925,38 +949,46 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
                   {{ profissionalEmEdicao() ? 'Alterar Senha de Acesso (opcional)' : 'Senha de Acesso (padrão 123456)' }}
                 </label>
-                <input type="password" formControlName="senha" placeholder="Mínimo 6 caracteres" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <input type="password" formControlName="senha" placeholder="Mínimo 6 caracteres" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1.5">Procedimentos Habilitados:</label>
-                <div class="max-h-36 overflow-y-auto space-y-1.5 p-3 rounded-xl border border-nude-200 bg-stone-50">
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Procedimentos Habilitados:</label>
+                <div class="max-h-36 overflow-y-auto space-y-1.5 p-3 rounded-xl border border-slate-200 bg-slate-50">
                   @for (proc of procedimentos(); track proc.id) {
-                    <label class="flex items-center gap-2 text-xs text-stone-700 cursor-pointer hover:text-stone-900">
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:text-slate-900">
                       <input
                         type="checkbox"
                         [checked]="isProcedimentoSelecionado(proc.id)"
                         (change)="toggleProcedimentoProfissional(proc.id)"
-                        class="rounded text-rose-600 focus:ring-rose-400" />
+                        class="rounded text-slate-900 focus:ring-slate-900" />
                       <span>{{ proc.titulo }} ({{ proc.categoriaNome }})</span>
                     </label>
                   }
                 </div>
               </div>
+            </div>
 
-              <div class="pt-4 flex items-center justify-end gap-3">
-                <button type="button" (click)="fecharModalProfissional()" class="px-4 py-2.5 rounded-xl border border-nude-300 text-stone-600 text-xs font-semibold hover:bg-stone-50">
-                  Cancelar
-                </button>
-                <button type="submit" [disabled]="formProfissional.invalid || salvando()" class="px-6 py-2.5 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 disabled:opacity-50">
-                  {{ salvando() ? 'Salvando...' : 'Salvar Especialista' }}
-                </button>
-              </div>
-            </form>
-          </div>
+            <!-- Rodapé Fixo / Sticky Footer -->
+            <div class="px-5 py-3.5 sm:px-6 sm:py-4 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0 bg-slate-50">
+              <button 
+                type="button" 
+                (click)="fecharModalProfissional()" 
+                class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-colors">
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                [disabled]="formProfissional.invalid || salvando()" 
+                class="px-6 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 disabled:opacity-50 transition-colors shadow">
+                {{ salvando() ? 'Salvando...' : 'Salvar Especialista' }}
+              </button>
+            </div>
+
+          </form>
         </div>
       }
 
@@ -964,59 +996,75 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
       <!-- MODAL: CADASTRAR / EDITAR CLIENTE -->
       <!-- ========================================================================================= -->
       @if (modalClienteAberto()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-nude-200 animate-scale-up my-8">
-            <div class="flex items-center justify-between mb-6">
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start sm:items-center">
+          <form [formGroup]="formCliente" (ngSubmit)="salvarCliente()" class="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 animate-scale-up my-auto flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden font-sans">
+            
+            <!-- Cabeçalho Fixo / Sticky Header -->
+            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
               <div>
-                <span class="text-[10px] uppercase tracking-wider font-bold text-rose-600">Base de Pacientes</span>
-                <h3 class="font-serif font-bold text-xl text-stone-900">
+                <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Base de Pacientes</span>
+                <h3 class="font-extrabold text-lg sm:text-xl text-slate-900">
                   {{ clienteEmEdicao() ? 'Editar Paciente' : 'Novo Paciente' }}
                 </h3>
               </div>
-              <button (click)="fecharModalCliente()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
+              <button 
+                type="button"
+                (click)="fecharModalCliente()" 
+                class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-base font-bold transition-colors">
+                ✕
+              </button>
             </div>
 
-            @if (mensagemErro()) {
-              <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
-                <span>{{ mensagemErro() }}</span>
-                <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
-              </div>
-            }
-
-            <form [formGroup]="formCliente" (ngSubmit)="salvarCliente()" class="space-y-4">
-              <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Nome Completo do Paciente *</label>
-                <input type="text" formControlName="nome" placeholder="Ex: Fernanda Alencar" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-              </div>
+            <!-- Corpo com rolagem interna -->
+            <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              @if (mensagemErro()) {
+                <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                  <span>{{ mensagemErro() }}</span>
+                  <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
+                </div>
+              }
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">WhatsApp com DDD (Login de Acesso) *</label>
-                <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98765-4321" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                <span class="text-[10px] text-stone-400 mt-0.5 block">Usado para o cliente entrar na plataforma</span>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Completo do Paciente *</label>
+                <input type="text" formControlName="nome" placeholder="Ex: Fernanda Alencar" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail (opcional)</label>
-                <input type="email" formControlName="email" placeholder="fernanda@exemplo.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <label class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp com DDD (Login de Acesso) *</label>
+                <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98765-4321" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+                <span class="text-[10px] text-slate-400 mt-0.5 block">Usado para o cliente entrar na plataforma</span>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail (opcional)</label>
+                <input type="email" formControlName="email" placeholder="fernanda@exemplo.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
                   {{ clienteEmEdicao() ? 'Alterar Senha (opcional)' : 'Senha de Acesso (opcional - cliente cadastrará no primeiro acesso)' }}
                 </label>
-                <input type="password" formControlName="senha" placeholder="Mínimo 6 caracteres" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <input type="password" formControlName="senha" placeholder="Mínimo 6 caracteres" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
               </div>
+            </div>
 
-              <div class="pt-4 flex items-center justify-end gap-3">
-                <button type="button" (click)="fecharModalCliente()" class="px-4 py-2.5 rounded-xl border border-nude-300 text-stone-600 text-xs font-semibold hover:bg-stone-50">
-                  Cancelar
-                </button>
-                <button type="submit" [disabled]="formCliente.invalid || salvando()" class="px-6 py-2.5 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 disabled:opacity-50">
-                  {{ salvando() ? 'Salvando...' : 'Salvar Paciente' }}
-                </button>
-              </div>
-            </form>
-          </div>
+            <!-- Rodapé Fixo / Sticky Footer -->
+            <div class="px-5 py-3.5 sm:px-6 sm:py-4 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0 bg-slate-50">
+              <button 
+                type="button" 
+                (click)="fecharModalCliente()" 
+                class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-colors">
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                [disabled]="formCliente.invalid || salvando()" 
+                class="px-6 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 disabled:opacity-50 transition-colors shadow">
+                {{ salvando() ? 'Salvando...' : 'Salvar Paciente' }}
+              </button>
+            </div>
+
+          </form>
         </div>
       }
 
@@ -1088,60 +1136,68 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
       <!-- MODAL: CADASTRAR / EDITAR TIPO OU CATEGORIA -->
       <!-- ========================================================================================= -->
       @if (modalCategoriaAberto()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-nude-200 animate-scale-up my-8">
-            <div class="flex items-center justify-between mb-6">
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start sm:items-center">
+          <form [formGroup]="formCategoria" (ngSubmit)="salvarCategoria()" class="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 animate-scale-up my-auto flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden font-sans">
+            
+            <!-- Cabeçalho Fixo / Sticky Header -->
+            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
               <div>
-                <span class="text-[10px] uppercase tracking-wider font-bold text-rose-600">Catálogo do Estabelecimento</span>
-                <h3 class="font-serif font-bold text-xl text-stone-900">
+                <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Catálogo do Estabelecimento</span>
+                <h3 class="font-extrabold text-lg sm:text-xl text-slate-900">
                   {{ categoriaEmEdicao() ? 'Editar Tipo / Categoria' : 'Novo Tipo / Categoria' }}
                 </h3>
               </div>
-              <button (click)="fecharModalCategoria()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
+              <button 
+                type="button"
+                (click)="fecharModalCategoria()" 
+                class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-base font-bold transition-colors">
+                ✕
+              </button>
             </div>
 
-            @if (mensagemErro()) {
-              <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
-                <span>{{ mensagemErro() }}</span>
-                <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
-              </div>
-            }
+            <!-- Corpo com rolagem interna -->
+            <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              @if (mensagemErro()) {
+                <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                  <span>{{ mensagemErro() }}</span>
+                  <button type="button" (click)="mensagemErro.set(null)" class="text-rose-600 hover:text-rose-800 font-bold ml-2">✕</button>
+                </div>
+              }
 
-            <form [formGroup]="formCategoria" (ngSubmit)="salvarCategoria()" class="space-y-4">
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Nome do Tipo / Categoria *</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nome do Tipo / Categoria *</label>
                 <input
                   type="text"
                   formControlName="nome"
                   placeholder="Ex: Corte & Barba, Lavagem Detalhada, Facial..."
-                  class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Foto / Imagem de Capa do Tipo / Categoria</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Foto / Imagem de Capa do Tipo / Categoria</label>
                 @if (!formCategoria.get('imagemUrl')?.value) {
                   <div
                     (click)="fileInputFotoCategoria.click()"
-                    class="border-2 border-dashed border-nude-300 hover:border-rose-400 rounded-2xl p-4 text-center cursor-pointer transition-all bg-stone-50/50 hover:bg-rose-50/20 flex flex-col items-center justify-center gap-2">
-                    <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-lg">
+                    class="border-2 border-dashed border-slate-300 hover:border-slate-500 rounded-2xl p-4 text-center cursor-pointer transition-all bg-slate-50 hover:bg-slate-100/70 flex flex-col items-center justify-center gap-2 group">
+                    <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-lg group-hover:scale-105 transition-transform">
                       📷
                     </div>
                     <div>
-                      <span class="text-xs font-semibold text-stone-800 block">Clique para fazer upload da foto de capa</span>
-                      <span class="text-[10px] text-stone-400">PNG, JPG, WEBP ou SVG (até 15MB)</span>
+                      <span class="text-xs font-semibold text-slate-800 block">Clique para fazer upload da foto de capa</span>
+                      <span class="text-[10px] text-slate-400">PNG, JPG, WEBP ou SVG (até 15MB)</span>
                     </div>
                     @if (fazendoUploadCategoria()) {
-                      <span class="text-xs font-bold text-rose-600 animate-pulse">Enviando imagem...</span>
+                      <span class="text-xs font-bold text-slate-700 animate-pulse">Enviando imagem...</span>
                     }
                   </div>
                 } @else {
-                  <div class="p-3 rounded-2xl bg-stone-50 border border-nude-200 flex items-center justify-between gap-3">
+                  <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
-                      <div class="w-16 h-12 rounded-xl overflow-hidden border border-nude-300 bg-white shadow-sm flex items-center justify-center">
+                      <div class="w-16 h-12 rounded-xl overflow-hidden border border-slate-300 bg-white shadow-sm flex items-center justify-center">
                         <img [src]="obterImagemUrl(formCategoria.get('imagemUrl')?.value)" alt="Capa" class="w-full h-full object-cover" />
                       </div>
                       <div>
-                        <span class="text-xs font-semibold text-stone-800 block">Foto selecionada</span>
+                        <span class="text-xs font-semibold text-slate-800 block">Foto selecionada</span>
                         <span class="text-[10px] text-emerald-600 font-medium">✓ Imagem anexada com sucesso</span>
                       </div>
                     </div>
@@ -1149,7 +1205,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                       <button
                         type="button"
                         (click)="fileInputFotoCategoria.click()"
-                        class="px-2.5 py-1.5 rounded-lg border border-nude-300 bg-white text-[11px] font-semibold text-stone-700 hover:bg-stone-100">
+                        class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-semibold text-slate-700 hover:bg-slate-100">
                         Trocar Foto
                       </button>
                       <button
@@ -1166,76 +1222,78 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">Descrição Comercial</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição Comercial</label>
                 <textarea
                   formControlName="descricao"
                   rows="2"
                   placeholder="Breve descrição dos serviços agrupados nesta categoria..."
-                  class="w-full text-xs px-3.5 py-2 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50"></textarea>
+                  class="w-full text-xs px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50"></textarea>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Duração Padrão (Minutos) *</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Duração Padrão (Minutos) *</label>
                   <input
                     type="number"
                     step="5"
                     min="5"
                     formControlName="duracaoMinutosPadrao"
                     placeholder="Ex: 45"
-                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50 font-semibold" />
-                  <span class="text-[10px] text-stone-400 mt-0.5 block">Tempo sugerido nos serviços</span>
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50 font-semibold" />
+                  <span class="text-[10px] text-slate-400 mt-0.5 block">Tempo sugerido</span>
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Preço / Valor Médio (R$) *</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Preço / Valor Médio (R$) *</label>
                   <input
                     type="number"
                     step="1"
                     min="0"
                     formControlName="precoPadrao"
                     placeholder="Ex: 50.00"
-                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50 font-semibold" />
-                  <span class="text-[10px] text-stone-400 mt-0.5 block">Preço base do procedimento</span>
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50 font-semibold" />
+                  <span class="text-[10px] text-slate-400 mt-0.5 block">Preço base</span>
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Ordem de Exibição *</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Ordem de Exibição *</label>
                   <input
                     type="number"
                     min="1"
                     formControlName="ordemExibicao"
-                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
-                  <span class="text-[10px] text-stone-400 mt-0.5 block">1 aparece primeiro</span>
+                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+                  <span class="text-[10px] text-slate-400 mt-0.5 block">1 aparece primeiro</span>
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1">Disponível / Ativo</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Disponível / Ativo</label>
                   <div class="h-10 flex items-center">
                     <label class="inline-flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" formControlName="ativo" class="w-4 h-4 text-rose-600 rounded border-stone-300 focus:ring-rose-400" />
-                      <span class="text-xs text-stone-700 font-semibold">Exibir no catálogo</span>
+                      <input type="checkbox" formControlName="ativo" class="w-4 h-4 text-slate-900 rounded border-slate-300 focus:ring-slate-900" />
+                      <span class="text-xs text-slate-700 font-semibold">Exibir no catálogo</span>
                     </label>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div class="pt-4 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  (click)="fecharModalCategoria()"
-                  class="px-4 py-2.5 rounded-xl border border-nude-300 text-stone-600 text-xs font-semibold hover:bg-stone-50">
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  [disabled]="formCategoria.invalid || salvandoCategoria()"
-                  class="px-6 py-2.5 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 disabled:opacity-50">
-                  {{ salvandoCategoria() ? 'Salvando...' : 'Salvar Categoria' }}
-                </button>
-              </div>
-            </form>
-          </div>
+            <!-- Rodapé Fixo / Sticky Footer -->
+            <div class="px-5 py-3.5 sm:px-6 sm:py-4 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0 bg-slate-50">
+              <button
+                type="button"
+                (click)="fecharModalCategoria()"
+                class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-colors">
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                [disabled]="formCategoria.invalid || salvandoCategoria()"
+                class="px-6 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 disabled:opacity-50 transition-colors shadow">
+                {{ salvandoCategoria() ? 'Salvando...' : 'Salvar Categoria' }}
+              </button>
+            </div>
+
+          </form>
         </div>
       }
 

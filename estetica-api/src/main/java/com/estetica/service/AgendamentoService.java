@@ -30,23 +30,42 @@ public class AgendamentoService {
     private final UsuarioRepository usuarioRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TenantResolverService tenantResolverService;
+    private final ClinicaTenantRepository tenantRepository;
 
     private static final int HORAS_MINIMAS_CANCELAMENTO = 2;
 
     @Transactional
-    public AgendamentoDTO criarAgendamento(Long usuarioAutenticadoId, CriarAgendamentoRequest request) {
-        Usuario usuarioAutenticado = usuarioRepository.findById(usuarioAutenticadoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado com ID: " + usuarioAutenticadoId));
+    public AgendamentoDTO criarAgendamento(Object principal, CriarAgendamentoRequest request) {
+        if (principal == null) {
+            throw new org.springframework.security.authentication.BadCredentialsException("Usuário não autenticado.");
+        }
 
         Usuario cliente;
-        if (usuarioAutenticado.getRole() == Role.ROLE_ADMIN || usuarioAutenticado.getRole() == Role.ROLE_PROFISSIONAL) {
+        ClinicaTenant tenant;
+
+        if (principal instanceof com.estetica.model.Lojista lojista) {
             if (request.clienteId() == null) {
-                throw new RegraNegocioException("Como administrador ou especialista, você deve selecionar o paciente para o qual a consulta será marcada.");
+                throw new RegraNegocioException("Como administrador, você deve selecionar o paciente para o qual a consulta será marcada.");
             }
             cliente = usuarioRepository.findById(request.clienteId())
                     .orElseThrow(() -> new RecursoNaoEncontradoException("Paciente selecionado não encontrado com ID: " + request.clienteId()));
+            tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+            if (tenant == null && lojista.getSlug() != null) {
+                tenant = tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
+            }
+        } else if (principal instanceof Usuario usuario) {
+            if (usuario.getRole() == Role.ROLE_ADMIN || usuario.getRole() == Role.ROLE_PROFISSIONAL) {
+                if (request.clienteId() == null) {
+                    throw new RegraNegocioException("Como especialista ou administrador, você deve selecionar o paciente para o qual a consulta será marcada.");
+                }
+                cliente = usuarioRepository.findById(request.clienteId())
+                        .orElseThrow(() -> new RecursoNaoEncontradoException("Paciente selecionado não encontrado com ID: " + request.clienteId()));
+            } else {
+                cliente = usuario;
+            }
+            tenant = usuario.getTenant() != null ? usuario.getTenant() : tenantResolverService.getTenantDoUsuarioAutenticado();
         } else {
-            cliente = usuarioAutenticado;
+            throw new org.springframework.security.authentication.BadCredentialsException("Tipo de credencial inválido.");
         }
 
         Procedimento procedimento = procedimentoRepository.findById(request.procedimentoId())
@@ -101,9 +120,9 @@ public class AgendamentoService {
             throw new HorarioIndisponivelException("O horário selecionado acabou de ser reservado por outro cliente. Por favor, escolha outro slot.");
         }
 
-        com.estetica.model.ClinicaTenant tenant = profissional.getTenant() != null
-                ? profissional.getTenant()
-                : tenantResolverService.getTenantDoUsuarioAutenticado();
+        if (tenant == null && profissional.getTenant() != null) {
+            tenant = profissional.getTenant();
+        }
 
         Agendamento agendamento = Agendamento.builder()
                 .cliente(cliente)
@@ -112,7 +131,7 @@ public class AgendamentoService {
                 .tenant(tenant)
                 .dataHoraInicio(inicio)
                 .dataHoraFim(fim)
-                .status(StatusAgendamento.CONFIRMADO) // ou PENDENTE se exigisse pré-aprovação
+                .status(StatusAgendamento.CONFIRMADO)
                 .valorCobrado(procedimento.getPreco())
                 .observacoesCliente(request.observacoesCliente())
                 .dataCriacao(LocalDateTime.now())
@@ -126,6 +145,24 @@ public class AgendamentoService {
         return toDTO(agendamento);
     }
 
+    @Transactional
+    public AgendamentoDTO criarAgendamento(Long usuarioAutenticadoId, CriarAgendamentoRequest request) {
+        Usuario usuario = usuarioRepository.findById(usuarioAutenticadoId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado com ID: " + usuarioAutenticadoId));
+        return criarAgendamento(usuario, request);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AgendamentoDTO> listarMeusAgendamentos(Object principal) {
+        if (principal instanceof Usuario usuario) {
+            return agendamentoRepository.findByClienteIdOrderByDataHoraInicioDesc(usuario.getId())
+                    .stream()
+                    .map(this::toDTO)
+                    .toList();
+        }
+        return List.of();
+    }
+
     @Transactional(readOnly = true)
     public List<AgendamentoDTO> listarMeusAgendamentos(Long clienteId) {
         return agendamentoRepository.findByClienteIdOrderByDataHoraInicioDesc(clienteId)
@@ -135,13 +172,13 @@ public class AgendamentoService {
     }
 
     @Transactional(readOnly = true)
-    public List<AgendamentoDTO> listarCalendarioGeral(LocalDateTime inicio, LocalDateTime fim, Usuario usuario) {
+    public List<AgendamentoDTO> listarCalendarioGeral(LocalDateTime inicio, LocalDateTime fim, Object principal) {
         com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         List<Agendamento> agendamentos = (tenant != null)
                 ? agendamentoRepository.findAgendamentosCalendarioTenant(tenant.getId(), inicio, fim)
                 : agendamentoRepository.findAgendamentosCalendario(inicio, fim);
 
-        if (usuario != null && usuario.getRole() == Role.ROLE_PROFISSIONAL) {
+        if (principal instanceof Usuario usuario && usuario.getRole() == Role.ROLE_PROFISSIONAL) {
             return agendamentos.stream()
                     .filter(a -> a.getProfissional() != null && a.getProfissional().getUsuario() != null
                             && a.getProfissional().getUsuario().getId().equals(usuario.getId()))
@@ -154,11 +191,21 @@ public class AgendamentoService {
     }
 
     @Transactional
-    public AgendamentoDTO cancelarAgendamento(Long agendamentoId, Long usuarioId, boolean isAdmin, String motivo) {
+    public AgendamentoDTO cancelarAgendamento(Long agendamentoId, Object principal, String motivo) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Agendamento não encontrado com ID: " + agendamentoId));
 
-        if (!isAdmin && !agendamento.getCliente().getId().equals(usuarioId)) {
+        boolean isAdmin = false;
+        Long usuarioId = null;
+
+        if (principal instanceof com.estetica.model.Lojista) {
+            isAdmin = true;
+        } else if (principal instanceof Usuario u) {
+            isAdmin = (u.getRole() == Role.ROLE_ADMIN || u.getRole() == Role.ROLE_PROFISSIONAL);
+            usuarioId = u.getId();
+        }
+
+        if (!isAdmin && (usuarioId == null || !agendamento.getCliente().getId().equals(usuarioId))) {
             throw new RegraNegocioException("Você não tem permissão para cancelar este agendamento.");
         }
 
@@ -192,11 +239,21 @@ public class AgendamentoService {
     }
 
     @Transactional
-    public AgendamentoDTO remarcarAgendamento(Long agendamentoId, Long usuarioId, boolean isAdmin, RemarcarAgendamentoRequest request) {
+    public AgendamentoDTO remarcarAgendamento(Long agendamentoId, Object principal, RemarcarAgendamentoRequest request) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Agendamento não encontrado com ID: " + agendamentoId));
 
-        if (!isAdmin && !agendamento.getCliente().getId().equals(usuarioId)) {
+        boolean isAdmin = false;
+        Long usuarioId = null;
+
+        if (principal instanceof com.estetica.model.Lojista) {
+            isAdmin = true;
+        } else if (principal instanceof Usuario u) {
+            isAdmin = (u.getRole() == Role.ROLE_ADMIN || u.getRole() == Role.ROLE_PROFISSIONAL);
+            usuarioId = u.getId();
+        }
+
+        if (!isAdmin && (usuarioId == null || !agendamento.getCliente().getId().equals(usuarioId))) {
             throw new RegraNegocioException("Você não tem permissão para remarcar este agendamento.");
         }
 

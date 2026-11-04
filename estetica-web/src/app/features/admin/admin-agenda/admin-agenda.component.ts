@@ -25,7 +25,7 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
           </h1>
         </div>
 
-        <!-- Filtro Rápido de Data & Ação de Travar Agenda -->
+        <!-- Filtro Rápido de Data, Novo Agendamento & Ação de Travar Agenda -->
         <div class="flex flex-wrap items-center gap-2">
           <input 
             type="date" 
@@ -35,6 +35,12 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
           <button (click)="irParaHoje()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors">
             Hoje
           </button>
+          <a 
+            routerLink="/agendar"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2d7a58] hover:bg-[#236347] text-white text-xs font-bold shadow-sm transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Agendar Paciente</span>
+          </a>
           <button 
             (click)="abrirModalAgenda()"
             class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all">
@@ -84,9 +90,18 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
           Consultando agendamentos...
         </div>
       } @else if (agendamentosFiltrados().length === 0) {
-        <div class="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm">
+        <div class="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center">
+          <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-xl mb-3 text-slate-500">
+            📅
+          </div>
           <p class="font-bold text-slate-800 text-lg">Nenhum atendimento agendado para esta data.</p>
-          <p class="text-xs text-slate-400 mt-1">Selecione outro dia ou divulgue horários na recepção.</p>
+          <p class="text-xs text-slate-400 mt-1 max-w-sm mb-5">Selecione outro dia ou agende um paciente diretamente para este ou outro horário.</p>
+          <a
+            routerLink="/agendar"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Agendar Atendimento</span>
+          </a>
         </div>
       } @else {
         <div class="space-y-3">
