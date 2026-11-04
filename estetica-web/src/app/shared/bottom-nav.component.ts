@@ -19,15 +19,17 @@ import { AuthService } from '../core/services/auth.service';
           <span>Serviços</span>
         </a>
 
-        <!-- Botão Principal Central de Agendar -->
-        <a routerLink="/agendar" class="flex flex-col items-center -mt-5 group">
-          <div class="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-300 group-hover:scale-105 transition-transform">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-          </div>
-          <span class="text-[10px] font-bold text-slate-900 mt-1">Agendar</span>
-        </a>
+        <!-- Botão Principal Central de Agendar / Catálogo -->
+        @if (authService.isAdminOrProfissional()) {
+          <a routerLink="/agendar" class="flex flex-col items-center -mt-5 group">
+            <div class="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-300 group-hover:scale-105 transition-transform">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+            </div>
+            <span class="text-[10px] font-bold text-slate-900 mt-1">Agendar</span>
+          </a>
+        }
 
         <!-- Meus Agendamentos -->
         @if (authService.isAuthenticated()) {

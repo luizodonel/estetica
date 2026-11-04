@@ -50,7 +50,7 @@ public class ClinicaTenant {
     @JoinColumn(name = "lojista_id")
     private Lojista lojista;
 
-    @Column(name = "telefone_whatsapp", length = 20)
+    @Column(name = "telefone_whatsapp", length = 50)
     private String telefoneWhatsApp;
 
     @Column(name = "banner_tag", length = 100)

@@ -922,6 +922,10 @@ export class AgendamentoWizardComponent implements OnInit {
         this.erroAgendamento.set('Por favor, informe seu Nome Completo e WhatsApp para confirmar seu agendamento.');
         return;
       }
+      if (this.whatsappClienteOnline.replaceAll(/[^0-9]/g, '').length < 8) {
+        this.erroAgendamento.set('Por favor, informe um WhatsApp válido com DDD (mínimo 8 a 11 dígitos).');
+        return;
+      }
     }
 
     this.salvando.set(true);

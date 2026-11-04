@@ -32,7 +32,7 @@ public class Usuario implements UserDetails {
     @Column(length = 120)
     private String email;
 
-    @Column(name = "telefone_whatsapp", nullable = false, length = 20)
+    @Column(name = "telefone_whatsapp", nullable = false, length = 50)
     private String telefoneWhatsApp;
 
     @Column(name = "senha_hash")

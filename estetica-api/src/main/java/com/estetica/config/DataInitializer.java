@@ -26,6 +26,11 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         try {
+            // Garante tamanho de colunas de telefone para até 50 caracteres
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_lojista ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
+
             // Remove restrições de unicidade legadas na tabela tb_categoria para permitir
             // que cada tenant e nicho tenha suas próprias categorias sem colisão de nomes.
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_categoria DROP CONSTRAINT IF EXISTS uk_at5cf41guxjf4dkdeo5qxva9");

@@ -601,7 +601,8 @@ interface DiaCarrossel {
                   [(ngModel)]="whatsappRapido"
                   name="whatsappRapido"
                   required
-                  placeholder="(61) 99999-9999"
+                  maxlength="20"
+                  placeholder="(11) 99999-9999"
                   class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-slate-50" />
               </div>
 
@@ -1006,11 +1007,16 @@ export class CatalogoComponent implements OnInit {
     const slot = this.slotSelecionado();
     if (!proc || !slot) return;
 
+    const telLimpo = this.whatsappRapido.replaceAll(/[^0-9]/g, '');
+    if (telLimpo.length < 8) {
+      this.erroClienteRapido.set('Por favor, informe seu WhatsApp com DDD (mínimo 8 a 11 dígitos).');
+      return;
+    }
+
     this.salvando.set(true);
     this.erroClienteRapido.set(null);
 
     const slug = this.tenantService.obterSlugAtual();
-    const telLimpo = this.whatsappRapido.replaceAll(/[^0-9]/g, '');
 
     const horaInicioLimpa = slot.horarioInicio.length === 5 ? slot.horarioInicio + ':00' : slot.horarioInicio;
     const dataHoraInicio = `${this.dataSelecionada()}T${horaInicioLimpa}`;

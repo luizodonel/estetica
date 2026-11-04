@@ -50,12 +50,14 @@ import { SetorService } from '../core/services/setor.service';
               {{ setorService.termoServicos() }}
             </a>
 
-            <a 
-              routerLink="/agendar" 
-              routerLinkActive="bg-slate-900 text-white font-semibold shadow-sm" 
-              class="px-3.5 py-2 rounded-xl hover:text-slate-900 hover:bg-slate-100 transition-all whitespace-nowrap">
-              {{ setorService.termoAgendar() }}
-            </a>
+            @if (authService.isAdminOrProfissional()) {
+              <a 
+                routerLink="/agendar" 
+                routerLinkActive="bg-slate-900 text-white font-semibold shadow-sm" 
+                class="px-3.5 py-2 rounded-xl hover:text-slate-900 hover:bg-slate-100 transition-all whitespace-nowrap">
+                {{ setorService.termoAgendar() }}
+              </a>
+            }
 
             @if (authService.isAuthenticated() && !authService.isAdminOrProfissional()) {
               <a 

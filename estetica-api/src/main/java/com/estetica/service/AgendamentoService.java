@@ -57,8 +57,11 @@ public class AgendamentoService {
             String telefoneLimpo = request.clienteTelefone() != null 
                     ? request.clienteTelefone().replaceAll("[^0-9]", "") : "";
 
-            if (telefoneLimpo.isBlank()) {
-                throw new RegraNegocioException("Por favor, informe seu WhatsApp para confirmar o agendamento.");
+            if (telefoneLimpo.isBlank() || telefoneLimpo.length() < 8) {
+                throw new RegraNegocioException("Por favor, informe seu WhatsApp com DDD para confirmar o agendamento.");
+            }
+            if (telefoneLimpo.length() > 30) {
+                telefoneLimpo = telefoneLimpo.substring(0, 30);
             }
 
             final Long tid = tenant != null ? tenant.getId() : null;
@@ -97,6 +100,9 @@ public class AgendamentoService {
                         .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente selecionado não encontrado com ID: " + request.clienteId()));
             } else if (request.clienteNome() != null && request.clienteTelefone() != null) {
                 String telLimpo = request.clienteTelefone().replaceAll("[^0-9]", "");
+                if (telLimpo.length() > 30) {
+                    telLimpo = telLimpo.substring(0, 30);
+                }
                 final Long tid = tenant != null ? tenant.getId() : null;
                 cliente = usuarioRepository.findByTelefoneWhatsApp(telLimpo)
                         .filter(u -> tid == null || (u.getTenant() != null && u.getTenant().getId().equals(tid)))
@@ -125,6 +131,9 @@ public class AgendamentoService {
                             .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente selecionado não encontrado com ID: " + request.clienteId()));
                 } else if (request.clienteNome() != null && request.clienteTelefone() != null) {
                     String telLimpo = request.clienteTelefone().replaceAll("[^0-9]", "");
+                if (telLimpo.length() > 30) {
+                    telLimpo = telLimpo.substring(0, 30);
+                }
                     final Long tid = tenant != null ? tenant.getId() : null;
                     cliente = usuarioRepository.findByTelefoneWhatsApp(telLimpo)
                             .filter(u -> tid == null || (u.getTenant() != null && u.getTenant().getId().equals(tid)))
