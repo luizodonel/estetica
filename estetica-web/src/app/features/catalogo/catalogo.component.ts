@@ -29,12 +29,12 @@ interface DiaCarrossel {
         <div class="bg-stone-900 text-white text-xs px-4 py-2 flex items-center justify-between z-30">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="font-semibold">Modo de VisualizaÃ§Ã£o do CatÃ¡logo & Agendamento do Estabelecimento</span>
+            <span class="font-semibold">Modo de Visualização do Catálogo & Agendamento do Estabelecimento</span>
           </div>
           <div class="flex items-center gap-3">
-            <a routerLink="/admin/gestao" class="text-stone-300 hover:text-white underline">Painel de GestÃ£o</a>
+            <a routerLink="/admin/gestao" class="text-stone-300 hover:text-white underline">Painel de Gestão</a>
             <button (click)="abrirModalBanner()" class="px-2.5 py-1 rounded bg-stone-800 hover:bg-stone-700 text-[11px] font-semibold border border-stone-700">
-              âœï¸ Editar Banner
+              ✏️ Editar Banner
             </button>
           </div>
         </div>
@@ -56,7 +56,7 @@ interface DiaCarrossel {
               @if (tenantService.logoUrl()) {
                 <img [src]="tenantService.logoUrl()" [alt]="tenantService.nomeEmpresa()" class="w-full h-full object-contain" />
               } @else {
-                <div class="text-3xl text-rose-500">ðŸŒ¸</div>
+                <div class="text-3xl text-rose-500">🌸</div>
               }
             </div>
             
@@ -68,19 +68,19 @@ interface DiaCarrossel {
             </span>
           </div>
 
-          <!-- InformaÃ§Ãµes de EndereÃ§o & HorÃ¡rio -->
+          <!-- Informações de Endereço & Horário -->
           <div class="py-5 border-b border-slate-100 space-y-3 text-xs text-stone-600">
             <div class="flex items-start gap-2.5">
-              <span class="text-stone-400 text-sm shrink-0">ðŸ“</span>
+              <span class="text-stone-400 text-sm shrink-0">📍</span>
               <span class="leading-relaxed">
                 {{ enderecoLoja() }}
               </span>
             </div>
             <div class="flex items-start gap-2.5">
-              <span class="text-stone-400 text-sm shrink-0">ðŸ•’</span>
+              <span class="text-stone-400 text-sm shrink-0">🕒</span>
               <div>
-                <span class="block text-stone-700 font-semibold">HorÃ¡rio de funcionamento</span>
-                <span class="text-[11px] text-stone-500">09:00 Ã s 19:00</span>
+                <span class="block text-stone-700 font-semibold">Horário de funcionamento</span>
+                <span class="text-[11px] text-stone-500">09:00 às 19:00</span>
               </div>
             </div>
             <div class="flex items-center gap-2 pt-1">
@@ -106,8 +106,8 @@ interface DiaCarrossel {
                 [class.text-stone-600]="categoriaSelecionada() !== null"
                 [class.hover:bg-slate-100]="categoriaSelecionada() !== null"
                 class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left">
-                <span class="text-sm">ðŸ§­</span>
-                <span>Todos os ServiÃ§os</span>
+                <span class="text-sm">🧭</span>
+                <span>Todos os Serviços</span>
               </button>
 
               @for (cat of categorias(); track cat.id) {
@@ -120,7 +120,7 @@ interface DiaCarrossel {
                   [class.text-stone-600]="categoriaSelecionada() !== cat.id"
                   [class.hover:bg-slate-100]="categoriaSelecionada() !== cat.id"
                   class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left">
-                  <span class="text-sm">{{ cat.icone || 'âœ¨' }}</span>
+                  <span class="text-sm">{{ cat.icone || '✨' }}</span>
                   <span class="truncate">{{ cat.nome }}</span>
                 </button>
               }
@@ -130,7 +130,7 @@ interface DiaCarrossel {
         </aside>
 
         <!-- --------------------------------------------------------------------- -->
-        <!-- COLUNA 2: CONTEÃšDO CENTRAL (CATÃLOGO DE SERVIÃ‡OS) -->
+        <!-- COLUNA 2: CONTEÚDO CENTRAL (CATÁLOGO DE SERVIÇOS) -->
         <!-- --------------------------------------------------------------------- -->
         <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           
@@ -141,7 +141,7 @@ interface DiaCarrossel {
                 @if (tenantService.logoUrl()) {
                   <img [src]="tenantService.logoUrl()" [alt]="tenantService.nomeEmpresa()" class="w-full h-full object-contain" />
                 } @else {
-                  <div class="text-2xl text-rose-500">ðŸŒ¸</div>
+                  <div class="text-2xl text-rose-500">🌸</div>
                 }
               </div>
               <div>
@@ -167,11 +167,11 @@ interface DiaCarrossel {
             <input
               type="text"
               [(ngModel)]="termoBusca"
-              placeholder="Buscar serviÃ§o por nome ou descriÃ§Ã£o..."
+              placeholder="Buscar serviço por nome ou descrição..."
               class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent shadow-sm" />
           </div>
 
-          <!-- PÃLULAS DE CATEGORIAS (TABLET & MOBILE) -->
+          <!-- PÍLULAS DE CATEGORIAS (TABLET & MOBILE) -->
           <div class="lg:hidden flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
             <button
               type="button"
@@ -192,13 +192,13 @@ interface DiaCarrossel {
                 [class.bg-white]="categoriaSelecionada() !== cat.id"
                 [class.text-stone-700]="categoriaSelecionada() !== cat.id"
                 class="px-4 py-2 rounded-full text-xs font-semibold border border-slate-200 whitespace-nowrap shadow-sm transition-all flex items-center gap-1.5">
-                <span>{{ cat.icone || 'âœ¨' }}</span>
+                <span>{{ cat.icone || '✨' }}</span>
                 <span>{{ cat.nome }}</span>
               </button>
             }
           </div>
 
-          <!-- LISTAGEM DE SERVIÃ‡OS / PROCEDIMENTOS -->
+          <!-- LISTAGEM DE SERVIÇOS / PROCEDIMENTOS -->
           @if (carregando()) {
             <div class="space-y-4">
               @for (i of [1,2,3,4]; track i) {
@@ -207,8 +207,8 @@ interface DiaCarrossel {
             </div>
           } @else if (procedimentosFiltrados().length === 0) {
             <div class="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm space-y-3">
-              <span class="text-3xl">ðŸ”</span>
-              <h3 class="font-serif font-bold text-base text-stone-800">Nenhum serviÃ§o encontrado</h3>
+              <span class="text-3xl">🔍</span>
+              <h3 class="font-serif font-bold text-base text-stone-800">Nenhum serviço encontrado</h3>
               <p class="text-xs text-stone-500">Tente buscar por outro termo ou selecione outra categoria.</p>
             </div>
           } @else {
@@ -230,11 +230,11 @@ interface DiaCarrossel {
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2 mb-1">
                         <span class="text-[10px] font-semibold text-stone-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                          â±ï¸ {{ proc.duracaoMinutos }} min
+                          ⏱️ {{ proc.duracaoMinutos }} min
                         </span>
                         @if (proc.categoriaNome) {
                           <span class="text-[10px] font-medium text-stone-400">
-                            â€¢ {{ proc.categoriaNome }}
+                            • {{ proc.categoriaNome }}
                           </span>
                         }
                       </div>
@@ -244,7 +244,7 @@ interface DiaCarrossel {
                       </h3>
 
                       <p class="text-xs text-stone-500 mt-1 line-clamp-2 leading-relaxed">
-                        {{ proc.descricao || 'ServiÃ§o especializado com profissionais certificados e produtos de primeira linha.' }}
+                        {{ proc.descricao || 'Serviço especializado com profissionais certificados e produtos de primeira linha.' }}
                       </p>
 
                       <div class="mt-2 sm:hidden flex items-center justify-between">
@@ -259,13 +259,13 @@ interface DiaCarrossel {
                           [class.bg-slate-100]="!isServicoSelecionado(proc.id)"
                           [class.text-stone-800]="!isServicoSelecionado(proc.id)"
                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm">
-                          {{ isServicoSelecionado(proc.id) ? 'âœ“ Adicionado' : '+ Adicionar' }}
+                          {{ isServicoSelecionado(proc.id) ? '✓ Adicionado' : '+ Adicionar' }}
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  <!-- PreÃ§o e BotÃ£o Adicionar (Desktop / Tablet) -->
+                  <!-- Preço e Botão Adicionar (Desktop / Tablet) -->
                   <div class="hidden sm:flex flex-col items-end gap-2 shrink-0 pl-2">
                     <span class="font-serif font-bold text-base sm:text-lg text-stone-900">
                       {{ proc.preco | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
@@ -281,7 +281,7 @@ interface DiaCarrossel {
                       [class.text-stone-800]="!isServicoSelecionado(proc.id)"
                       class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
                       @if (isServicoSelecionado(proc.id)) {
-                        <span>âœ“ Adicionado</span>
+                        <span>✓ Adicionado</span>
                       } @else {
                         <span>+ Adicionar</span>
                       }
@@ -315,7 +315,7 @@ interface DiaCarrossel {
               <span class="font-serif text-base font-bold text-stone-900">
                 {{ totalPreco() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
               </span>
-              <span class="text-[10px] text-stone-500">({{ servicosSelecionados().length }} serviÃ§o{{ servicosSelecionados().length > 1 ? 's' : '' }})</span>
+              <span class="text-[10px] text-stone-500">({{ servicosSelecionados().length }} serviço{{ servicosSelecionados().length > 1 ? 's' : '' }})</span>
             </div>
           </div>
 
@@ -337,7 +337,7 @@ interface DiaCarrossel {
           <div class="bg-white rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto shadow-2xl border-t border-slate-200 animate-slide-up">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h2 class="font-serif font-bold text-lg text-stone-900">Seu Agendamento</h2>
-              <button (click)="gavetaMobileAberta.set(false)" class="text-stone-400 hover:text-stone-700 p-2 text-lg font-bold">âœ•</button>
+              <button (click)="gavetaMobileAberta.set(false)" class="text-stone-400 hover:text-stone-700 p-2 text-lg font-bold">✕</button>
             </div>
 
             <ng-container *ngTemplateOutlet="painelAgendamentoConteudo"></ng-container>
@@ -346,12 +346,12 @@ interface DiaCarrossel {
       }
 
       <!-- ========================================================================= -->
-      <!-- TEMPLATE REUTILIZÃVEL: PAINEL SEU AGENDAMENTO -->
+      <!-- TEMPLATE REUTILIZÁVEL: PAINEL SEU AGENDAMENTO -->
       <!-- ========================================================================= -->
       <ng-template #painelAgendamentoConteudo>
         <div class="space-y-6">
           
-          <!-- TÃ­tulo do Painel -->
+          <!-- Título do Painel -->
           <div class="hidden md:flex items-center justify-between pb-3 border-b border-slate-100">
             <h2 class="font-serif font-bold text-lg text-stone-900">Seu Agendamento</h2>
             @if (servicosSelecionados().length > 0) {
@@ -361,12 +361,12 @@ interface DiaCarrossel {
             }
           </div>
 
-          <!-- ServiÃ§os Selecionados -->
+          <!-- Serviços Selecionados -->
           @if (servicosSelecionados().length === 0) {
             <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 text-center space-y-2">
-              <span class="text-2xl">ðŸ’†</span>
-              <p class="text-xs text-stone-600 font-semibold">Nenhum serviÃ§o selecionado</p>
-              <p class="text-[11px] text-stone-400">Clique em "+ Adicionar" nos serviÃ§os do catÃ¡logo ao lado para agendar seu horÃ¡rio.</p>
+              <span class="text-2xl">💆</span>
+              <p class="text-xs text-stone-600 font-semibold">Nenhum serviço selecionado</p>
+              <p class="text-[11px] text-stone-400">Clique em "+ Adicionar" nos serviços do catálogo ao lado para agendar seu horário.</p>
             </div>
           } @else {
             <div class="space-y-2.5 max-h-48 overflow-y-auto pr-1">
@@ -378,19 +378,19 @@ interface DiaCarrossel {
                       class="w-10 h-10 rounded-lg object-cover shrink-0" />
                     <div class="min-w-0">
                       <span class="text-xs font-semibold text-stone-800 block truncate">{{ item.titulo }}</span>
-                      <span class="text-[10px] text-stone-400">â±ï¸ {{ item.duracaoMinutos }} min</span>
+                      <span class="text-[10px] text-stone-400">⏱️ {{ item.duracaoMinutos }} min</span>
                     </div>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
                     <span class="text-xs font-bold text-stone-900">{{ item.preco | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</span>
-                    <button (click)="removerServico(item.id)" class="text-stone-400 hover:text-rose-600 p-1 text-xs">âœ•</button>
+                    <button (click)="removerServico(item.id)" class="text-stone-400 hover:text-rose-600 p-1 text-xs">✕</button>
                   </div>
                 </div>
               }
             </div>
           }
 
-          <!-- SELEÃ‡ÃƒO DE PROFISSIONAL -->
+          <!-- SELEÇÃO DE PROFISSIONAL -->
           @if (servicosSelecionados().length > 0) {
             <div>
               <span class="text-xs font-bold text-stone-900 block mb-2.5">
@@ -407,7 +407,7 @@ interface DiaCarrossel {
                   [class.bg-slate-100]="profissionalSelecionado() === null"
                   class="flex flex-col items-center gap-1 shrink-0 p-1.5 rounded-2xl border-2 border-transparent transition-all">
                   <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-stone-600 text-lg shadow-sm">
-                    ðŸ‘¤
+                    👤
                   </div>
                   <span class="text-[10px] font-medium text-stone-600 text-center max-w-[64px] leading-tight">
                     Qualquer Profissional
@@ -434,7 +434,7 @@ interface DiaCarrossel {
               </div>
             </div>
 
-            <!-- SELEÃ‡ÃƒO DE DATAS -->
+            <!-- SELEÇÃO DE DATAS -->
             <div>
               <span class="text-xs font-bold text-stone-900 block mb-2.5">
                 Datas
@@ -457,27 +457,27 @@ interface DiaCarrossel {
               </div>
             </div>
 
-            <!-- SELEÃ‡ÃƒO DE HORÃRIOS -->
+            <!-- SELEÇÃO DE HORÁRIOS -->
             <div>
               <span class="text-xs font-bold text-stone-900 block mb-2">
-                HorÃ¡rios DisponÃ­veis
+                Horários Disponíveis
               </span>
 
               @if (carregandoSlots()) {
                 <div class="py-6 text-center text-xs text-stone-400">
                   <div class="inline-block w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mb-1"></div>
-                  <p>Buscando horÃ¡rios disponÃ­veis...</p>
+                  <p>Buscando horários disponíveis...</p>
                 </div>
               } @else if (slots().length === 0) {
                 <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-stone-500">
-                  Sem horÃ¡rios livres nesta data. Selecione outro dia acima.
+                  Sem horários livres nesta data. Selecione outro dia acima.
                 </div>
               } @else {
                 
-                <!-- ManhÃ£ -->
+                <!-- Manhã -->
                 @if (slotsManha().length > 0) {
                   <div class="mb-3">
-                    <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider block mb-1.5">ManhÃ£</span>
+                    <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider block mb-1.5">Manhã</span>
                     <div class="grid grid-cols-4 gap-1.5">
                       @for (slot of slotsManha(); track slot.horarioInicio) {
                         <button
@@ -519,7 +519,7 @@ interface DiaCarrossel {
               }
             </div>
 
-            <!-- TOTAL E BOTÃƒO CONFIRMAR -->
+            <!-- TOTAL E BOTÃO CONFIRMAR -->
             <div class="pt-4 border-t border-slate-100 space-y-3">
               <div class="flex items-center justify-between">
                 <span class="text-xs text-stone-500 font-medium">Total:</span>
@@ -548,7 +548,7 @@ interface DiaCarrossel {
               </button>
 
               <p class="text-[10px] text-stone-400 text-center">
-                Sem cobranÃ§a antecipada obrigatÃ³ria â€¢ Pagamento no local
+                Sem cobrança antecipada obrigatória • Pagamento no local
               </p>
             </div>
 
@@ -558,7 +558,7 @@ interface DiaCarrossel {
       </ng-template>
 
       <!-- ========================================================================= -->
-      <!-- MODAL DE IDENTIFICAÃ‡ÃƒO RÃPIDA DO CLIENTE (SE NÃƒO ESTIVER LOGADO) -->
+      <!-- MODAL DE IDENTIFICAÇÃO RÁPIDA DO CLIENTE (SE NÃO ESTIVER LOGADO) -->
       <!-- ========================================================================= -->
       @if (modalIdentificacaoAberta()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
@@ -566,14 +566,14 @@ interface DiaCarrossel {
             
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <span class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">ConfirmaÃ§Ã£o RÃ¡pida</span>
-                <h3 class="font-serif font-bold text-xl text-stone-900">Quase lÃ¡! Quem vai agendar?</h3>
+                <span class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">Confirmação Rápida</span>
+                <h3 class="font-serif font-bold text-xl text-stone-900">Quase lá! Quem vai agendar?</h3>
               </div>
-              <button (click)="modalIdentificacaoAberta.set(false)" class="text-stone-400 hover:text-stone-700 p-2 text-lg font-bold">âœ•</button>
+              <button (click)="modalIdentificacaoAberta.set(false)" class="text-stone-400 hover:text-stone-700 p-2 text-lg font-bold">✕</button>
             </div>
 
             <p class="text-xs text-stone-500">
-              Informe seu nome e WhatsApp para enviarmos a confirmaÃ§Ã£o e lembretes da sua sessÃ£o.
+              Informe seu nome e WhatsApp para enviarmos a confirmação e lembretes da sua sessão.
             </p>
 
             @if (erroClienteRapido()) {
@@ -642,7 +642,7 @@ interface DiaCarrossel {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
           <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-200 text-center space-y-4 animate-scale-up">
             <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
-              âœ“
+              ✓
             </div>
             
             <h3 class="font-serif font-bold text-2xl text-stone-900">
@@ -650,8 +650,8 @@ interface DiaCarrossel {
             </h3>
             
             <p class="text-xs text-stone-600 leading-relaxed max-w-sm mx-auto">
-              Seu horÃ¡rio em <strong>{{ tenantService.nomeEmpresa() }}</strong> foi reservado com sucesso para o dia 
-              <strong>{{ formatarDataBR(dataSelecionada()) }}</strong> Ã s 
+              Seu horário em <strong>{{ tenantService.nomeEmpresa() }}</strong> foi reservado com sucesso para o dia 
+              <strong>{{ formatarDataBR(dataSelecionada()) }}</strong> às 
               <strong>{{ formatarHora(slotSelecionado()?.horarioInicio || '') }}</strong>.
             </p>
 
@@ -681,21 +681,21 @@ interface DiaCarrossel {
         </div>
       }
 
-      <!-- MODAL DE EDIÃ‡ÃƒO DE BANNER (ADMIN) -->
+      <!-- MODAL DE EDIÇÃO DE BANNER (ADMIN) -->
       @if (modalBannerAberto()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
           <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <div>
-                <span class="text-[10px] uppercase font-bold text-rose-600 tracking-wider">PersonalizaÃ§Ã£o da Loja</span>
-                <h3 class="font-serif font-bold text-xl text-stone-900">Editar InformaÃ§Ãµes de ApresentaÃ§Ã£o</h3>
+                <span class="text-[10px] uppercase font-bold text-rose-600 tracking-wider">Personalização da Loja</span>
+                <h3 class="font-serif font-bold text-xl text-stone-900">Editar Informações de Apresentação</h3>
               </div>
-              <button (click)="fecharModalBanner()" class="text-stone-400 hover:text-stone-600 p-2 font-bold text-lg">âœ•</button>
+              <button (click)="fecharModalBanner()" class="text-stone-400 hover:text-stone-600 p-2 font-bold text-lg">✕</button>
             </div>
 
             <form (ngSubmit)="salvarBanner()" class="space-y-4">
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">TÃ­tulo de Destaque *:</label>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Título de Destaque *:</label>
                 <input 
                   type="text" 
                   [(ngModel)]="editBannerTitulo" 
@@ -705,7 +705,7 @@ interface DiaCarrossel {
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-stone-700 mb-1">SubtÃ­tulo / DescriÃ§Ã£o:</label>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Subtítulo / Descrição:</label>
                 <textarea 
                   [(ngModel)]="editBannerSubtitulo" 
                   name="editBannerSubtitulo" 
@@ -732,7 +732,7 @@ export class CatalogoComponent implements OnInit {
   tenantService = inject(TenantService);
   setorService = inject(SetorService);
 
-  // Dados do CatÃ¡logo
+  // Dados do Catálogo
   categorias = signal<Categoria[]>([]);
   procedimentos = signal<Procedimento[]>([]);
   profissionais = signal<Profissional[]>([]);
@@ -754,7 +754,7 @@ export class CatalogoComponent implements OnInit {
   // Mobile Drawer
   gavetaMobileAberta = signal<boolean>(false);
 
-  // Cliente RÃ¡pido (para quem nÃ£o estÃ¡ logado)
+  // Cliente Rápido (para quem não está logado)
   modalIdentificacaoAberta = signal<boolean>(false);
   nomeRapido = '';
   whatsappRapido = '';
@@ -768,7 +768,7 @@ export class CatalogoComponent implements OnInit {
   editBannerTitulo = '';
   editBannerSubtitulo = '';
 
-  // CÃ¡lculos Reativos
+  // Cálculos Reativos
   procedimentosFiltrados = computed(() => {
     let lista = this.procedimentos();
     const catId = this.categoriaSelecionada();
@@ -813,7 +813,7 @@ export class CatalogoComponent implements OnInit {
     if (t?.telefoneWhatsApp) {
       return `WhatsApp: ${t.telefoneWhatsApp}`;
     }
-    return 'Atendimento com horÃ¡rio marcado no local';
+    return 'Atendimento com horário marcado no local';
   });
 
   ngOnInit(): void {
@@ -832,7 +832,7 @@ export class CatalogoComponent implements OnInit {
   gerarDiasCarrossel(): void {
     const dias: DiaCarrossel[] = [];
     const hoje = new Date();
-    const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b'];
+    const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     for (let i = 0; i < 14; i++) {
       const d = new Date();
       d.setDate(hoje.getDate() + i);
@@ -953,7 +953,7 @@ export class CatalogoComponent implements OnInit {
       next: (res) => {
         this.slots.set(res.slots || []);
         this.carregandoSlots.set(false);
-        // Se o slot atual nÃ£o estiver na nova lista, desseleciona
+        // Se o slot atual não estiver na nova lista, desseleciona
         if (this.slotSelecionado() && !res.slots?.some(s => s.horarioInicio === this.slotSelecionado()?.horarioInicio)) {
           this.slotSelecionado.set(null);
         }
@@ -1054,7 +1054,7 @@ export class CatalogoComponent implements OnInit {
     const horaInicioLimpa = slot.horarioInicio.length === 5 ? slot.horarioInicio + ':00' : slot.horarioInicio;
     const dataHoraInicio = `${this.dataSelecionada()}T${horaInicioLimpa}`;
 
-    // Monta observaÃ§Ã£o com todos os serviÃ§os caso mais de um tenha sido selecionado
+    // Monta observação com todos os serviços caso mais de um tenha sido selecionado
     let obs = '';
     if (this.servicosSelecionados().length > 1) {
       obs = 'Combo: ' + this.servicosSelecionados().map(s => s.titulo).join(' + ');
@@ -1073,7 +1073,7 @@ export class CatalogoComponent implements OnInit {
       },
       error: (err) => {
         this.salvando.set(false);
-        const detalhe = err?.error?.detail || err?.error?.detalheTecnico || 'Erro ao confirmar agendamento. Este horÃ¡rio pode ter sido reservado.';
+        const detalhe = err?.error?.detail || err?.error?.detalheTecnico || 'Erro ao confirmar agendamento. Este horário pode ter sido reservado.';
         this.erroAgendamento.set(detalhe);
       }
     });
@@ -1097,7 +1097,7 @@ export class CatalogoComponent implements OnInit {
   salvarBanner(): void {
     this.salvandoBanner.set(true);
     this.api.atualizarBanner({
-      bannerTag: 'âœ¨ Cuidado & Alta Tecnologia',
+      bannerTag: '✨ Cuidado & Alta Tecnologia',
       bannerTitulo: this.editBannerTitulo,
       bannerSubtitulo: this.editBannerSubtitulo,
       bannerBotaoTexto: 'Agendar'

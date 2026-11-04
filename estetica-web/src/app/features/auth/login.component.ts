@@ -49,7 +49,7 @@ interface PixPendenteInfo {
             [class.shadow-sm]="modo() === 'login'"
             [class.text-stone-500]="modo() !== 'login'"
             class="py-2.5 rounded-xl transition-all">
-            JÃ¡ Tenho Senha
+            Já Tenho Senha
           </button>
           <button
             type="button"
@@ -67,7 +67,7 @@ interface PixPendenteInfo {
         @if (mensagemSucesso()) {
           <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs mb-5 flex items-center justify-between">
             <span>{{ mensagemSucesso() }}</span>
-            <button (click)="mensagemSucesso.set(null)" class="text-emerald-700 font-bold ml-2">âœ•</button>
+            <button (click)="mensagemSucesso.set(null)" class="text-emerald-700 font-bold ml-2">✕</button>
           </div>
         }
 
@@ -76,9 +76,9 @@ interface PixPendenteInfo {
           <div class="p-4 rounded-3xl bg-rose-50/90 border-2 border-rose-300 text-stone-800 text-xs mb-6 shadow-md animate-scale-up text-center space-y-3">
             <div class="flex items-center justify-between">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold text-[10px] uppercase tracking-wider">
-                ðŸ’³ AtivaÃ§Ã£o PIX â€¢ R$ {{ pixPendente()!.valor.toFixed(2).replace('.', ',') }}
+                💳 Ativação PIX • R$ {{ pixPendente()!.valor.toFixed(2).replace('.', ',') }}
               </span>
-              <button (click)="fecharPixPendente()" class="text-stone-400 hover:text-stone-700 font-bold text-sm">âœ•</button>
+              <button (click)="fecharPixPendente()" class="text-stone-400 hover:text-stone-700 font-bold text-sm">✕</button>
             </div>
 
             <p class="text-xs text-rose-900 font-medium leading-relaxed">
@@ -92,7 +92,7 @@ interface PixPendenteInfo {
                   [src]="'data:image/png;base64,' + pixPendente()!.pixQrCodeBase64"
                   alt="QR Code PIX"
                   class="w-48 h-48 object-contain rounded-xl mx-auto" />
-                <span class="text-[10px] text-stone-400 block mt-1.5">Abra o app do seu banco e aponte a cÃ¢mera</span>
+                <span class="text-[10px] text-stone-400 block mt-1.5">Abra o app do seu banco e aponte a câmera</span>
               </div>
             }
 
@@ -110,13 +110,13 @@ interface PixPendenteInfo {
                     type="button"
                     (click)="copiarPix()"
                     class="px-3 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-semibold text-[11px] whitespace-nowrap shadow-sm transition-all">
-                    {{ pixCopiado() ? 'âœ“ Copiado!' : 'Copiar' }}
+                    {{ pixCopiado() ? '✓ Copiado!' : 'Copiar' }}
                   </button>
                 </div>
               </div>
             }
 
-            <!-- Status de VerificaÃ§Ã£o AutomÃ¡tica -->
+            <!-- Status de Verificação Automática -->
             <div class="flex items-center justify-center gap-2 text-[11px] font-medium text-amber-800 bg-amber-100/60 py-2 px-3 rounded-xl">
               <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
               <span>Aguardando pagamento... Verificando a cada 3s</span>
@@ -126,7 +126,7 @@ interface PixPendenteInfo {
               type="button"
               (click)="verificarPagamentoManual()"
               class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
-              <span>ðŸ”„ JÃ¡ realizei o pagamento â€¢ Liberar Acesso</span>
+              <span>🔄 Já realizei o pagamento • Liberar Acesso</span>
             </button>
           </div>
         }
@@ -139,11 +139,11 @@ interface PixPendenteInfo {
               </svg>
               <span>{{ erro() }}</span>
             </div>
-            <button (click)="erro.set(null)" class="text-rose-700 hover:text-rose-900 font-bold ml-2">âœ•</button>
+            <button (click)="erro.set(null)" class="text-rose-700 hover:text-rose-900 font-bold ml-2">✕</button>
           </div>
         }
 
-        <!-- ================= FORMULÃRIO 1: LOGIN TRADICIONAL ================= -->
+        <!-- ================= FORMULÁRIO 1: LOGIN TRADICIONAL ================= -->
         @if (modo() === 'login') {
           <form (ngSubmit)="entrar()" class="space-y-4">
             <div>
@@ -172,7 +172,7 @@ interface PixPendenteInfo {
                 [(ngModel)]="senha" 
                 name="senha"
                 required
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" 
+                placeholder="••••••••" 
                 class="w-full p-3 rounded-xl border border-nude-300 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none" />
             </div>
 
@@ -185,11 +185,11 @@ interface PixPendenteInfo {
           </form>
         }
 
-        <!-- ================= FORMULÃRIO 2: PRIMEIRO ACESSO ================= -->
+        <!-- ================= FORMULÁRIO 2: PRIMEIRO ACESSO ================= -->
         @if (modo() === 'primeiro-acesso') {
           <form (ngSubmit)="confirmarPrimeiroAcesso()" class="space-y-4">
             <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
-              ðŸ’¡ <strong>JÃ¡ possui cadastro?</strong> Se o administrador cadastrou vocÃª como especialista ou cliente, informe seu WhatsApp abaixo para definir sua senha de acesso.
+              💡 <strong>Já possui cadastro?</strong> Se o administrador cadastrou você como especialista ou cliente, informe seu WhatsApp abaixo para definir sua senha de acesso.
             </div>
 
             <div>
@@ -205,7 +205,7 @@ interface PixPendenteInfo {
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1">Crie sua Senha de Acesso (MÃ­nimo 6 dÃ­gitos):</label>
+              <label class="block text-xs font-semibold text-stone-700 mb-1">Crie sua Senha de Acesso (Mínimo 6 dígitos):</label>
               <input 
                 type="password" 
                 [(ngModel)]="novaSenha" 
@@ -333,14 +333,14 @@ export class LoginComponent implements OnDestroy {
         const errData = err?.error;
         const msg = errData?.detail || errData?.message || (typeof errData === 'string' ? errData : null);
 
-        // Se for pendÃªncia de pagamento PIX (com dados retornados pelo backend)
-        if (err.status === 402 || errData?.pixQrCodeBase64 || errData?.pixCopiaCola || (msg && msg.includes('PIX de ativaÃ§Ã£o'))) {
+        // Se for pendência de pagamento PIX (com dados retornados pelo backend)
+        if (err.status === 402 || errData?.pixQrCodeBase64 || errData?.pixCopiaCola || (msg && msg.includes('PIX de ativação'))) {
           this.pixPendente.set({
             paymentId: errData?.paymentId,
             pixQrCodeBase64: errData?.pixQrCodeBase64,
             pixCopiaCola: errData?.pixCopiaCola,
             valor: errData?.valor || 149.90,
-            mensagem: msg || 'O seu acesso estÃ¡ aguardando a confirmaÃ§Ã£o do pagamento PIX de ativaÃ§Ã£o (R$ 149,90).'
+            mensagem: msg || 'O seu acesso está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).'
           });
 
           if (errData?.paymentId) {
@@ -353,10 +353,10 @@ export class LoginComponent implements OnDestroy {
           this.telefonePrimeiroAcesso = this.loginIdentificador;
           this.setModo('primeiro-acesso');
           this.erro.set(msg);
-        } else if (msg && (msg.includes('nÃ£o pertence') || msg.includes('Credenciais') || msg.includes('Bad credentials') || msg.includes('nÃ£o encontrado') || msg.includes('invÃ¡lid') || msg.includes('pertence'))) {
-          this.erro.set('Login ou usuÃ¡rio invÃ¡lido.');
+        } else if (msg && (msg.includes('não pertence') || msg.includes('Credenciais') || msg.includes('Bad credentials') || msg.includes('não encontrado') || msg.includes('inválid') || msg.includes('pertence'))) {
+          this.erro.set('Login ou usuário inválido.');
         } else {
-          this.erro.set(msg || 'Login ou usuÃ¡rio invÃ¡lido.');
+          this.erro.set(msg || 'Login ou usuário inválido.');
         }
       }
     });
@@ -385,7 +385,7 @@ export class LoginComponent implements OnDestroy {
         if (res.pago || res.status === 'approved') {
           this.limparPolling();
           this.pixPendente.set(null);
-          this.mensagemSucesso.set('ðŸŽ‰ Pagamento PIX aprovado com sucesso! Acesso liberado!');
+          this.mensagemSucesso.set('🎉 Pagamento PIX aprovado com sucesso! Acesso liberado!');
 
           if (res.token) {
             localStorage.setItem('auth_token', res.token);
@@ -398,7 +398,7 @@ export class LoginComponent implements OnDestroy {
             this.redirecionarAposAuth(res.usuario?.role);
           }, 1200);
         } else if (manual) {
-          alert('O pagamento ainda nÃ£o foi identificado pelo banco. Por favor, aguarde alguns instantes enquanto o PIX Ã© processado.');
+          alert('O pagamento ainda não foi identificado pelo banco. Por favor, aguarde alguns instantes enquanto o PIX é processado.');
         }
       },
       error: () => {
@@ -423,12 +423,12 @@ export class LoginComponent implements OnDestroy {
     if (!this.telefonePrimeiroAcesso || !this.novaSenha) return;
 
     if (this.novaSenha.length < 6) {
-      this.erro.set('A nova senha deve ter no mÃ­nimo 6 caracteres.');
+      this.erro.set('A nova senha deve ter no mínimo 6 caracteres.');
       return;
     }
 
     if (this.novaSenha !== this.confirmarSenha) {
-      this.erro.set('As senhas nÃ£o coincidem. Digite a mesma senha em ambos os campos.');
+      this.erro.set('As senhas não coincidem. Digite a mesma senha em ambos os campos.');
       return;
     }
 
@@ -447,7 +447,7 @@ export class LoginComponent implements OnDestroy {
       },
       error: (err) => {
         this.carregando.set(false);
-        this.erro.set(err?.error?.message || 'Falha ao cadastrar senha. Verifique o nÃºmero de WhatsApp informado.');
+        this.erro.set(err?.error?.message || 'Falha ao cadastrar senha. Verifique o número de WhatsApp informado.');
       }
     });
   }
