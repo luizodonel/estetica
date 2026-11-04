@@ -9,7 +9,11 @@ import java.time.LocalDateTime;
 public class AgendamentoDTOs {
 
     public record CriarAgendamentoRequest(
-        Long clienteId, // Obrigatório se marcado por Admin/Profissional
+        Long clienteId, // Usado quando Administrador ou Especialista seleciona cliente já cadastrado
+        String clienteNome, // Nome do cliente quando agendando sem login
+        String clienteTelefone, // WhatsApp do cliente quando agendando sem login
+        String clienteEmail, // Opcional
+        String slug, // Slug do estabelecimento/tenant
 
         @NotNull(message = "Procedimento é obrigatório")
         Long procedimentoId,

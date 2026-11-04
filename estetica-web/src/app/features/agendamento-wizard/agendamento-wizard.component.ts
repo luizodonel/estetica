@@ -6,7 +6,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { SetorService } from '../../core/services/setor.service';
-import { Procedimento, Profissional, SlotDisponivel, Usuario } from '../../core/models';
+import { Agendamento, Procedimento, Profissional, SlotDisponivel, Usuario } from '../../core/models';
 import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 
 @Component({
@@ -16,28 +16,29 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
   template: `
     <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12 font-sans">
       
-      <!-- Cabeçalho do Wizard -->
+      <!-- CabeÃ§alho do Wizard -->
       <div class="text-center mb-8">
         <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
-          {{ tenantService.nomeEmpresa() }} • {{ setorService.icone() }} {{ setorService.config().label }}
+          {{ tenantService.nomeEmpresa() }} â€¢ {{ setorService.icone() }} {{ setorService.config().label }}
         </span>
         <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
           {{ setorService.termoAgendar() }}
         </h1>
         <p class="text-xs sm:text-sm text-slate-500 mt-1.5">
-          Conclua em poucos passos o agendamento no seu estabelecimento de preferência.
+          Conclua em poucos passos o agendamento no seu estabelecimento de preferÃªncia.
         </p>
 
         <!-- Banner de Perfil Administrativo / Especialista -->
         @if (authService.isAdminOrProfissional()) {
           <div class="inline-flex items-center gap-2 mt-3 px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-semibold shadow-sm">
-            <span>🛡️ Modo Recepção / Atendimento</span>
-            <span class="opacity-50">•</span>
+            <span>ðŸ›¡ï¸ Modo RecepÃ§Ã£o / Atendimento</span>
+            <span class="opacity-50">â€¢</span>
             <span>Agendando em nome do {{ setorService.termoCliente() }}</span>
           </div>
         }
       </div>
 
+      @if (!agendamentoConcluido()) {
       <!-- Barra de Progresso em Passos (Responsiva) -->
       <div class="bg-white rounded-2xl p-4 border border-slate-200 mb-8 shadow-sm">
         <div class="flex items-center justify-between relative">
@@ -63,7 +64,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               [class.border-slate-300]="passoAtual() < 1"
               [class.text-slate-400]="passoAtual() < 1"
               class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold text-xs shadow-sm transition-all">
-              @if (passoAtual() > 1) { ✓ } @else { 1 }
+              @if (passoAtual() > 1) { âœ“ } @else { 1 }
             </button>
             <span class="text-[11px] font-semibold mt-1.5 text-slate-700 hidden sm:block truncate max-w-[90px] text-center">
               {{ setorService.termoServico() }}
@@ -85,7 +86,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               [class.border-slate-300]="passoAtual() < 2"
               [class.text-slate-400]="passoAtual() < 2"
               class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold text-xs shadow-sm transition-all disabled:opacity-40">
-              @if (passoAtual() > 2) { ✓ } @else { 2 }
+              @if (passoAtual() > 2) { âœ“ } @else { 2 }
             </button>
             <span class="text-[11px] font-semibold mt-1.5 text-slate-700 hidden sm:block truncate max-w-[90px] text-center">
               {{ setorService.termoProfissional() }}
@@ -107,9 +108,9 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               [class.border-slate-300]="passoAtual() < 3"
               [class.text-slate-400]="passoAtual() < 3"
               class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold text-xs shadow-sm transition-all disabled:opacity-40">
-              @if (passoAtual() > 3) { ✓ } @else { 3 }
+              @if (passoAtual() > 3) { âœ“ } @else { 3 }
             </button>
-            <span class="text-[11px] font-semibold mt-1.5 text-slate-700 hidden sm:block">Horário</span>
+            <span class="text-[11px] font-semibold mt-1.5 text-slate-700 hidden sm:block">HorÃ¡rio</span>
           </div>
 
           <!-- Passo 4 -->
@@ -133,18 +134,18 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
         </div>
       </div>
 
-      <!-- CONTEÚDO DO WIZARD -->
+      <!-- CONTEÃšDO DO WIZARD -->
       <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm transition-all">
         
         <!-- ========================================== -->
-        <!-- PASSO 1: SELEÇÃO DE PROCEDIMENTO / SERVIÇO -->
+        <!-- PASSO 1: SELEÃ‡ÃƒO DE PROCEDIMENTO / SERVIÃ‡O -->
         <!-- ========================================== -->
         @if (passoAtual() === 1) {
           <div>
             <div class="mb-6">
               <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Etapa 1 de 4</span>
               <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Escolha o {{ setorService.termoServico() }}</h2>
-              <p class="text-xs text-slate-500 mt-1">Selecione o serviço desejado para o atendimento.</p>
+              <p class="text-xs text-slate-500 mt-1">Selecione o serviÃ§o desejado para o atendimento.</p>
             </div>
 
             <div class="space-y-3">
@@ -165,8 +166,8 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                         {{ proc.titulo }}
                       </h4>
                       <span class="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
-                        <span>⏱️ {{ proc.duracaoMinutos }} min</span>
-                        <span>•</span>
+                        <span>â±ï¸ {{ proc.duracaoMinutos }} min</span>
+                        <span>â€¢</span>
                         <span class="truncate">{{ proc.categoriaNome }}</span>
                       </span>
                     </div>
@@ -180,7 +181,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                       [class.bg-slate-900]="procedimentoSelecionado()?.id === proc.id"
                       [class.text-white]="procedimentoSelecionado()?.id === proc.id"
                       [class.text-slate-500]="procedimentoSelecionado()?.id !== proc.id">
-                      {{ procedimentoSelecionado()?.id === proc.id ? 'Selecionado ✓' : 'Escolher' }}
+                      {{ procedimentoSelecionado()?.id === proc.id ? 'Selecionado âœ“' : 'Escolher' }}
                     </span>
                   </div>
                 </div>
@@ -193,25 +194,25 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 [disabled]="!procedimentoSelecionado()"
                 (click)="avancarParaPasso2()"
                 class="px-6 py-3 rounded-xl bg-slate-900 text-white font-bold text-xs sm:text-sm hover:bg-slate-800 disabled:opacity-40 transition-all shadow">
-                Próximo: Escolher {{ setorService.termoProfissional() }} →
+                PrÃ³ximo: Escolher {{ setorService.termoProfissional() }} â†’
               </button>
             </div>
           </div>
         }
 
         <!-- ========================================== -->
-        <!-- PASSO 2: SELEÇÃO DE PROFISSIONAL -->
+        <!-- PASSO 2: SELEÃ‡ÃƒO DE PROFISSIONAL -->
         <!-- ========================================== -->
         @if (passoAtual() === 2) {
           <div>
             <div class="mb-6">
               <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Etapa 2 de 4</span>
               <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Escolha o {{ setorService.termoProfissional() }}</h2>
-              <p class="text-xs text-slate-500 mt-1">Prefere atendimento com alguém específico ou o primeiro horário disponível?</p>
+              <p class="text-xs text-slate-500 mt-1">Prefere atendimento com alguÃ©m especÃ­fico ou o primeiro horÃ¡rio disponÃ­vel?</p>
             </div>
 
             <div class="space-y-3">
-              <!-- Opção "Primeiro Horário Disponível" -->
+              <!-- OpÃ§Ã£o "Primeiro HorÃ¡rio DisponÃ­vel" -->
               <div 
                 (click)="selecionarProfissional(null)"
                 [class.border-slate-900]="profissionalSelecionado() === null"
@@ -221,11 +222,11 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 class="p-4 rounded-2xl border border-slate-200 hover:border-slate-400 cursor-pointer transition-all flex items-center justify-between">
                 <div class="flex items-center gap-3.5">
                   <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-lg">
-                    ⚡
+                    âš¡
                   </div>
                   <div>
-                    <h4 class="font-bold text-slate-900 text-sm sm:text-base">Primeiro Horário Disponível</h4>
-                    <p class="text-[11px] text-slate-500">Agiliza buscando qualquer especialista disponível.</p>
+                    <h4 class="font-bold text-slate-900 text-sm sm:text-base">Primeiro HorÃ¡rio DisponÃ­vel</h4>
+                    <p class="text-[11px] text-slate-500">Agiliza buscando qualquer especialista disponÃ­vel.</p>
                   </div>
                 </div>
                 <span 
@@ -233,7 +234,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                   [class.bg-slate-900]="profissionalSelecionado() === null"
                   [class.text-white]="profissionalSelecionado() === null"
                   [class.text-slate-500]="profissionalSelecionado() !== null">
-                  {{ profissionalSelecionado() === null ? 'Selecionado ✓' : 'Escolher' }}
+                  {{ profissionalSelecionado() === null ? 'Selecionado âœ“' : 'Escolher' }}
                 </span>
               </div>
 
@@ -260,7 +261,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                     [class.bg-slate-900]="profissionalSelecionado()?.id === prof.id"
                     [class.text-white]="profissionalSelecionado()?.id === prof.id"
                     [class.text-slate-500]="profissionalSelecionado()?.id !== prof.id">
-                    {{ profissionalSelecionado()?.id === prof.id ? 'Selecionado ✓' : 'Escolher' }}
+                    {{ profissionalSelecionado()?.id === prof.id ? 'Selecionado âœ“' : 'Escolher' }}
                   </span>
                 </div>
               }
@@ -271,26 +272,26 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 type="button"
                 (click)="irParaPasso(1)" 
                 class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50">
-                ← Voltar
+                â† Voltar
               </button>
               <button 
                 type="button"
                 (click)="avancarParaPasso3()" 
                 class="px-6 py-3 rounded-xl bg-slate-900 text-white font-bold text-xs sm:text-sm hover:bg-slate-800 transition-all shadow">
-                Próximo: Escolher Data e Hora →
+                PrÃ³ximo: Escolher Data e Hora â†’
               </button>
             </div>
           </div>
         }
 
         <!-- ========================================== -->
-        <!-- PASSO 3: CALENDÁRIO E GRADE DE HORÁRIOS LIVRES -->
+        <!-- PASSO 3: CALENDÃRIO E GRADE DE HORÃRIOS LIVRES -->
         <!-- ========================================== -->
         @if (passoAtual() === 3) {
           <div>
             <div class="mb-6">
               <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Etapa 3 de 4</span>
-              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Data & Grade de Horários</h2>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Data & Grade de HorÃ¡rios</h2>
               <p class="text-xs text-slate-500 mt-1">
                 Vagas calculadas dinamicamente sem conflito para {{ procedimentoSelecionado()?.titulo }}.
               </p>
@@ -309,19 +310,19 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 class="w-full sm:w-64 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-800 font-semibold focus:ring-2 focus:ring-slate-900 focus:outline-none bg-white shadow-sm" />
             </div>
 
-            <!-- Grade de Horários Livres (Slots) -->
+            <!-- Grade de HorÃ¡rios Livres (Slots) -->
             <div class="mt-4">
               <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-3">
-                Horários Livres Disponíveis (Duração: {{ procedimentoSelecionado()?.duracaoMinutos }} min):
+                HorÃ¡rios Livres DisponÃ­veis (DuraÃ§Ã£o: {{ procedimentoSelecionado()?.duracaoMinutos }} min):
               </h4>
 
               @if (carregandoSlots()) {
                 <div class="py-12 text-center text-slate-400 text-xs animate-pulse">
-                  Consultando grade de horários em tempo real...
+                  Consultando grade de horÃ¡rios em tempo real...
                 </div>
               } @else if (slots().length === 0) {
                 <div class="p-6 rounded-2xl bg-slate-50 text-center border border-slate-200">
-                  <p class="text-xs text-slate-600 font-medium">Nenhum horário livre encontrado nesta data.</p>
+                  <p class="text-xs text-slate-600 font-medium">Nenhum horÃ¡rio livre encontrado nesta data.</p>
                   <p class="text-[11px] text-slate-400 mt-1">Por favor, selecione outro dia ou profissional.</p>
                 </div>
               } @else {
@@ -349,28 +350,28 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 type="button"
                 (click)="irParaPasso(2)" 
                 class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50">
-                ← Voltar
+                â† Voltar
               </button>
               <button 
                 type="button"
                 [disabled]="!slotSelecionado()"
                 (click)="avancarParaPasso4()" 
                 class="px-6 py-3 rounded-xl bg-slate-900 text-white font-bold text-xs sm:text-sm hover:bg-slate-800 disabled:opacity-40 transition-all shadow">
-                Próximo: Resumo & Confirmação →
+                PrÃ³ximo: Resumo & ConfirmaÃ§Ã£o â†’
               </button>
             </div>
           </div>
         }
 
         <!-- ========================================== -->
-        <!-- PASSO 4: CONFIRMAÇÃO & RESUMO DO AGENDAMENTO -->
+        <!-- PASSO 4: CONFIRMAÃ‡ÃƒO & RESUMO DO AGENDAMENTO -->
         <!-- ========================================== -->
         @if (passoAtual() === 4) {
           <div>
             <div class="mb-6">
               <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Etapa 4 de 4</span>
-              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Resumo e Confirmação</h2>
-              <p class="text-xs text-slate-500 mt-1">Confira os detalhes da sessão antes de confirmar o agendamento.</p>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Resumo e ConfirmaÃ§Ã£o</h2>
+              <p class="text-xs text-slate-500 mt-1">Confira os detalhes da sessÃ£o antes de confirmar o agendamento.</p>
             </div>
 
             <!-- Seletor de Paciente para Administrador ou Especialista -->
@@ -378,13 +379,13 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               <div class="mb-6 p-5 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm space-y-3">
                 <div class="flex items-center justify-between">
                   <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Selecione o {{ setorService.termoCliente() }} para quem está agendando: *
+                    Selecione o {{ setorService.termoCliente() }} para quem estÃ¡ agendando: *
                   </label>
                   <button 
                     type="button" 
                     (click)="mostrarCadastroRapido.set(!mostrarCadastroRapido())"
                     class="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline">
-                    {{ mostrarCadastroRapido() ? '✕ Fechar Cadastro' : '+ Cadastrar Novo ' + setorService.termoCliente() }}
+                    {{ mostrarCadastroRapido() ? 'âœ• Fechar Cadastro' : '+ Cadastrar Novo ' + setorService.termoCliente() }}
                   </button>
                 </div>
 
@@ -396,33 +397,33 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                     <option [ngValue]="null">-- Selecione o {{ setorService.termoCliente() }} Cadastrado --</option>
                     @for (cli of clientes(); track cli.id) {
                       <option [ngValue]="cli.id">
-                        {{ cli.nome }} • WhatsApp: {{ formatarTelefone(cli.telefoneWhatsApp) }}
+                        {{ cli.nome }} â€¢ WhatsApp: {{ formatarTelefone(cli.telefoneWhatsApp) }}
                       </option>
                     }
                   </select>
 
                   @if (clienteIdSelecionado && pacienteSelecionado()) {
                     <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-medium flex items-center gap-2">
-                      <span>✓ {{ setorService.termoCliente() }} Selecionado:</span>
+                      <span>âœ“ {{ setorService.termoCliente() }} Selecionado:</span>
                       <strong>{{ pacienteSelecionado()?.nome }}</strong>
                       <span class="text-emerald-700">({{ pacienteSelecionado()?.telefoneWhatsApp }})</span>
                     </div>
                   } @else {
                     <p class="text-xs text-rose-600 font-semibold">
-                      * Obrigatório: Selecione o {{ setorService.termoCliente() }} acima para confirmar o agendamento.
+                      * ObrigatÃ³rio: Selecione o {{ setorService.termoCliente() }} acima para confirmar o agendamento.
                     </p>
                   }
                 } @else {
-                  <!-- Formulário Rápido de Novo Cliente Inline -->
+                  <!-- FormulÃ¡rio RÃ¡pido de Novo Cliente Inline -->
                   <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-3">
-                    <h4 class="text-xs font-bold text-slate-800 uppercase">Cadastro Rápido de {{ setorService.termoCliente() }}</h4>
+                    <h4 class="text-xs font-bold text-slate-800 uppercase">Cadastro RÃ¡pido de {{ setorService.termoCliente() }}</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label class="block text-[11px] font-semibold text-slate-600 mb-1">Nome Completo *</label>
                         <input 
                           type="text" 
                           [(ngModel)]="novoClienteNome" 
-                          placeholder="Ex: João da Silva" 
+                          placeholder="Ex: JoÃ£o da Silva" 
                           class="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900" />
                       </div>
                       <div>
@@ -457,12 +458,51 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               </div>
             }
 
+            <!-- Identificação do Cliente Online (Sem necessidade de login/senha) -->
+            @if (!authService.isAdminOrProfissional()) {
+              <div class="mb-6 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+                <div>
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-700 block">Seus Dados de Contato</span>
+                  <h3 class="text-sm font-bold text-slate-900 mt-0.5">Informe seus dados para confirmar seu agendamento</h3>
+                  <p class="text-[11px] text-slate-500">Sem burocracia: não é necessário criar senha ou fazer login.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Seu Nome Completo *</label>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="nomeClienteOnline" 
+                      placeholder="Ex: Maria Oliveira" 
+                      class="w-full p-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Seu WhatsApp com DDD *</label>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="whatsappClienteOnline" 
+                      placeholder="(61) 98226-1155" 
+                      class="w-full p-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail (opcional)</label>
+                  <input 
+                    type="email" 
+                    [(ngModel)]="emailClienteOnline" 
+                    placeholder="seuemail@exemplo.com" 
+                    class="w-full p-2.5 rounded-xl border border-slate-300 text-xs bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                </div>
+              </div>
+            }
+
             <!-- Card de Resumo Elegante e Moderno -->
             <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 mb-6 space-y-4">
               
               @if (authService.isAdminOrProfissional() && pacienteSelecionado()) {
                 <div class="border-b border-slate-200 pb-3">
-                  <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">{{ setorService.termoCliente() }} / Beneficiário</span>
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">{{ setorService.termoCliente() }} / BeneficiÃ¡rio</span>
                   <h4 class="text-base font-bold text-slate-900">{{ pacienteSelecionado()?.nome }}</h4>
                   <span class="text-xs text-slate-500">WhatsApp: {{ pacienteSelecionado()?.telefoneWhatsApp }}</span>
                 </div>
@@ -472,7 +512,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 <div>
                   <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">{{ setorService.termoServico() }}</span>
                   <h3 class="text-base sm:text-lg font-bold text-slate-900">{{ procedimentoSelecionado()?.titulo }}</h3>
-                  <span class="text-xs text-slate-500">Duração estimada: {{ procedimentoSelecionado()?.duracaoMinutos }} minutos</span>
+                  <span class="text-xs text-slate-500">DuraÃ§Ã£o estimada: {{ procedimentoSelecionado()?.duracaoMinutos }} minutos</span>
                 </div>
                 <span class="text-lg font-extrabold text-slate-900">
                   {{ procedimentoSelecionado()?.preco | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
@@ -485,18 +525,18 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                   <span class="font-bold text-slate-800 text-sm">{{ slotSelecionado()?.profissionalNome }}</span>
                 </div>
                 <div>
-                  <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Data e Horário</span>
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Data e HorÃ¡rio</span>
                   <span class="font-bold text-emerald-700 text-sm">
-                    {{ dataSelecionada() }} às {{ formatarHora(slotSelecionado()?.horarioInicio || '') }}
+                    {{ dataSelecionada() }} Ã s {{ formatarHora(slotSelecionado()?.horarioInicio || '') }}
                   </span>
                 </div>
               </div>
 
-              <!-- Funcionalidades Específicas por Setor -->
+              <!-- Funcionalidades EspecÃ­ficas por Setor -->
               @if (setorService.recursos().temVeiculoPlaca) {
                 <div class="p-3.5 rounded-xl bg-white border border-slate-200 space-y-1">
                   <label class="block text-xs font-semibold text-slate-800">
-                    🚗 Modelo e Placa do Veículo (Obrigatório):
+                    ðŸš— Modelo e Placa do VeÃ­culo (ObrigatÃ³rio):
                   </label>
                   <input
                     type="text"
@@ -509,7 +549,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               @if (setorService.recursos().temMesaReserva) {
                 <div class="p-3.5 rounded-xl bg-white border border-slate-200 space-y-1">
                   <label class="block text-xs font-semibold text-slate-800">
-                    👥 Quantidade de Pessoas na Mesa:
+                    ðŸ‘¥ Quantidade de Pessoas na Mesa:
                   </label>
                   <select
                     [(ngModel)]="pessoasMesa"
@@ -517,7 +557,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                     <option [value]="1">1 pessoa (Mesa Individual)</option>
                     <option [value]="2">2 pessoas (Casal / Par)</option>
                     <option [value]="3">3 pessoas</option>
-                    <option [value]="4">4 pessoas (Família / Grupo)</option>
+                    <option [value]="4">4 pessoas (FamÃ­lia / Grupo)</option>
                     <option [value]="6">6 pessoas (Mesa Grande)</option>
                     <option [value]="8">8 pessoas</option>
                     <option [value]="10">10+ pessoas (Reserva Especial)</option>
@@ -528,51 +568,44 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
               @if (setorService.recursos().temLocacaoEnsaio) {
                 <div class="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
                   <label class="block text-xs font-semibold text-slate-800">
-                    📸 Locação do Ensaio Fotográfico:
+                    ðŸ“¸ LocaÃ§Ã£o do Ensaio FotogrÃ¡fico:
                   </label>
                   <div class="grid grid-cols-2 gap-2 text-xs">
                     <button
                       type="button"
-                      (click)="locacaoEnsaio = 'Estúdio Interno'"
-                      [class.bg-slate-900]="locacaoEnsaio === 'Estúdio Interno'"
-                      [class.text-white]="locacaoEnsaio === 'Estúdio Interno'"
-                      [class.bg-slate-100]="locacaoEnsaio !== 'Estúdio Interno'"
+                      (click)="locacaoEnsaio = 'EstÃºdio Interno'"
+                      [class.bg-slate-900]="locacaoEnsaio === 'EstÃºdio Interno'"
+                      [class.text-white]="locacaoEnsaio === 'EstÃºdio Interno'"
+                      [class.bg-slate-100]="locacaoEnsaio !== 'EstÃºdio Interno'"
                       class="py-2 px-3 rounded-xl border border-slate-200 font-semibold transition-all">
-                      🏢 Estúdio Interno
+                      ðŸ¢ EstÃºdio Interno
                     </button>
                     <button
                       type="button"
-                      (click)="locacaoEnsaio = 'Locação Externa'"
-                      [class.bg-slate-900]="locacaoEnsaio === 'Locação Externa'"
-                      [class.text-white]="locacaoEnsaio === 'Locação Externa'"
-                      [class.bg-slate-100]="locacaoEnsaio !== 'Locação Externa'"
+                      (click)="locacaoEnsaio = 'LocaÃ§Ã£o Externa'"
+                      [class.bg-slate-900]="locacaoEnsaio === 'LocaÃ§Ã£o Externa'"
+                      [class.text-white]="locacaoEnsaio === 'LocaÃ§Ã£o Externa'"
+                      [class.bg-slate-100]="locacaoEnsaio !== 'LocaÃ§Ã£o Externa'"
                       class="py-2 px-3 rounded-xl border border-slate-200 font-semibold transition-all">
-                      🌳 Locação Externa
+                      ðŸŒ³ LocaÃ§Ã£o Externa
                     </button>
                   </div>
                 </div>
               }
 
-              <!-- Observações -->
+              <!-- ObservaÃ§Ãµes -->
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">
-                  Observações ou Recomendações Adicionais (opcional):
+                  ObservaÃ§Ãµes ou RecomendaÃ§Ãµes Adicionais (opcional):
                 </label>
                 <textarea 
                   [(ngModel)]="observacoesCliente"
                   rows="2"
-                  placeholder="Informações adicionais para a sessão..."
+                  placeholder="InformaÃ§Ãµes adicionais para a sessÃ£o..."
                   class="w-full p-3 rounded-xl border border-slate-200 text-xs bg-white focus:ring-2 focus:ring-slate-900 focus:outline-none"></textarea>
               </div>
 
             </div>
-
-            <!-- Aviso se não logado -->
-            @if (!authService.isAuthenticated()) {
-              <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 mb-6 text-xs text-amber-800">
-                <span class="font-bold">Atenção:</span> Você precisará entrar ou criar uma conta para concluir o agendamento.
-              </div>
-            }
 
             @if (erroAgendamento()) {
               <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 mb-6 text-xs text-rose-800 flex items-center justify-between">
@@ -586,7 +619,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                 type="button"
                 (click)="irParaPasso(3)" 
                 class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50">
-                ← Voltar
+                â† Voltar
               </button>
 
               <button 
@@ -598,7 +631,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                   <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                   <span>Confirmando...</span>
                 } @else {
-                  <span>Confirmar Agendamento ✓</span>
+                  <span>Confirmar Agendamento âœ“</span>
                 }
               </button>
             </div>
@@ -606,6 +639,57 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
         }
 
       </div>
+      } @else {
+        <!-- Tela de Sucesso do Agendamento (Sem Necessidade de Login) -->
+        <div class="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 shadow-xl text-center max-w-xl mx-auto space-y-6 animate-scale-up">
+          <div class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-4xl mx-auto border-4 border-emerald-100 shadow-sm">
+            ✓
+          </div>
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+              Reserva Concluída
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">
+              Agendamento Confirmado!
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-2">
+              Seu horário foi agendado com sucesso para <strong class="text-slate-800">{{ nomeClienteOnline }}</strong>.
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2.5 text-xs">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+              <span class="text-slate-500">{{ setorService.termoServico() }}:</span>
+              <strong class="text-slate-900 font-semibold">{{ procedimentoSelecionado()?.titulo }}</strong>
+            </div>
+            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+              <span class="text-slate-500">{{ setorService.termoProfissional() }}:</span>
+              <strong class="text-slate-900 font-semibold">{{ slotSelecionado()?.profissionalNome }}</strong>
+            </div>
+            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+              <span class="text-slate-500">Data e Horário:</span>
+              <strong class="text-emerald-700 font-bold text-sm">{{ dataSelecionada() }} às {{ formatarHora(slotSelecionado()?.horarioInicio || '') }}</strong>
+            </div>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-slate-500">Valor do Atendimento:</span>
+              <strong class="text-slate-900 font-bold text-sm">{{ procedimentoSelecionado()?.preco | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-400">
+            Enviamos os detalhes da reserva para seu WhatsApp <strong>{{ whatsappClienteOnline }}</strong>.
+          </p>
+
+          <div class="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+            <a routerLink="/catalogo" class="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all">
+              Voltar ao Início / Catálogo
+            </a>
+            <button (click)="reiniciarWizard()" class="px-6 py-3 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition-all">
+              Fazer Outro Agendamento
+            </button>
+          </div>
+        </div>
+      }
 
     </div>
   `
@@ -629,17 +713,24 @@ export class AgendamentoWizardComponent implements OnInit {
   clienteIdSelecionado: number | null = null;
   pacienteSelecionado = signal<Usuario | null>(null);
 
-  // Cadastro rápido inline de cliente
+  // Cadastro rápido inline de cliente por Admin/Especialista
   mostrarCadastroRapido = signal<boolean>(false);
   novoClienteNome = '';
   novoClienteWhatsApp = '';
   salvandoNovoCliente = signal<boolean>(false);
   erroNovoCliente = signal<string | null>(null);
 
+  // Campos de agendamento online para cliente (sem login)
+  nomeClienteOnline = '';
+  whatsappClienteOnline = '';
+  emailClienteOnline = '';
+  agendamentoConcluido = signal<boolean>(false);
+  agendamentoResultado = signal<Agendamento | null>(null);
+
   // Campos condicionais por nicho (SaaS Agendar.)
   veiculoPlaca = '';
   pessoasMesa: number = 2;
-  locacaoEnsaio: string = 'Estúdio Interno';
+  locacaoEnsaio: string = 'EstÃºdio Interno';
   observacoesCliente = '';
 
   private obterDataLocal(): string {
@@ -717,7 +808,7 @@ export class AgendamentoWizardComponent implements OnInit {
         this.mostrarCadastroRapido.set(false);
         this.novoClienteNome = '';
         this.novoClienteWhatsApp = '';
-        // Atualiza a lista de clientes e seleciona o recém-criado
+        // Atualiza a lista de clientes e seleciona o recÃ©m-criado
         const lista = [...this.clientes(), novo];
         this.clientes.set(lista);
         this.onClienteSelecionadoChange(novo.id);
@@ -817,19 +908,21 @@ export class AgendamentoWizardComponent implements OnInit {
   }
 
   confirmarAgendamento(): void {
-    if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/login'], { queryParams: { returnUrl: '/agendar' } });
-      return;
-    }
-
-    if (this.authService.isAdminOrProfissional() && !this.clienteIdSelecionado) {
-      this.erroAgendamento.set(`Como administrador ou especialista, selecione o ${this.setorService.termoCliente()} para quem o atendimento será agendado.`);
-      return;
-    }
-
     const proc = this.procedimentoSelecionado();
     const slot = this.slotSelecionado();
     if (!proc || !slot) return;
+
+    if (this.authService.isAdminOrProfissional()) {
+      if (!this.clienteIdSelecionado) {
+        this.erroAgendamento.set(`Como administrador ou especialista, selecione o ${this.setorService.termoCliente()} para quem o atendimento será agendado.`);
+        return;
+      }
+    } else {
+      if (!this.nomeClienteOnline.trim() || !this.whatsappClienteOnline.trim()) {
+        this.erroAgendamento.set('Por favor, informe seu Nome Completo e WhatsApp para confirmar seu agendamento.');
+        return;
+      }
+    }
 
     this.salvando.set(true);
     this.erroAgendamento.set(null);
@@ -850,6 +943,10 @@ export class AgendamentoWizardComponent implements OnInit {
 
     const payload = {
       clienteId: this.authService.isAdminOrProfissional() ? (Number(this.clienteIdSelecionado) || undefined) : undefined,
+      clienteNome: !this.authService.isAdminOrProfissional() ? this.nomeClienteOnline.trim() : undefined,
+      clienteTelefone: !this.authService.isAdminOrProfissional() ? this.whatsappClienteOnline.replaceAll(/[^0-9]/g, '') : undefined,
+      clienteEmail: (!this.authService.isAdminOrProfissional() && this.emailClienteOnline.trim()) ? this.emailClienteOnline.trim() : undefined,
+      slug: this.tenantService.obterSlugAtual(),
       procedimentoId: Number(proc.id),
       profissionalId: slot.profissionalId ? Number(slot.profissionalId) : undefined,
       dataHoraInicio: dataHoraInicio,
@@ -862,7 +959,8 @@ export class AgendamentoWizardComponent implements OnInit {
         if (this.authService.isAdminOrProfissional()) {
           this.router.navigate(['/admin/agenda'], { queryParams: { sucesso: agendamento.id } });
         } else {
-          this.router.navigate(['/meus-agendamentos'], { queryParams: { sucesso: agendamento.id } });
+          this.agendamentoResultado.set(agendamento);
+          this.agendamentoConcluido.set(true);
         }
       },
       error: (err) => {
@@ -871,5 +969,17 @@ export class AgendamentoWizardComponent implements OnInit {
         this.erroAgendamento.set(detalhe);
       }
     });
+  }
+
+  reiniciarWizard(): void {
+    this.agendamentoConcluido.set(false);
+    this.agendamentoResultado.set(null);
+    this.nomeClienteOnline = '';
+    this.whatsappClienteOnline = '';
+    this.emailClienteOnline = '';
+    this.passoAtual.set(1);
+    this.procedimentoSelecionado.set(null);
+    this.profissionalSelecionado.set(null);
+    this.slotSelecionado.set(null);
   }
 }

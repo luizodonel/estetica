@@ -36,13 +36,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints Públicos'
+                        // Endpoints Públicos
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/onboarding/**").permitAll()
                         .requestMatchers("/api/v1/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/procedimentos/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/disponibilidade/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/agendamentos").permitAll()
 
                         // Swagger / OpenAPI
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

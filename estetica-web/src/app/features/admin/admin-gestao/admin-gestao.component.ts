@@ -1535,20 +1535,35 @@ export class AdminGestaoComponent implements OnInit {
 
   carregarCategorias(setor?: string): void {
     const s = setor || this.formIdentidade?.get('setor')?.value || this.setorService.setorAtual();
+    const deduplicar = (cats: Categoria[]) => {
+      const vistas = new Set<string>();
+      const unicas: Categoria[] = [];
+      for (const c of (cats || [])) {
+        const chave = (c.nome || '').trim().toLowerCase();
+        if (chave && !vistas.has(chave)) {
+          vistas.add(chave);
+          unicas.push(c);
+        }
+      }
+      return unicas;
+    };
+
     this.api.getCategoriasAdmin().subscribe({
       next: (cats) => {
-        this.categorias.set(cats);
-        if (!this.formProcedimento?.get('categoriaId')?.value && cats.length > 0) {
-          const ativa = cats.find(c => c.ativo) || cats[0];
+        const lista = deduplicar(cats);
+        this.categorias.set(lista);
+        if (!this.formProcedimento?.get('categoriaId')?.value && lista.length > 0) {
+          const ativa = lista.find(c => c.ativo) || lista[0];
           this.formProcedimento.patchValue({ categoriaId: ativa.id });
         }
       },
       error: () => {
         this.api.getCategorias(s).subscribe({
           next: (cats) => {
-            this.categorias.set(cats);
-            if (!this.formProcedimento?.get('categoriaId')?.value && cats.length > 0) {
-              this.formProcedimento.patchValue({ categoriaId: cats[0].id });
+            const lista = deduplicar(cats);
+            this.categorias.set(lista);
+            if (!this.formProcedimento?.get('categoriaId')?.value && lista.length > 0) {
+              this.formProcedimento.patchValue({ categoriaId: lista[0].id });
             }
           }
         });

@@ -15,7 +15,7 @@ import { SetorService } from '../core/services/setor.service';
       <!-- LINHA 1: Header Principal (Marca + Links de Atendimento + Perfil) -->
       <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-4">
         
-        <!-- 1. Logo e Marca da Empresa (Whitelabel Dinâmico) -->
+        <!-- 1. Logo e Marca da Empresa (Whitelabel DinÃ¢mico) -->
         <a routerLink="/" class="flex items-center gap-3 group min-w-0 max-w-[280px] sm:max-w-[400px] lg:max-w-[550px]">
           @if (tenantService.logoUrl()) {
             <div class="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center bg-white group-hover:scale-105 transition-transform shrink-0">
@@ -23,7 +23,7 @@ import { SetorService } from '../core/services/setor.service';
             </div>
           } @else {
             <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform duration-300 shrink-0">
-              <span class="text-base font-bold">✨</span>
+              <span class="text-base font-bold">âœ¨</span>
             </div>
           }
           <div class="min-w-0 flex-1">
@@ -38,7 +38,7 @@ import { SetorService } from '../core/services/setor.service';
           </div>
         </a>
 
-        <!-- 2. Lado Direito: Links do Cliente + Perfil do Usuário -->
+        <!-- 2. Lado Direito: Links do Cliente + Perfil do UsuÃ¡rio -->
         <div class="flex items-center gap-3 sm:gap-4 shrink-0">
           
           <!-- Links de Agendamento do Cliente -->
@@ -67,7 +67,7 @@ import { SetorService } from '../core/services/setor.service';
             }
           </div>
 
-          <!-- Perfil do Usuário Autenticado -->
+          <!-- Perfil do UsuÃ¡rio Autenticado -->
           @if (authService.isAuthenticated()) {
             <div class="flex items-center gap-2.5 bg-slate-50 p-1.5 pr-3 rounded-2xl border border-slate-200 shadow-sm">
               <!-- Avatar circular com as iniciais -->
@@ -75,7 +75,7 @@ import { SetorService } from '../core/services/setor.service';
                 {{ authService.currentUser()?.nome?.substring(0, 2)?.toUpperCase() }}
               </div>
 
-              <!-- Dados do usuário -->
+              <!-- Dados do usuÃ¡rio -->
               <div class="text-left hidden md:block max-w-[120px] lg:max-w-[160px]">
                 <span class="block text-xs font-bold text-slate-900 leading-tight truncate">
                   {{ authService.currentUser()?.nome?.split(' ')?.[0] }}
@@ -85,7 +85,7 @@ import { SetorService } from '../core/services/setor.service';
                 </span>
               </div>
 
-              <!-- Botão Sair -->
+              <!-- BotÃ£o Sair -->
               <button 
                 (click)="logout()"
                 title="Sair do Sistema"
@@ -97,16 +97,14 @@ import { SetorService } from '../core/services/setor.service';
             </div>
           } @else {
             <div class="flex items-center gap-2">
-              <a routerLink="/login" class="text-xs font-semibold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-xl hover:bg-slate-100 transition-colors">
-                Entrar
-              </a>
-              <a routerLink="/registrar" class="text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all whitespace-nowrap">
-                Criar Conta
+              <a routerLink="/login" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm">
+                <span>🔒</span>
+                <span>Acesso da Equipe</span>
               </a>
             </div>
           }
 
-          <!-- Botão Menu Mobile (aparece em telas < sm) -->
+          <!-- BotÃ£o Menu Mobile (aparece em telas < sm) -->
           @if (authService.isAdminOrProfissional()) {
             <button 
               (click)="menuMobileAberto.set(!menuMobileAberto())"
@@ -121,7 +119,7 @@ import { SetorService } from '../core/services/setor.service';
 
       </div>
 
-      <!-- LINHA 2: Barra Dedicada de Gestão Operacional (Exclusiva para Administradores e Especialistas) -->
+      <!-- LINHA 2: Barra Dedicada de GestÃ£o Operacional (Exclusiva para Administradores e Especialistas) -->
       @if (authService.isAdminOrProfissional()) {
         <div class="bg-slate-50/80 border-t border-slate-200 py-1.5 px-4 sm:px-6 lg:px-8">
           <div class="max-w-[1440px] mx-auto flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
@@ -129,7 +127,7 @@ import { SetorService } from '../core/services/setor.service';
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">
               <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 mr-2 select-none shrink-0 flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Gestão
+                GestÃ£o
               </span>
 
               <a 
@@ -137,7 +135,7 @@ import { SetorService } from '../core/services/setor.service';
                 routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
                 title="Painel Geral & Faturamento"
                 class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent">
-                <span>📊</span>
+                <span>ðŸ“Š</span>
                 <span>Dashboard</span>
               </a>
 
@@ -146,7 +144,7 @@ import { SetorService } from '../core/services/setor.service';
                 routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
                 title="Agenda Completa"
                 class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent">
-                <span>📅</span>
+                <span>ðŸ“…</span>
                 <span>Agenda</span>
               </a>
 
@@ -155,35 +153,35 @@ import { SetorService } from '../core/services/setor.service';
                 routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
                 [title]="setorService.termoProntuario()"
                 class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent">
-                <span>📋</span>
+                <span>ðŸ“‹</span>
                 <span>{{ setorService.termoProntuario() }}</span>
               </a>
 
               <a 
                 routerLink="/admin/relatorios" 
                 routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
-                title="Relatórios & Comissões"
+                title="RelatÃ³rios & ComissÃµes"
                 class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent">
-                <span>📈</span>
-                <span>Relatórios</span>
+                <span>ðŸ“ˆ</span>
+                <span>RelatÃ³rios</span>
               </a>
 
               @if (authService.isAdmin()) {
                 <a 
                   routerLink="/admin/gestao" 
                   routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
-                  title="Configurações e Cadastros"
+                  title="ConfiguraÃ§Ãµes e Cadastros"
                   class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent">
-                  <span>⚙️</span>
-                  <span>Cadastros & Gestão</span>
+                  <span>âš™ï¸</span>
+                  <span>Cadastros & GestÃ£o</span>
                 </a>
 
                 <a 
                   routerLink="/admin/assinatura" 
                   routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
-                  title="Minha Assinatura & Renovação"
+                  title="Minha Assinatura & RenovaÃ§Ã£o"
                   class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent relative">
-                  <span>💳</span>
+                  <span>ðŸ’³</span>
                   <span>Assinatura</span>
                   @if (tenantService.assinaturaProximaDoVencimento()) {
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping absolute -top-0.5 -right-0.5"></span>
@@ -192,12 +190,12 @@ import { SetorService } from '../core/services/setor.service';
               }
             </div>
 
-            <!-- Botão de Acesso Rápido ao Catálogo Público -->
+            <!-- BotÃ£o de Acesso RÃ¡pido ao CatÃ¡logo PÃºblico -->
             <a 
               routerLink="/catalogo" 
               class="text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl shrink-0 hidden sm:flex items-center gap-1.5 transition-all shadow-sm">
-              <span>Ver Página Pública</span>
-              <span>↗</span>
+              <span>Ver PÃ¡gina PÃºblica</span>
+              <span>â†—</span>
             </a>
 
           </div>
@@ -213,26 +211,26 @@ import { SetorService } from '../core/services/setor.service';
             <a routerLink="/agendar" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white truncate">{{ setorService.termoAgendar() }}</a>
           </div>
 
-          <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider pt-2">Módulo de Gestão</div>
+          <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider pt-2">MÃ³dulo de GestÃ£o</div>
           <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
             <a routerLink="/admin/dashboard" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
-              <span>📊</span> Dashboard
+              <span>ðŸ“Š</span> Dashboard
             </a>
             <a routerLink="/admin/agenda" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
-              <span>📅</span> Agenda
+              <span>ðŸ“…</span> Agenda
             </a>
             <a routerLink="/admin/prontuarios" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
-              <span>📋</span> <span class="truncate">{{ setorService.termoProntuario() }}</span>
+              <span>ðŸ“‹</span> <span class="truncate">{{ setorService.termoProntuario() }}</span>
             </a>
             <a routerLink="/admin/relatorios" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
-              <span>📈</span> Relatórios
+              <span>ðŸ“ˆ</span> RelatÃ³rios
             </a>
             <a routerLink="/admin/gestao" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
-              <span>⚙️</span> Cadastros
+              <span>âš™ï¸</span> Cadastros
             </a>
             @if (authService.isAdmin()) {
               <a routerLink="/admin/assinatura" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
-                <span>💳</span> Assinatura
+                <span>ðŸ’³</span> Assinatura
               </a>
             }
           </div>

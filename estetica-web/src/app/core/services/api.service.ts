@@ -195,6 +195,10 @@ export class ApiService {
   // Agendamentos
   criarAgendamento(payload: {
     clienteId?: number;
+    clienteNome?: string;
+    clienteTelefone?: string;
+    clienteEmail?: string;
+    slug?: string;
     procedimentoId: number;
     profissionalId?: number;
     dataHoraInicio: string; // ISO string

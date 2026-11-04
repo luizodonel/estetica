@@ -36,34 +36,117 @@ public class AgendamentoService {
 
     @Transactional
     public AgendamentoDTO criarAgendamento(Object principal, CriarAgendamentoRequest request) {
-        if (principal == null) {
-            throw new org.springframework.security.authentication.BadCredentialsException("Usuário não autenticado.");
-        }
-
         Usuario cliente;
         ClinicaTenant tenant;
 
-        if (principal instanceof com.estetica.model.Lojista lojista) {
-            if (request.clienteId() == null) {
-                throw new RegraNegocioException("Como administrador, você deve selecionar o paciente para o qual a consulta será marcada.");
+        if (principal == null) {
+            // Agendamento online feito diretamente pelo cliente (sem necessidade de login ou senha)
+            Procedimento proc = procedimentoRepository.findById(request.procedimentoId())
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Procedimento não encontrado com ID: " + request.procedimentoId()));
+
+            tenant = tenantResolverService.resolverTenantPorSlugOuAutenticado(request.slug());
+            if (tenant == null) {
+                tenant = proc.getTenant();
             }
-            cliente = usuarioRepository.findById(request.clienteId())
-                    .orElseThrow(() -> new RecursoNaoEncontradoException("Paciente selecionado não encontrado com ID: " + request.clienteId()));
+            if (tenant == null) {
+                tenant = tenantRepository.findAll().stream().findFirst().orElse(null);
+            }
+
+            String nomeCliente = request.clienteNome() != null && !request.clienteNome().isBlank() 
+                    ? request.clienteNome().trim() : "Cliente";
+            String telefoneLimpo = request.clienteTelefone() != null 
+                    ? request.clienteTelefone().replaceAll("[^0-9]", "") : "";
+
+            if (telefoneLimpo.isBlank()) {
+                throw new RegraNegocioException("Por favor, informe seu WhatsApp para confirmar o agendamento.");
+            }
+
+            final Long tid = tenant != null ? tenant.getId() : null;
+            cliente = usuarioRepository.findByTelefoneWhatsApp(telefoneLimpo)
+                    .filter(u -> tid == null || (u.getTenant() != null && u.getTenant().getId().equals(tid)))
+                    .orElse(null);
+
+            if (cliente == null) {
+                cliente = Usuario.builder()
+                        .nome(nomeCliente)
+                        .telefoneWhatsApp(telefoneLimpo)
+                        .email(request.clienteEmail() != null && !request.clienteEmail().isBlank() ? request.clienteEmail().trim() : null)
+                        .role(Role.ROLE_CLIENTE)
+                        .ativo(true)
+                        .tenant(tenant)
+                        .senhaHash("SEM_LOGIN")
+                        .build();
+                cliente = usuarioRepository.save(cliente);
+            } else {
+                if (request.clienteNome() != null && !request.clienteNome().isBlank()) {
+                    cliente.setNome(nomeCliente);
+                }
+                if (request.clienteEmail() != null && !request.clienteEmail().isBlank()) {
+                    cliente.setEmail(request.clienteEmail().trim());
+                }
+                cliente = usuarioRepository.save(cliente);
+            }
+        } else if (principal instanceof com.estetica.model.Lojista lojista) {
             tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
             if (tenant == null && lojista.getSlug() != null) {
                 tenant = tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
             }
-        } else if (principal instanceof Usuario usuario) {
-            if (usuario.getRole() == Role.ROLE_ADMIN || usuario.getRole() == Role.ROLE_PROFISSIONAL) {
-                if (request.clienteId() == null) {
-                    throw new RegraNegocioException("Como especialista ou administrador, você deve selecionar o paciente para o qual a consulta será marcada.");
-                }
+
+            if (request.clienteId() != null) {
                 cliente = usuarioRepository.findById(request.clienteId())
-                        .orElseThrow(() -> new RecursoNaoEncontradoException("Paciente selecionado não encontrado com ID: " + request.clienteId()));
+                        .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente selecionado não encontrado com ID: " + request.clienteId()));
+            } else if (request.clienteNome() != null && request.clienteTelefone() != null) {
+                String telLimpo = request.clienteTelefone().replaceAll("[^0-9]", "");
+                final Long tid = tenant != null ? tenant.getId() : null;
+                cliente = usuarioRepository.findByTelefoneWhatsApp(telLimpo)
+                        .filter(u -> tid == null || (u.getTenant() != null && u.getTenant().getId().equals(tid)))
+                        .orElse(null);
+                if (cliente == null) {
+                    cliente = Usuario.builder()
+                            .nome(request.clienteNome().trim())
+                            .telefoneWhatsApp(telLimpo)
+                            .email(request.clienteEmail() != null ? request.clienteEmail().trim() : null)
+                            .role(Role.ROLE_CLIENTE)
+                            .ativo(true)
+                            .tenant(tenant)
+                            .senhaHash("SEM_LOGIN")
+                            .build();
+                    cliente = usuarioRepository.save(cliente);
+                }
+            } else {
+                throw new RegraNegocioException("Como administrador, selecione um cliente cadastrado ou informe nome e WhatsApp.");
+            }
+        } else if (principal instanceof Usuario usuario) {
+            tenant = usuario.getTenant() != null ? usuario.getTenant() : tenantResolverService.getTenantDoUsuarioAutenticado();
+
+            if (usuario.getRole() == Role.ROLE_ADMIN || usuario.getRole() == Role.ROLE_PROFISSIONAL) {
+                if (request.clienteId() != null) {
+                    cliente = usuarioRepository.findById(request.clienteId())
+                            .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente selecionado não encontrado com ID: " + request.clienteId()));
+                } else if (request.clienteNome() != null && request.clienteTelefone() != null) {
+                    String telLimpo = request.clienteTelefone().replaceAll("[^0-9]", "");
+                    final Long tid = tenant != null ? tenant.getId() : null;
+                    cliente = usuarioRepository.findByTelefoneWhatsApp(telLimpo)
+                            .filter(u -> tid == null || (u.getTenant() != null && u.getTenant().getId().equals(tid)))
+                            .orElse(null);
+                    if (cliente == null) {
+                        cliente = Usuario.builder()
+                                .nome(request.clienteNome().trim())
+                                .telefoneWhatsApp(telLimpo)
+                                .email(request.clienteEmail() != null ? request.clienteEmail().trim() : null)
+                                .role(Role.ROLE_CLIENTE)
+                                .ativo(true)
+                                .tenant(tenant)
+                                .senhaHash("SEM_LOGIN")
+                                .build();
+                        cliente = usuarioRepository.save(cliente);
+                    }
+                } else {
+                    throw new RegraNegocioException("Como especialista ou administrador, selecione um cliente cadastrado ou informe nome e WhatsApp.");
+                }
             } else {
                 cliente = usuario;
             }
-            tenant = usuario.getTenant() != null ? usuario.getTenant() : tenantResolverService.getTenantDoUsuarioAutenticado();
         } else {
             throw new org.springframework.security.authentication.BadCredentialsException("Tipo de credencial inválido.");
         }

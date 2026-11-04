@@ -346,12 +346,76 @@ public class TenantService {
         return toPublicDTO(t);
     }
 
+    private String getBannerTagPadrao(com.estetica.model.SetorAtuacao setor) {
+        if (setor == null) return "✨ Cuidado & Alta Tecnologia";
+        return switch (setor) {
+            case ESTUDIO_FOTOGRAFICO -> "📷 Fotografia & Produção";
+            case BARBEARIA -> "💈 Estilo & Tradição Masculina";
+            case SALAO_BELEZA -> "✨ Beleza & Autoestima";
+            case ESTETICA_AUTOMOTIVA -> "🚗 Cuidado & Proteção Automotiva";
+            case SPA_MASSOTERAPIA -> "🌿 Bem-Estar & Relaxamento";
+            case DENTISTA -> "🦷 Saúde & Harmonia Bucal";
+            case TATUAGEM -> "🎨 Arte & Expressão na Pele";
+            default -> "✨ Cuidado & Alta Tecnologia";
+        };
+    }
+
+    private String getBannerTituloPadrao(com.estetica.model.SetorAtuacao setor) {
+        if (setor == null) return "Realce sua melhor versão com tratamentos exclusivos.";
+        return switch (setor) {
+            case ESTUDIO_FOTOGRAFICO -> "Eternize seus melhores momentos com ensaios inesquecíveis.";
+            case BARBEARIA -> "Cortes modernos, barba alinhada e visual impecável.";
+            case SALAO_BELEZA -> "Transforme seu visual com especialistas em beleza.";
+            case ESTETICA_AUTOMOTIVA -> "Proteção, brilho e detalhamento de alto padrão.";
+            case SPA_MASSOTERAPIA -> "Renove suas energias e equilibre corpo e mente.";
+            case DENTISTA -> "Conquiste um sorriso radiante e uma saúde bucal impecável.";
+            case TATUAGEM -> "Sua história e personalidade transformadas em arte corporal.";
+            default -> "Realce sua melhor versão com tratamentos exclusivos.";
+        };
+    }
+
+    private String getBannerSubtituloPadrao(com.estetica.model.SetorAtuacao setor) {
+        if (setor == null) return "Protocolos personalizados, equipamentos de última geração e especialistas dedicados ao seu bem-estar e autoestima.";
+        return switch (setor) {
+            case ESTUDIO_FOTOGRAFICO -> "Estúdio climatizado, iluminação de ponta, figurinos exclusivos e direção profissional.";
+            case BARBEARIA -> "Toalha quente, navalha afiada, produtos de primeira linha e ambiente exclusivo.";
+            case SALAO_BELEZA -> "Cabelos, unhas, maquiagens e cuidados executados com produtos renomados.";
+            case ESTETICA_AUTOMOTIVA -> "Lavagem detalhada, vitrificação de pintura, higienização interna e restauração automotiva.";
+            case SPA_MASSOTERAPIA -> "Massagens relaxantes, drenagens terapêuticas e rituais de spa para aliviar o estresse.";
+            case DENTISTA -> "Clareamentos, harmonização orofacial e procedimentos odontológicos modernos.";
+            case TATUAGEM -> "Ambiente 100% biosseguro, materiais descartáveis e artistas qualificados.";
+            default -> "Protocolos personalizados, equipamentos de última geração e especialistas dedicados ao seu bem-estar e autoestima.";
+        };
+    }
+
+    private String getBannerBotaoPadrao(com.estetica.model.SetorAtuacao setor) {
+        if (setor == null) return "Agendamento Online";
+        return switch (setor) {
+            case ESTUDIO_FOTOGRAFICO -> "Agendar Ensaio";
+            case BARBEARIA -> "Agendar Horário";
+            case SALAO_BELEZA -> "Agendar Horário";
+            case ESTETICA_AUTOMOTIVA -> "Agendar Serviço";
+            case SPA_MASSOTERAPIA -> "Agendar Sessão";
+            case DENTISTA -> "Agendar Avaliação";
+            case TATUAGEM -> "Agendar Sessão";
+            default -> "Agendamento Online";
+        };
+    }
+
     private TenantPublicDTO toPublicDTO(ClinicaTenant t) {
         Long diasRestantes = null;
         if (t.getDataVencimento() != null) {
             diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(LocalDateTime.now().toLocalDate(), t.getDataVencimento().toLocalDate());
         }
         String setorNome = t.getSetor() != null ? t.getSetor().name() : "CLINICA_ESTETICA";
+
+        boolean usaBannerPadraoEstetica = t.getBannerTitulo() == null 
+                || "Realce sua melhor versão com tratamentos exclusivos.".equalsIgnoreCase(t.getBannerTitulo().trim());
+        String bannerTag = (!usaBannerPadraoEstetica && t.getBannerTag() != null) ? t.getBannerTag() : getBannerTagPadrao(t.getSetor());
+        String bannerTitulo = (!usaBannerPadraoEstetica && t.getBannerTitulo() != null) ? t.getBannerTitulo() : getBannerTituloPadrao(t.getSetor());
+        String bannerSubtitulo = (!usaBannerPadraoEstetica && t.getBannerSubtitulo() != null) ? t.getBannerSubtitulo() : getBannerSubtituloPadrao(t.getSetor());
+        String bannerBotao = (!usaBannerPadraoEstetica && t.getBannerBotaoTexto() != null) ? t.getBannerBotaoTexto() : getBannerBotaoPadrao(t.getSetor());
+
         return new TenantPublicDTO(
                 t.getId(),
                 t.getNomeEmpresa(),
@@ -362,10 +426,10 @@ public class TenantService {
                 t.getCorPrimaria(),
                 t.getCorSecundaria(),
                 t.getTelefoneWhatsApp(),
-                t.getBannerTag() != null ? t.getBannerTag() : "✨ Cuidado & Alta Tecnologia",
-                t.getBannerTitulo() != null ? t.getBannerTitulo() : "Realce sua melhor versão com tratamentos exclusivos.",
-                t.getBannerSubtitulo() != null ? t.getBannerSubtitulo() : "Protocolos personalizados, equipamentos de última geração e especialistas dedicados ao seu bem-estar e autoestima.",
-                t.getBannerBotaoTexto() != null ? t.getBannerBotaoTexto() : "Agendamento Online",
+                bannerTag,
+                bannerTitulo,
+                bannerSubtitulo,
+                bannerBotao,
                 t.getStatusPagamento() != null ? t.getStatusPagamento() : "PENDENTE",
                 t.getAtivo(),
                 t.getDataVencimento(),
@@ -423,6 +487,10 @@ public class TenantService {
                 if (mudouSetor) {
                     log.warn("[TenantService] Tenant {} mudou de setor de {} para {}. Limpando dados anteriores...", tenant.getId(), tenant.getSetor(), st);
                     limparDadosDoTenantPorMudancaDeSetor(tenant.getId());
+                    tenant.setBannerTag(getBannerTagPadrao(st));
+                    tenant.setBannerTitulo(getBannerTituloPadrao(st));
+                    tenant.setBannerSubtitulo(getBannerSubtituloPadrao(st));
+                    tenant.setBannerBotaoTexto(getBannerBotaoPadrao(st));
                 }
                 tenant.setSetor(st);
                 if (tenant.getLojista() != null) {
@@ -471,7 +539,7 @@ public class TenantService {
                     .executeUpdate();
 
             // 2. Bloqueios de agenda
-            entityManager.createNativeQuery("DELETE FROM tb_bloqueio_agenda WHERE tenant_id = :tid")
+            entityManager.createNativeQuery("DELETE FROM tb_bloqueio_agenda WHERE profissional_id IN (SELECT p.id FROM tb_profissional p WHERE p.tenant_id = :tid)")
                     .setParameter("tid", tenantId)
                     .executeUpdate();
 
