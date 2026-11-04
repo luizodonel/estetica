@@ -10,31 +10,31 @@ import { AssinaturaStatusResponse } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="min-h-screen bg-[#faf8f5] py-8 px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div class="max-w-4xl mx-auto space-y-6">
 
         <!-- Top Navigation / Back -->
         <div class="flex items-center justify-between">
-          <a routerLink="/admin/gestao" class="inline-flex items-center gap-2 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors">
+          <a routerLink="/admin/gestao" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors">
             <span>←</span> Voltar para Cadastros & Gestão
           </a>
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
             💎 Assinatura Lojista Whitelabel
           </span>
         </div>
 
         <!-- Header Card -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-nude-200">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <span class="text-[11px] font-bold tracking-widest text-rose-500 uppercase">
+              <span class="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
                 Ciclo Mensal de 30 Dias
               </span>
-              <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-1">
+              <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
                 Minha Assinatura & Renovação
               </h1>
-              <p class="text-xs sm:text-sm text-stone-500 mt-1">
-                Acompanhe o status do plano de <strong class="text-stone-800">{{ dados()?.nomeEmpresa || tenantService.nomeEmpresa() }}</strong>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Acompanhe o status do plano de <strong class="text-slate-800">{{ dados()?.nomeEmpresa || tenantService.nomeEmpresa() }}</strong>
               </p>
             </div>
 
@@ -42,7 +42,7 @@ import { AssinaturaStatusResponse } from '../../../core/models';
             <button
               (click)="carregarStatus()"
               [disabled]="carregando()"
-              class="px-4 py-2 rounded-xl text-xs font-semibold border border-nude-300 text-stone-600 hover:bg-stone-50 transition-all flex items-center gap-2 disabled:opacity-50">
+              class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50">
               <span [class.animate-spin]="carregando()">🔄</span> Atualizar Status
             </button>
           </div>

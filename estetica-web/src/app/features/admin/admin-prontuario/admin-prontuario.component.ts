@@ -11,22 +11,22 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12 font-sans">
       
       <!-- Cabeçalho -->
       <div class="mb-8">
-        <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
+        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block mb-1">
           {{ setorService.termoProntuario() }}
         </span>
-        <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           Ficha & Histórico do {{ setorService.termoCliente() }}
         </h1>
-        <p class="text-xs text-stone-500 mt-1">Consulte o histórico e registre novas anotações de atendimento.</p>
+        <p class="text-xs text-slate-500 mt-1">Consulte o histórico e registre novas anotações de atendimento.</p>
       </div>
 
       <!-- Seleção de Paciente Cadastrado -->
-      <div class="bg-white rounded-3xl p-6 border border-nude-200 mb-8 shadow-sm">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-2">
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 mb-8 shadow-sm">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
           Selecione o {{ setorService.termoCliente() }} Cadastrado:
         </label>
         
@@ -34,7 +34,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
           <select 
             [ngModel]="clienteId" 
             (ngModelChange)="onClienteChange($event)"
-            class="flex-1 p-3 rounded-2xl border border-nude-300 text-xs sm:text-sm font-medium text-stone-800 focus:ring-2 focus:ring-rose-400 focus:outline-none bg-white">
+            class="flex-1 p-3 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-800 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-white">
             <option [ngValue]="null">-- Selecione um {{ setorService.termoCliente() }} Cadastrado --</option>
             @for (p of clientes(); track p.id) {
               <option [ngValue]="p.id">

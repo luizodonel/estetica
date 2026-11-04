@@ -34,29 +34,29 @@ const DIAS_PADRAO: { diaSemana: DiaSemanaTipo; label: string }[] = [
   template: `
     @if (aberto) {
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-nude-200 animate-scale-up my-8 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-scale-up my-8 max-h-[90vh] overflow-y-auto font-sans">
           
           <!-- Cabeçalho -->
-          <div class="flex items-center justify-between pb-4 border-b border-nude-200 mb-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-6">
             <div>
-              <span class="text-[10px] uppercase tracking-wider font-bold text-rose-600">Disponibilidade & Agenda</span>
-              <h3 class="font-serif font-bold text-xl text-stone-900">
+              <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Disponibilidade & Agenda</span>
+              <h3 class="font-extrabold text-xl text-slate-900">
                 Horários de Atendimento & Trava de Agenda
               </h3>
             </div>
-            <button (click)="fecharModal()" class="text-stone-400 hover:text-stone-600 p-2 text-xl font-bold">✕</button>
+            <button (click)="fecharModal()" class="text-slate-400 hover:text-slate-600 p-2 text-xl font-bold">✕</button>
           </div>
 
           <!-- Seletor de Especialista -->
-          <div class="mb-6 p-4 rounded-2xl bg-stone-50 border border-nude-200">
+          <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
             @if (auth.isAdmin()) {
-              <label class="block text-xs font-semibold text-stone-700 mb-1.5">
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">
                 Selecione o Especialista para Configurar:
               </label>
               <select 
                 [ngModel]="profissionalSelecionadoId()"
                 (ngModelChange)="aoTrocarProfissional($event)"
-                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 bg-white font-medium text-stone-800 focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium text-slate-800 focus:ring-2 focus:ring-slate-900 focus:outline-none">
                 @for (p of profissionais(); track p.id) {
                   <option [value]="p.id">{{ p.nome }} — {{ p.especialidade }}</option>
                 }

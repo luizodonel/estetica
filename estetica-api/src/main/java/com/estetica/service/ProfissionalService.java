@@ -79,7 +79,8 @@ public class ProfissionalService {
     @Transactional(readOnly = true)
     public ProfissionalDTO obterMeuPerfil(Usuario usuario) {
         Profissional prof = profissionalRepository.findByUsuarioId(usuario.getId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Perfil de especialista não encontrado para o usuário logado."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Perfil de especialista não encontrado para o usuário logado."));
         return toDTO(prof);
     }
 
@@ -91,7 +92,8 @@ public class ProfissionalService {
         }
 
         if (usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
-            throw new RegraNegocioException("Já existe um especialista ou usuário cadastrado com o WhatsApp: " + cleanPhone);
+            throw new RegraNegocioException(
+                    "Já existe um especialista ou usuário cadastrado com o WhatsApp: " + cleanPhone);
         }
 
         String email = (request.email() != null && !request.email().isBlank())
@@ -104,7 +106,8 @@ public class ProfissionalService {
 
         ClinicaTenant adminTenant = tenantResolverService.getTenantDoUsuarioAutenticado();
 
-        // Senha temporária caso não informada (o especialista definirá no Primeiro Acesso via WhatsApp)
+        // Senha temporária caso não informada (o especialista definirá no Primeiro
+        // Acesso via WhatsApp)
         String senha = (request.senha() != null && !request.senha().isBlank())
                 ? request.senha()
                 : java.util.UUID.randomUUID().toString();
@@ -114,7 +117,8 @@ public class ProfissionalService {
                 : null;
 
         if (cleanLogin != null && usuarioRepository.existsByLoginIgnoreCase(cleanLogin)) {
-            throw new RegraNegocioException("Já existe um especialista ou usuário cadastrado com o login: " + cleanLogin);
+            throw new RegraNegocioException(
+                    "Já existe um especialista ou usuário cadastrado com o login: " + cleanLogin);
         }
 
         // Cria a conta de acesso como ROLE_PROFISSIONAL com primeiro_acesso = true
@@ -151,7 +155,8 @@ public class ProfissionalService {
 
         prof = profissionalRepository.save(prof);
 
-        // Cria jornada semanal padrão (Segunda a Sexta, 08:00 às 18:00, almoço 12:00 às 13:00)
+        // Cria jornada semanal padrão (Segunda a Sexta, 08:00 às 18:00, almoço 12:00 às
+        // 13:00)
         List<DayOfWeek> diasUteis = List.of(
                 DayOfWeek.MONDAY,
                 DayOfWeek.TUESDAY,
@@ -182,7 +187,8 @@ public class ProfissionalService {
 
         ClinicaTenant adminTenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         if (adminTenant != null && prof.getTenant() != null && !prof.getTenant().getId().equals(adminTenant.getId())) {
-            throw new RegraNegocioException("Acesso negado: Este especialista pertence a outro estabelecimento parceiro.");
+            throw new RegraNegocioException(
+                    "Acesso negado: Este especialista pertence a outro estabelecimento parceiro.");
         }
 
         prof.setNome(request.nome().trim());
@@ -197,14 +203,16 @@ public class ProfissionalService {
             prof.getUsuario().setNome(request.nome().trim());
             if (request.email() != null && !request.email().isBlank()) {
                 String novoEmail = request.email().toLowerCase().trim();
-                if (!novoEmail.equalsIgnoreCase(prof.getUsuario().getEmail()) && usuarioRepository.existsByEmail(novoEmail)) {
+                if (!novoEmail.equalsIgnoreCase(prof.getUsuario().getEmail())
+                        && usuarioRepository.existsByEmail(novoEmail)) {
                     throw new RegraNegocioException("Já existe um usuário com o e-mail: " + novoEmail);
                 }
                 prof.getUsuario().setEmail(novoEmail);
             }
             if (request.telefoneWhatsApp() != null && !request.telefoneWhatsApp().isBlank()) {
                 String cleanPhone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
-                if (!cleanPhone.equals(prof.getUsuario().getTelefoneWhatsApp()) && usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+                if (!cleanPhone.equals(prof.getUsuario().getTelefoneWhatsApp())
+                        && usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
                     throw new RegraNegocioException("Já existe um usuário cadastrado com este WhatsApp: " + cleanPhone);
                 }
                 prof.getUsuario().setTelefoneWhatsApp(cleanPhone);
@@ -282,15 +290,15 @@ public class ProfissionalService {
                         b.getProfissional().getId(),
                         b.getDataInicio(),
                         b.getDataFim(),
-                        b.getMotivo()
-                ))
+                        b.getMotivo()))
                 .toList();
     }
 
     @Transactional
     public BloqueioAgendaDTO criarBloqueio(Long profissionalId, CriarBloqueioRequest request) {
         Profissional prof = profissionalRepository.findById(profissionalId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + profissionalId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Profissional não encontrado com ID: " + profissionalId));
 
         if (request.dataInicio() == null || request.dataFim() == null) {
             throw new RegraNegocioException("Data de início e data de término são obrigatórias para travar a agenda.");
@@ -303,7 +311,8 @@ public class ProfissionalService {
                 .profissional(prof)
                 .dataInicio(request.dataInicio())
                 .dataFim(request.dataFim())
-                .motivo(request.motivo() != null && !request.motivo().isBlank() ? request.motivo().trim() : "Agenda travada / Indisponível")
+                .motivo(request.motivo() != null && !request.motivo().isBlank() ? request.motivo().trim()
+                        : "Agenda travada / Indisponível")
                 .build();
 
         bloqueio = bloqueioAgendaRepository.save(bloqueio);
@@ -312,8 +321,7 @@ public class ProfissionalService {
                 prof.getId(),
                 bloqueio.getDataInicio(),
                 bloqueio.getDataFim(),
-                bloqueio.getMotivo()
-        );
+                bloqueio.getMotivo());
     }
 
     @Transactional
@@ -330,7 +338,8 @@ public class ProfissionalService {
     @Transactional
     public List<HorarioTrabalhoDTO> salvarJornada(Long profissionalId, List<SalvarJornadaItemRequest> itens) {
         Profissional prof = profissionalRepository.findById(profissionalId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + profissionalId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Profissional não encontrado com ID: " + profissionalId));
 
         if (itens != null) {
             for (SalvarJornadaItemRequest item : itens) {

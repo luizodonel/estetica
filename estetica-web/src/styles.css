@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-nude-50 text-stone-800 antialiased font-sans selection:bg-rose-100 selection:text-rose-900;
+    @apply bg-slate-50 text-slate-800 antialiased font-sans selection:bg-slate-200 selection:text-slate-900;
   }
 }
 
@@ -14,12 +14,12 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f6f1ea;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #decabd;
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c5ae9d;
+  background: #94a3b8;
 }

@@ -17,99 +17,99 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
   standalone: true,
   imports: [CommonModule, RouterModule, ReactiveFormsModule, PhoneMaskDirective, TelefonePipe, ModalTravaAgendaComponent],
   template: `
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12 font-sans">
       
       <!-- Cabeçalho Principal -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <span class="text-xs font-semibold uppercase tracking-widest text-rose-600 block mb-1">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block mb-1">
             Módulo Administrativo
           </span>
-          <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Cadastros & Configurações
           </h1>
-          <p class="text-xs text-stone-500 mt-1">Gerencie os procedimentos oferecidos, equipe de especialistas e clientes.</p>
+          <p class="text-xs text-slate-500 mt-1">Gerencie os procedimentos oferecidos, equipe de especialistas e clientes.</p>
         </div>
 
         <div class="flex items-center gap-2">
-          <a routerLink="/admin/dashboard" class="px-4 py-2 rounded-xl bg-white border border-nude-300 text-stone-700 font-semibold text-xs hover:bg-stone-50 transition-all shadow-sm">
+          <a routerLink="/admin/dashboard" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-all shadow-sm">
             ← Voltar ao Painel
           </a>
         </div>
       </div>
 
       <!-- Navegação por Abas -->
-      <div class="flex items-center gap-2 border-b border-nude-200 pb-3 mb-6 overflow-x-auto">
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-3 mb-6 overflow-x-auto">
         <button
           (click)="abaAtiva.set('procedimentos')"
-          [class.bg-rose-500]="abaAtiva() === 'procedimentos'"
+          [class.bg-slate-900]="abaAtiva() === 'procedimentos'"
           [class.text-white]="abaAtiva() === 'procedimentos'"
-          [class.shadow-md]="abaAtiva() === 'procedimentos'"
+          [class.shadow-sm]="abaAtiva() === 'procedimentos'"
           [class.bg-white]="abaAtiva() !== 'procedimentos'"
-          [class.text-stone-700]="abaAtiva() !== 'procedimentos'"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
+          [class.text-slate-700]="abaAtiva() !== 'procedimentos'"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200">
           <span>💎 {{ setorService.termoServicos() }}</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-rose-700]="abaAtiva() === 'procedimentos'" [class.bg-nude-100]="abaAtiva() !== 'procedimentos'">
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-slate-700]="abaAtiva() === 'procedimentos'" [class.bg-slate-100]="abaAtiva() !== 'procedimentos'">
             {{ procedimentos().length }}
           </span>
         </button>
 
         <button
           (click)="abaAtiva.set('categorias')"
-          [class.bg-rose-500]="abaAtiva() === 'categorias'"
+          [class.bg-slate-900]="abaAtiva() === 'categorias'"
           [class.text-white]="abaAtiva() === 'categorias'"
-          [class.shadow-md]="abaAtiva() === 'categorias'"
+          [class.shadow-sm]="abaAtiva() === 'categorias'"
           [class.bg-white]="abaAtiva() !== 'categorias'"
-          [class.text-stone-700]="abaAtiva() !== 'categorias'"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
+          [class.text-slate-700]="abaAtiva() !== 'categorias'"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200">
           <span>🏷️ Tipos & Categorias</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-rose-700]="abaAtiva() === 'categorias'" [class.bg-nude-100]="abaAtiva() !== 'categorias'">
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-slate-700]="abaAtiva() === 'categorias'" [class.bg-slate-100]="abaAtiva() !== 'categorias'">
             {{ categorias().length }}
           </span>
         </button>
 
         <button
           (click)="abaAtiva.set('profissionais')"
-          [class.bg-rose-500]="abaAtiva() === 'profissionais'"
+          [class.bg-slate-900]="abaAtiva() === 'profissionais'"
           [class.text-white]="abaAtiva() === 'profissionais'"
-          [class.shadow-md]="abaAtiva() === 'profissionais'"
+          [class.shadow-sm]="abaAtiva() === 'profissionais'"
           [class.bg-white]="abaAtiva() !== 'profissionais'"
-          [class.text-stone-700]="abaAtiva() !== 'profissionais'"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
+          [class.text-slate-700]="abaAtiva() !== 'profissionais'"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200">
           <span>👩‍⚕️ Especialistas</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-rose-700]="abaAtiva() === 'profissionais'" [class.bg-nude-100]="abaAtiva() !== 'profissionais'">
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-slate-700]="abaAtiva() === 'profissionais'" [class.bg-slate-100]="abaAtiva() !== 'profissionais'">
             {{ profissionais().length }}
           </span>
         </button>
 
         <button
           (click)="abaAtiva.set('clientes')"
-          [class.bg-rose-500]="abaAtiva() === 'clientes'"
+          [class.bg-slate-900]="abaAtiva() === 'clientes'"
           [class.text-white]="abaAtiva() === 'clientes'"
-          [class.shadow-md]="abaAtiva() === 'clientes'"
+          [class.shadow-sm]="abaAtiva() === 'clientes'"
           [class.bg-white]="abaAtiva() !== 'clientes'"
-          [class.text-stone-700]="abaAtiva() !== 'clientes'"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
+          [class.text-slate-700]="abaAtiva() !== 'clientes'"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200">
           <span>👤 Pacientes & Clientes</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-rose-700]="abaAtiva() === 'clientes'" [class.bg-nude-100]="abaAtiva() !== 'clientes'">
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-slate-700]="abaAtiva() === 'clientes'" [class.bg-slate-100]="abaAtiva() !== 'clientes'">
             {{ clientes().length }}
           </span>
         </button>
 
         <button
           (click)="abaAtiva.set('identidade')"
-          [class.bg-rose-500]="abaAtiva() === 'identidade'"
+          [class.bg-slate-900]="abaAtiva() === 'identidade'"
           [class.text-white]="abaAtiva() === 'identidade'"
-          [class.shadow-md]="abaAtiva() === 'identidade'"
+          [class.shadow-sm]="abaAtiva() === 'identidade'"
           [class.bg-white]="abaAtiva() !== 'identidade'"
-          [class.text-stone-700]="abaAtiva() !== 'identidade'"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-nude-200">
+          [class.text-slate-700]="abaAtiva() !== 'identidade'"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200">
           <span>🖼️ Logotipo & Dados</span>
         </button>
 
         <a
           routerLink="/admin/assinatura"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 shadow-sm">
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm">
           <span>💳 Minha Assinatura & Renovação</span>
         </a>
       </div>
@@ -315,7 +315,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
             </div>
             <button
               (click)="abrirModalProcedimento()"
-              class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs shadow-md shadow-rose-200 transition-all">
+              class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
               <span>+ Novo Procedimento</span>
             </button>
@@ -402,7 +402,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
             <div class="flex items-center gap-2">
               <button
                 (click)="abrirModalCategoria()"
-                class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs shadow-md shadow-rose-200 transition-all">
+                class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 <span>+ Novo Tipo / Categoria</span>
               </button>
@@ -509,7 +509,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
             </div>
             <button
               (click)="abrirModalProfissional()"
-              class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs shadow-md shadow-rose-200 transition-all">
+              class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
               <span>+ Novo Especialista</span>
             </button>
@@ -611,7 +611,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
             </div>
             <button
               (click)="abrirModalCliente()"
-              class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs shadow-md shadow-rose-200 transition-all">
+              class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
               <span>+ Novo Paciente</span>
             </button>

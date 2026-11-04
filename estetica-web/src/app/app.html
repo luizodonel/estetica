@@ -1,4 +1,4 @@
-<div class="min-h-screen flex flex-col bg-nude-50 text-stone-800">
+<div class="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-sans">
   <!-- Navbar Desktop & Tablet -->
   <app-navbar></app-navbar>
 
@@ -8,16 +8,16 @@
   </main>
 
   <!-- Rodapé Dinâmico com o Nome da Clínica / Lojista -->
-  <footer class="border-t border-nude-200 bg-white py-12 px-4 sm:px-6 mb-16 md:mb-0 text-stone-500 text-xs">
+  <footer class="border-t border-slate-200 bg-white py-8 px-4 sm:px-6 mb-16 md:mb-0 text-slate-500 text-xs">
     <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-2">
         @if (tenantService.logoUrl()) {
           <img [src]="tenantService.logoUrl()!" [alt]="tenantService.nomeEmpresa()" class="h-6 w-auto object-contain max-w-[120px]" />
         }
-        <span class="font-serif text-lg font-bold text-stone-900">{{ tenantService.nomeEmpresa() }}</span>
-        <span>• {{ tenantService.tenant() ? 'Portal Oficial' : 'Portal de Agendamento' }}</span>
+        <span class="font-bold text-base text-slate-900">{{ tenantService.nomeEmpresa() }}</span>
+        <span class="text-slate-400">• {{ tenantService.tenant() ? 'Portal Oficial' : 'Portal de Agendamento' }}</span>
       </div>
-      <p class="text-stone-400">© 2026 {{ tenantService.nomeEmpresa() }}. Todos os direitos reservados.</p>
+      <p class="text-slate-400">© 2026 {{ tenantService.nomeEmpresa() }}. Todos os direitos reservados.</p>
     </div>
   </footer>
 

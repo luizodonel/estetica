@@ -18,30 +18,30 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   template: `
-    <div class="min-h-screen bg-[#faf8f5] py-8 px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div class="max-w-6xl mx-auto space-y-6">
 
         <!-- Navegação Superior -->
         <div class="flex items-center justify-between">
-          <a routerLink="/admin/dashboard" class="inline-flex items-center gap-2 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors">
+          <a routerLink="/admin/dashboard" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors">
             <span>←</span> Voltar para o Painel
           </a>
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
             📊 Gestão Financeira & Operacional
           </span>
         </div>
 
         <!-- Cabeçalho Principal -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-nude-200">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <span class="text-[11px] font-bold tracking-widest text-rose-600 uppercase block mb-1">
+              <span class="text-[11px] font-semibold tracking-wider text-slate-500 uppercase block mb-1">
                 Relatórios Gerenciais
               </span>
-              <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
+              <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Relatório de {{ setorService.termoProfissionais() }} & Faturamento
               </h1>
-              <p class="text-xs sm:text-sm text-stone-500 mt-1">
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">
                 Consulte o faturamento, {{ setorService.termoServicos() }} realizados, dias e horários de cada {{ setorService.termoProfissional() }} ou de toda a equipe.
               </p>
             </div>
@@ -52,7 +52,7 @@ import {
                 type="button"
                 (click)="carregarRelatorio()"
                 [disabled]="carregando()"
-                class="px-4 py-2.5 rounded-xl border border-nude-300 text-stone-700 hover:bg-stone-50 text-xs font-semibold flex items-center gap-2 transition-all">
+                class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-2 transition-all">
                 <span [class.animate-spin]="carregando()">🔄</span> Atualizar
               </button>
 
