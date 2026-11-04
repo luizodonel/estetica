@@ -18,10 +18,11 @@ public class TenantResolverService {
 
     private final ClinicaTenantRepository tenantRepository;
     private final ProfissionalRepository profissionalRepository;
+    private final jakarta.servlet.http.HttpServletRequest httpServletRequest;
 
     public ClinicaTenant getTenantDoUsuarioAutenticado() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null) {
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
             if (auth.getPrincipal() instanceof com.estetica.model.Lojista lojista) {
                 return tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
             }
@@ -48,8 +49,19 @@ public class TenantResolverService {
             }
         }
 
-        // Fallback: se houver apenas um tenant cadastrado no sistema (ou acesso público)
-        return tenantRepository.findAll().stream().findFirst().orElse(null);
+        // Tenta resolver pelo host/domínio da requisição HTTP pública
+        String slugRequisicao = extrairSlugDaRequisicaoHttp();
+        if (slugRequisicao != null && !slugRequisicao.isBlank()) {
+            Optional<ClinicaTenant> tenantOpt = tenantRepository.findBySlugIgnoreCase(slugRequisicao);
+            if (tenantOpt.isPresent()) {
+                return tenantOpt.get();
+            }
+        }
+
+        // Fallback: tenant padrão 'estetica' ou primeiro tenant
+        return tenantRepository.findBySlugIgnoreCase("estetica")
+                .or(() -> tenantRepository.findAll().stream().findFirst())
+                .orElse(null);
     }
 
     public ClinicaTenant resolverTenantPorSlugOuAutenticado(String slug) {
@@ -60,6 +72,44 @@ public class TenantResolverService {
             }
         }
         return getTenantDoUsuarioAutenticado();
+    }
+
+    public String extrairSlugDaRequisicaoHttp() {
+        if (httpServletRequest == null) return null;
+        try {
+            String host = httpServletRequest.getHeader("X-Forwarded-Host");
+            if (host == null || host.isBlank()) {
+                host = httpServletRequest.getHeader("Host");
+            }
+            if (host == null || host.isBlank()) {
+                host = httpServletRequest.getHeader("Origin");
+            }
+            if (host == null) return null;
+
+            host = host.toLowerCase().trim()
+                    .replace("https://", "")
+                    .replace("http://", "");
+
+            int slashIdx = host.indexOf('/');
+            if (slashIdx >= 0) host = host.substring(0, slashIdx);
+
+            int colonIdx = host.indexOf(':');
+            if (colonIdx >= 0) host = host.substring(0, colonIdx);
+
+            if (host.endsWith(".logistadigital.com.br")) {
+                String sub = host.substring(0, host.indexOf(".logistadigital.com.br")).trim();
+                return sub.isBlank() ? "estetica" : sub;
+            }
+
+            if (host.equals("logistadigital.com.br") || host.equals("estetica.local")) {
+                return "estetica";
+            }
+
+            if (!host.equals("localhost") && !host.equals("127.0.0.1") && !host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
+                return host;
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 }
 

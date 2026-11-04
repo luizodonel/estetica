@@ -47,17 +47,19 @@ public class ProcedimentoService {
 
     @Transactional
     public List<CategoriaDTO> listarCategorias(SetorAtuacao setorParam) {
-        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
-        SetorAtuacao setor = setorParam;
-        if (setor == null && tenant != null && tenant.getSetor() != null) {
-            setor = tenant.getSetor();
-        }
+        return listarCategorias(setorParam, null);
+    }
+
+    @Transactional
+    public List<CategoriaDTO> listarCategorias(SetorAtuacao setorParam, String slugParam) {
+        ClinicaTenant tenant = tenantResolverService.resolverTenantPorSlugOuAutenticado(slugParam);
+        SetorAtuacao setor = (tenant != null && tenant.getSetor() != null) ? tenant.getSetor() : setorParam;
         if (setor == null) {
             setor = SetorAtuacao.CLINICA_ESTETICA;
         }
 
         List<Categoria> cats;
-        if (tenant != null && setorParam == null) {
+        if (tenant != null) {
             cats = categoriaRepository.findByTenantIdAndAtivoTrueOrderByOrdemExibicaoAsc(tenant.getId());
             if (cats.isEmpty()) {
                 inicializarCategoriasPadraoParaTenant(tenant, setor);
@@ -168,48 +170,78 @@ public class ProcedimentoService {
     }
 
     @Transactional
-    public void inicializarCategoriasPadraoParaTenant(ClinicaTenant tenant, SetorAtuacao setor) {
+    public synchronized void inicializarCategoriasPadraoParaTenant(ClinicaTenant tenant, SetorAtuacao setor) {
         log.info("[ProcedimentoService] Inicializando catálogo padrão completo (categorias e procedimentos) para o tenant {} no nicho {}", tenant.getId(), setor);
         inicializarCategoriasEProcedimentosPadrao(setor, tenant);
     }
 
     @Transactional
-    public void inicializarCategoriasPadraoPorSetor(SetorAtuacao setor) {
+    public synchronized void inicializarCategoriasPadraoPorSetor(SetorAtuacao setor) {
         log.info("[ProcedimentoService] Inicializando catálogo global modelo para o nicho {}", setor);
         inicializarCategoriasEProcedimentosPadrao(setor, null);
     }
 
     @Transactional
-    public void inicializarCategoriasEProcedimentosPadrao(SetorAtuacao setor, ClinicaTenant tenant) {
+    public synchronized void inicializarCategoriasEProcedimentosPadrao(SetorAtuacao setor, ClinicaTenant tenant) {
         List<CategoriaSeed> seeds = getCatalogoPadrao(setor);
         for (CategoriaSeed catSeed : seeds) {
-            Categoria cat = Categoria.builder()
-                    .nome(catSeed.nome())
-                    .descricao(catSeed.descricao())
-                    .icone(catSeed.icone())
-                    .imagemUrl(catSeed.imagemUrl())
-                    .ordemExibicao(catSeed.ordem())
-                    .duracaoMinutosPadrao(catSeed.duracaoPadrao())
-                    .precoPadrao(catSeed.precoPadrao())
-                    .ativo(true)
-                    .setor(setor)
-                    .tenant(tenant)
-                    .build();
-            cat = categoriaRepository.save(cat);
+            Categoria cat;
+            if (tenant != null) {
+                List<Categoria> existentes = categoriaRepository.findByTenantIdOrderByOrdemExibicaoAsc(tenant.getId());
+                cat = existentes.stream()
+                        .filter(c -> c.getNome() != null && c.getNome().trim().equalsIgnoreCase(catSeed.nome().trim()))
+                        .findFirst()
+                        .orElse(null);
+            } else {
+                List<Categoria> existentes = categoriaRepository.findBySetor(setor);
+                cat = existentes.stream()
+                        .filter(c -> c.getTenant() == null && c.getNome() != null && c.getNome().trim().equalsIgnoreCase(catSeed.nome().trim()))
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (cat == null) {
+                cat = Categoria.builder()
+                        .nome(catSeed.nome())
+                        .descricao(catSeed.descricao())
+                        .icone(catSeed.icone())
+                        .imagemUrl(catSeed.imagemUrl())
+                        .ordemExibicao(catSeed.ordem())
+                        .duracaoMinutosPadrao(catSeed.duracaoPadrao())
+                        .precoPadrao(catSeed.precoPadrao())
+                        .ativo(true)
+                        .setor(setor)
+                        .tenant(tenant)
+                        .build();
+                cat = categoriaRepository.save(cat);
+            }
 
             for (ProcedimentoSeed procSeed : catSeed.procedimentos()) {
-                procedimentoRepository.save(Procedimento.builder()
-                        .categoria(cat)
-                        .titulo(procSeed.titulo())
-                        .descricao(procSeed.descricao())
-                        .duracaoMinutos(procSeed.duracaoMinutos())
-                        .preco(procSeed.preco())
-                        .imagemUrl(procSeed.imagemUrl() != null && !procSeed.imagemUrl().isBlank()
-                                ? procSeed.imagemUrl()
-                                : catSeed.imagemUrl())
-                        .ativo(true)
-                        .tenant(tenant)
-                        .build());
+                boolean procExiste;
+                if (tenant != null) {
+                    procExiste = procedimentoRepository.findByTenantIdAndCategoriaIdAndAtivoTrueOrderByTituloAsc(tenant.getId(), cat.getId())
+                            .stream()
+                            .anyMatch(p -> p.getTitulo().trim().equalsIgnoreCase(procSeed.titulo().trim()));
+                } else {
+                    procExiste = procedimentoRepository.findByCategoriaIdAndAtivoTrueOrderByTituloAsc(cat.getId())
+                            .stream()
+                            .anyMatch(p -> p.getTitulo().trim().equalsIgnoreCase(procSeed.titulo().trim()));
+                }
+
+                if (!procExiste) {
+                    procedimentoRepository.save(Procedimento.builder()
+                            .categoria(cat)
+                            .titulo(procSeed.titulo())
+                            .descricao(procSeed.descricao())
+                            .duracaoMinutos(procSeed.duracaoMinutos())
+                            .preco(procSeed.preco())
+                            .imagemUrl(procSeed.imagemUrl() != null && !procSeed.imagemUrl().isBlank()
+                                    ? procSeed.imagemUrl()
+                                    : catSeed.imagemUrl())
+                            .ativo(true)
+                            .tenant(tenant)
+                            .build());
+                }
             }
         }
     }
@@ -465,7 +497,12 @@ public class ProcedimentoService {
 
     @Transactional
     public List<ProcedimentoDTO> listarProcedimentos(Long categoriaId) {
-        ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        return listarProcedimentos(categoriaId, null);
+    }
+
+    @Transactional
+    public List<ProcedimentoDTO> listarProcedimentos(Long categoriaId, String slugParam) {
+        ClinicaTenant tenant = tenantResolverService.resolverTenantPorSlugOuAutenticado(slugParam);
         Long tenantId = tenant != null ? tenant.getId() : null;
 
         List<Procedimento> list;

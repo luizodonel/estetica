@@ -117,7 +117,7 @@ import { AssinaturaStatusResponse } from '../../../core/models';
                   } @else if (sub.diasRestantes === 0) {
                     Vence hoje!
                   } @else {
-                    Faltam <strong>{{ sub.diasRestantes }} dia(s)</strong> para vencer
+                    Faltam <strong>{{ sub.diasRestantes ?? 0 }} dia(s)</strong> para vencer
                   }
                 </p>
               </div>
@@ -160,7 +160,7 @@ import { AssinaturaStatusResponse } from '../../../core/models';
                     Sua assinatura está em dia!
                   </h3>
                   <p class="text-xs sm:text-sm text-stone-500 max-w-md mx-auto mt-1">
-                    Você ainda possui <strong>{{ sub.diasRestantes }} dias</strong> de acesso garantido. 
+                    Você ainda possui <strong>{{ sub.diasRestantes ?? 0 }} dias</strong> de acesso garantido. 
                     A geração do Pix de renovação será liberada automaticamente aqui nesta aba quando faltarem <strong>5 dias</strong> para o vencimento.
                   </p>
                 </div>
@@ -215,7 +215,7 @@ import { AssinaturaStatusResponse } from '../../../core/models';
                       </div>
                     } @else {
                       <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                        ⏳ Vence em {{ sub.diasRestantes }} dia(s) — Renove Sem Perder Dias
+                        ⏳ Vence em {{ sub.diasRestantes ?? 0 }} dia(s) — Renove Sem Perder Dias
                       </div>
                     }
 

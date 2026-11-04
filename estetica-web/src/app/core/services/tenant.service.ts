@@ -46,8 +46,30 @@ export class TenantService {
   corSecundaria = computed(() => '#f43f5e');
   linkPersonalizado = computed(() => this.tenant()?.linkPersonalizado || '');
 
+  assinaturaProximaDoVencimento = computed(() => {
+    const t = this.tenant();
+    return !!(t && typeof t.diasRestantes === 'number' && t.diasRestantes <= 5);
+  });
+
   constructor() {
     this.detectarECarregarTenant();
+  }
+
+  obterSlugAtual(): string {
+    if (typeof window === 'undefined') return 'estetica';
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramSlug = urlParams.get('empresa') || urlParams.get('loja') || urlParams.get('tenant');
+    if (paramSlug) return paramSlug.trim().toLowerCase();
+
+    const hostname = window.location.hostname.toLowerCase();
+    const dominioPadrao = 'logistadigital.com.br';
+    if (hostname.endsWith(dominioPadrao)) {
+      const subdominio = hostname.replace(`.${dominioPadrao}`, '').trim();
+      if (subdominio && !['www', 'api', 'app', 'painel'].includes(subdominio)) {
+        return subdominio;
+      }
+    }
+    return 'estetica';
   }
 
   detectarECarregarTenant(): void {
@@ -61,14 +83,13 @@ export class TenantService {
       return;
     }
 
-    // 2. Tenta extrair do subdomínio (ex: belavida.logistadigital.com.br)
+    // 2. Tenta extrair do subdomínio (ex: luizodonelcoefur.logistadigital.com.br ou estetica.logistadigital.com.br)
     const hostname = window.location.hostname.toLowerCase();
     const dominioPadrao = 'logistadigital.com.br';
 
     if (hostname.endsWith(dominioPadrao)) {
       const subdominio = hostname.replace(`.${dominioPadrao}`, '').trim();
-      // Ignora subdomínios padrão do sistema como "estetica", "www", "api"
-      if (subdominio && !['estetica', 'www', 'api', 'app', 'painel'].includes(subdominio)) {
+      if (subdominio && !['www', 'api', 'app', 'painel'].includes(subdominio)) {
         this.carregarTenant(subdominio);
         return;
       }
@@ -87,6 +108,9 @@ export class TenantService {
         } catch {}
       }
     }
+
+    // Padrão: carregar tenant estetica
+    this.carregarTenant('estetica');
   }
 
   carregarTenant(slug: string): void {

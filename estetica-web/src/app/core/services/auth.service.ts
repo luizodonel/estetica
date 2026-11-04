@@ -25,9 +25,28 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(dados: { login: string; senha: string; host?: string; origin?: string }): Observable<AuthResponse> {
+  obterSlugAtual(): string {
+    if (typeof window === 'undefined') return 'estetica';
+    const params = new URLSearchParams(window.location.search);
+    const param = params.get('empresa') || params.get('loja') || params.get('tenant');
+    if (param) return param.trim().toLowerCase();
+
+    const hostname = window.location.hostname.toLowerCase();
+    const dominioBase = 'logistadigital.com.br';
+    if (hostname.endsWith(dominioBase)) {
+      const sub = hostname.replace(`.${dominioBase}`, '').trim();
+      if (sub && !['www', 'api', 'app', 'painel'].includes(sub)) {
+        return sub;
+      }
+    }
+    return 'estetica';
+  }
+
+  login(dados: { login: string; senha: string; host?: string; origin?: string; slug?: string }): Observable<AuthResponse> {
+    const slugAtual = dados.slug || this.obterSlugAtual();
     const payload = {
       ...dados,
+      slug: slugAtual,
       host: dados.host || (typeof window !== 'undefined' ? window.location.host : ''),
       origin: dados.origin || (typeof window !== 'undefined' ? window.location.origin : '')
     };
@@ -46,8 +65,14 @@ export class AuthService {
     return this.http.get<{ existe: boolean; nome: string; primeiroAcesso: boolean }>(`${this.apiUrl}/verificar-primeiro-acesso?telefone=${encodeURIComponent(telefone)}`);
   }
 
-  registrar(dados: { nome: string; email?: string; telefoneWhatsApp: string; senha: string }): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/registrar`, dados).pipe(
+  registrar(dados: { nome: string; email?: string; telefoneWhatsApp: string; senha: string; slug?: string; host?: string }): Observable<AuthResponse> {
+    const slugAtual = dados.slug || this.obterSlugAtual();
+    const payload = {
+      ...dados,
+      slug: slugAtual,
+      host: dados.host || (typeof window !== 'undefined' ? window.location.host : '')
+    };
+    return this.http.post<AuthResponse>(`${this.apiUrl}/registrar`, payload).pipe(
       tap(res => this.handleAuthSuccess(res))
     );
   }

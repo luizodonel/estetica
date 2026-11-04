@@ -15,7 +15,8 @@ public class AuthDTOs {
         String senha,
 
         String host,
-        String origin
+        String origin,
+        String slug
     ) {
         public String getIdentificador() {
             if (login != null && !login.isBlank()) return login.trim();
@@ -52,7 +53,10 @@ public class AuthDTOs {
 
         @NotBlank(message = "A senha é obrigatória")
         @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
-        String senha
+        String senha,
+
+        String slug,
+        String host
     ) {}
 
     public record AuthResponse(

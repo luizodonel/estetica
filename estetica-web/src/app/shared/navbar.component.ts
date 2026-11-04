@@ -187,7 +187,7 @@ import { SetorService } from '../core/services/setor.service';
                   class="px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-600 hover:text-rose-600 hover:bg-white/80 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent relative">
                   <span>💳</span>
                   <span>Assinatura</span>
-                  @if ((tenantService.tenant()?.diasRestantes ?? 99) <= 5) {
+                  @if (tenantService.assinaturaProximaDoVencimento()) {
                     <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute -top-0.5 -right-0.5"></span>
                   }
                 </a>

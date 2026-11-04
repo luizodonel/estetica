@@ -17,6 +17,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,6 +30,9 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class TenantService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final ClinicaTenantRepository tenantRepository;
     private final UsuarioRepository usuarioRepository;
@@ -43,6 +48,7 @@ public class TenantService {
     private final TenantResolverService tenantResolverService;
     private final MercadoPagoService mercadoPagoService;
     private final CoolifyIntegrationService coolifyIntegrationService;
+    private final ProcedimentoService procedimentoService;
 
     private static final BigDecimal VALOR_ADESAO_PIX = new BigDecimal("149.90");
 
@@ -407,10 +413,13 @@ public class TenantService {
             tenant.setNomeEmpresa(req.nomeEmpresa().trim());
         }
 
+        boolean mudouSetor = false;
+        com.estetica.model.SetorAtuacao novoSetor = null;
         if (req.setor() != null && !req.setor().isBlank()) {
             try {
                 com.estetica.model.SetorAtuacao st = com.estetica.model.SetorAtuacao.valueOf(req.setor().trim().toUpperCase());
-                boolean mudouSetor = tenant.getSetor() != null && !tenant.getSetor().equals(st);
+                mudouSetor = tenant.getSetor() != null && !tenant.getSetor().equals(st);
+                novoSetor = st;
                 if (mudouSetor) {
                     log.warn("[TenantService] Tenant {} mudou de setor de {} para {}. Limpando dados anteriores...", tenant.getId(), tenant.getSetor(), st);
                     limparDadosDoTenantPorMudancaDeSetor(tenant.getId());
@@ -420,7 +429,9 @@ public class TenantService {
                     tenant.getLojista().setSetor(st);
                     lojistaRepository.save(tenant.getLojista());
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ex) {
+                log.error("[TenantService] Erro ao atualizar setor do tenant {}: {}", tenant.getId(), ex.getMessage());
+            }
         }
 
         if (req.logoUrl() != null) {
@@ -440,6 +451,12 @@ public class TenantService {
         }
 
         tenant = tenantRepository.save(tenant);
+
+        if (mudouSetor && novoSetor != null) {
+            log.info("[TenantService] Inicializando catálogo padrão para o tenant {} no novo nicho {}", tenant.getId(), novoSetor);
+            procedimentoService.inicializarCategoriasPadraoParaTenant(tenant, novoSetor);
+        }
+
         log.info("[TenantService] Identidade visual e cores atualizadas para a loja: {}", tenant.getNomeEmpresa());
         return toPublicDTO(tenant);
     }
@@ -448,34 +465,40 @@ public class TenantService {
     public void limparDadosDoTenantPorMudancaDeSetor(Long tenantId) {
         log.warn("[TenantService] Limpando dados do tenant {} devido a mudanca de nicho...", tenantId);
         try {
-            historicoAtendimentoRepository.deleteByTenantId(tenantId);
+            // 1. Histórico de atendimento
+            entityManager.createNativeQuery("DELETE FROM tb_historico_atendimento WHERE tenant_id = :tid OR agendamento_id IN (SELECT a.id FROM tb_agendamento a WHERE a.tenant_id = :tid)")
+                    .setParameter("tid", tenantId)
+                    .executeUpdate();
+
+            // 2. Bloqueios de agenda
+            entityManager.createNativeQuery("DELETE FROM tb_bloqueio_agenda WHERE tenant_id = :tid")
+                    .setParameter("tid", tenantId)
+                    .executeUpdate();
+
+            // 3. Agendamentos
+            entityManager.createNativeQuery("DELETE FROM tb_agendamento WHERE tenant_id = :tid")
+                    .setParameter("tid", tenantId)
+                    .executeUpdate();
+
+            // 4. Associação de procedimentos com profissionais
+            entityManager.createNativeQuery("DELETE FROM tb_profissional_procedimento WHERE procedimento_id IN (SELECT p.id FROM tb_procedimento p WHERE p.tenant_id = :tid)")
+                    .setParameter("tid", tenantId)
+                    .executeUpdate();
+
+            // 5. Procedimentos
+            entityManager.createNativeQuery("DELETE FROM tb_procedimento WHERE tenant_id = :tid")
+                    .setParameter("tid", tenantId)
+                    .executeUpdate();
+
+            // 6. Categorias
+            entityManager.createNativeQuery("DELETE FROM tb_categoria WHERE tenant_id = :tid")
+                    .setParameter("tid", tenantId)
+                    .executeUpdate();
+
+            entityManager.flush();
+            log.info("[TenantService] Limpeza de dados do tenant {} concluída com sucesso.", tenantId);
         } catch (Exception e) {
-            log.error("Erro ao deletar historico de atendimento do tenant {}: {}", tenantId, e.getMessage());
-        }
-        try {
-            bloqueioAgendaRepository.deleteByTenantId(tenantId);
-        } catch (Exception e) {
-            log.error("Erro ao deletar bloqueios do tenant {}: {}", tenantId, e.getMessage());
-        }
-        try {
-            agendamentoRepository.deleteByTenantId(tenantId);
-        } catch (Exception e) {
-            log.error("Erro ao deletar agendamentos do tenant {}: {}", tenantId, e.getMessage());
-        }
-        try {
-            List<com.estetica.model.Profissional> profissionais = profissionalRepository.findByTenantIdOrderByNomeAsc(tenantId);
-            for (com.estetica.model.Profissional p : profissionais) {
-                p.getProcedimentos().clear();
-                profissionalRepository.save(p);
-            }
-            procedimentoRepository.deleteByTenantId(tenantId);
-        } catch (Exception e) {
-            log.error("Erro ao deletar procedimentos do tenant {}: {}", tenantId, e.getMessage());
-        }
-        try {
-            categoriaRepository.deleteByTenantId(tenantId);
-        } catch (Exception e) {
-            log.error("Erro ao deletar categorias do tenant {}: {}", tenantId, e.getMessage());
+            log.error("[TenantService] Erro ao limpar dados do tenant {}: {}", tenantId, e.getMessage(), e);
         }
     }
 

@@ -37,10 +37,13 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   // Catálogo e Procedimentos
-  getCategorias(setor?: string): Observable<Categoria[]> {
+  getCategorias(setor?: string, slug?: string): Observable<Categoria[]> {
     let params = new HttpParams();
     if (setor) {
       params = params.set('setor', setor);
+    }
+    if (slug) {
+      params = params.set('slug', slug);
     }
     return this.http.get<Categoria[]>(`${this.baseUrl}/procedimentos/categorias`, { params });
   }
@@ -61,10 +64,13 @@ export class ApiService {
     return this.http.delete<void>(`${this.baseUrl}/procedimentos/categorias/${id}`);
   }
 
-  getProcedimentos(categoriaId?: number): Observable<Procedimento[]> {
+  getProcedimentos(categoriaId?: number, slug?: string): Observable<Procedimento[]> {
     let params = new HttpParams();
     if (categoriaId) {
       params = params.set('categoriaId', categoriaId.toString());
+    }
+    if (slug) {
+      params = params.set('slug', slug);
     }
     return this.http.get<Procedimento[]>(`${this.baseUrl}/procedimentos`, { params });
   }

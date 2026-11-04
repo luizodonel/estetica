@@ -51,13 +51,19 @@ public class AuthService {
             throw new RegraNegocioException("O e-mail informado já está cadastrado.");
         }
 
+        String slugReq = request.slug();
+        if (slugReq == null || slugReq.isBlank()) {
+            slugReq = tenantResolverService.extrairSlugDaRequisicaoHttp();
+        }
+        ClinicaTenant tenantAlvo = tenantResolverService.resolverTenantPorSlugOuAutenticado(slugReq);
+
         Usuario usuario = Usuario.builder()
                 .nome(request.nome().trim())
                 .email(email)
                 .telefoneWhatsApp(telefone)
                 .senhaHash(passwordEncoder.encode(request.senha()))
                 .role(Role.ROLE_CLIENTE)
-                .tenant(tenantResolverService.getTenantDoUsuarioAutenticado())
+                .tenant(tenantAlvo)
                 .primeiroAcesso(false)
                 .ativo(true)
                 .build();
@@ -131,6 +137,10 @@ public class AuthService {
         }
 
         String slugAmbiente = extrairSlugDoAmbiente(request);
+        if (slugAmbiente == null || slugAmbiente.isBlank()) {
+            slugAmbiente = "estetica";
+        }
+        slugAmbiente = slugAmbiente.toLowerCase().trim();
 
         // =========================================================================
         // 1. TENTA AUTENTICAR COMO LOJISTA (TABELA DEDICADA tb_lojista)
@@ -182,11 +192,9 @@ public class AuthService {
 
         // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO:
         // O lojista só pode fazer login no seu próprio link/subdomínio!
-        // Caso tente logar no link principal ou em outro link, retorna erro genérico conforme solicitado.
-        if (slugAmbiente != null) {
-            if ("estetica".equalsIgnoreCase(slugAmbiente) || !slugAmbiente.equalsIgnoreCase(lojistaSlug)) {
-                throw new BadCredentialsException("Login ou usuário inválido.");
-            }
+        // Caso tente logar no link principal ou em outro link, é estritamente barrado.
+        if (lojistaSlug == null || !slugAmbiente.equalsIgnoreCase(lojistaSlug.trim())) {
+            throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
         if (!passwordEncoder.matches(request.senha(), lojista.getSenhaHash())) {
@@ -248,23 +256,23 @@ public class AuthService {
     }
 
     private AuthResponse autenticarUsuario(Usuario usuario, LoginRequest request, String slugAmbiente) {
-        boolean isMasterAdmin = "admin@logistadigital.com.br".equalsIgnoreCase(usuario.getEmail()) || (usuario.getTenant() == null && usuario.getRole() == Role.ROLE_ADMIN);
+        boolean isMasterAdmin = "admin@logistadigital.com.br".equalsIgnoreCase(usuario.getEmail()) 
+                || (usuario.getTenant() == null && usuario.getRole() == Role.ROLE_ADMIN);
+
+        ClinicaTenant tenant = usuario.getTenant();
+        String userSlug = tenant != null ? tenant.getSlug() : null;
 
         // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO PARA USUÁRIO COMUM:
         if (isMasterAdmin) {
             // Administrador Master: só acessa pelo link principal (estetica)
-            if (slugAmbiente != null && !"estetica".equalsIgnoreCase(slugAmbiente)) {
+            if (!"estetica".equalsIgnoreCase(slugAmbiente)) {
                 throw new BadCredentialsException("Login ou usuário inválido.");
             }
         } else {
             // Especialista ou Cliente de uma clínica:
-            ClinicaTenant tenant = usuario.getTenant();
-            String userSlug = tenant != null ? tenant.getSlug() : null;
-
-            if (slugAmbiente != null) {
-                if ("estetica".equalsIgnoreCase(slugAmbiente) || (userSlug != null && !slugAmbiente.equalsIgnoreCase(userSlug))) {
-                    throw new BadCredentialsException("Login ou usuário inválido.");
-                }
+            // SÓ PODE ACESSAR NO LINK DA PRÓPRIA CLÍNICA!
+            if (userSlug == null || !slugAmbiente.equalsIgnoreCase(userSlug.trim())) {
+                throw new BadCredentialsException("Login ou usuário inválido.");
             }
         }
 
@@ -286,7 +294,6 @@ public class AuthService {
             throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
-        ClinicaTenant tenant = usuario.getTenant();
         if (tenant != null && Boolean.FALSE.equals(tenant.getAtivo())) {
             throw new RegraNegocioException("Este estabelecimento está temporariamente desativado. Entre em contato com o suporte.");
         }
@@ -314,9 +321,13 @@ public class AuthService {
     }
 
     private String extrairSlugDoAmbiente(LoginRequest request) {
-        String host = request.host();
+        if (request != null && request.slug() != null && !request.slug().isBlank()) {
+            return request.slug().toLowerCase().trim();
+        }
+
+        String host = request != null ? request.host() : null;
         if (host == null || host.isBlank()) {
-            host = request.origin();
+            host = request != null ? request.origin() : null;
         }
         if ((host == null || host.isBlank()) && httpServletRequest != null) {
             host = httpServletRequest.getHeader("X-Forwarded-Host");
@@ -327,7 +338,7 @@ public class AuthService {
                 host = httpServletRequest.getHeader("Origin");
             }
         }
-        if (host == null) return null;
+        if (host == null || host.isBlank()) return "estetica";
 
         host = host.toLowerCase().trim()
                 .replace("https://", "")
@@ -340,7 +351,7 @@ public class AuthService {
         if (colonIdx >= 0) host = host.substring(0, colonIdx);
 
         if (host.endsWith(".logistadigital.com.br")) {
-            String sub = host.substring(0, host.indexOf(".logistadigital.com.br"));
+            String sub = host.substring(0, host.indexOf(".logistadigital.com.br")).trim();
             return sub.isBlank() ? "estetica" : sub;
         }
 
@@ -348,12 +359,11 @@ public class AuthService {
             return "estetica";
         }
 
-        // Se for localhost ou IP de desenvolvimento direto, não restringe ou assume estetica
-        if (host.equals("localhost") || host.equals("127.0.0.1") || host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
-            return null; // Em ambiente local sem subdomínio, não bloqueia por domínio
+        if (!host.equals("localhost") && !host.equals("127.0.0.1") && !host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
+            return host;
         }
 
-        return host;
+        return "estetica";
     }
 
     // =========================================================================

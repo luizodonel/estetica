@@ -23,10 +23,11 @@ public class ProcedimentoController {
     private final ProcedimentoService procedimentoService;
 
     @GetMapping("/categorias")
-    @Operation(summary = "Lista categorias ativas filtradas por setor/nicho")
+    @Operation(summary = "Lista categorias ativas filtradas por setor/nicho e tenant/link")
     public ResponseEntity<List<CategoriaDTO>> listarCategorias(
-            @RequestParam(required = false) SetorAtuacao setor) {
-        return ResponseEntity.ok(procedimentoService.listarCategorias(setor));
+            @RequestParam(required = false) SetorAtuacao setor,
+            @RequestParam(required = false) String slug) {
+        return ResponseEntity.ok(procedimentoService.listarCategorias(setor, slug));
     }
 
     @GetMapping("/categorias/todas")
@@ -59,10 +60,11 @@ public class ProcedimentoController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista procedimentos com filtro opcional por categoria")
+    @Operation(summary = "Lista procedimentos com filtro opcional por categoria e tenant/link")
     public ResponseEntity<List<ProcedimentoDTO>> listarProcedimentos(
-            @RequestParam(required = false) Long categoriaId) {
-        return ResponseEntity.ok(procedimentoService.listarProcedimentos(categoriaId));
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) String slug) {
+        return ResponseEntity.ok(procedimentoService.listarProcedimentos(categoriaId, slug));
     }
 
     @GetMapping("/{id}")
