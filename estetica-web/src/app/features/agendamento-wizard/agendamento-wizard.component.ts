@@ -8,11 +8,12 @@ import { TenantService } from '../../core/services/tenant.service';
 import { SetorService } from '../../core/services/setor.service';
 import { Agendamento, Procedimento, Profissional, SlotDisponivel, Usuario } from '../../core/models';
 import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
+import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive';
 
 @Component({
   selector: 'app-agendamento-wizard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PhoneMaskDirective],
   template: `
     <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12 font-sans">
       
@@ -397,7 +398,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                     <option [ngValue]="null">-- Selecione o {{ setorService.termoCliente() }} Cadastrado --</option>
                     @for (cli of clientes(); track cli.id) {
                       <option [ngValue]="cli.id">
-                        {{ cli.nome }} • WhatsApp: {{ formatarTelefone(cli.telefoneWhatsApp) }}
+                        {{ cli.nome }} • {{ formatarTelefone(cli.telefoneWhatsApp) }}
                       </option>
                     }
                   </select>
@@ -406,7 +407,7 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                     <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-medium flex items-center gap-2">
                       <span>✓ {{ setorService.termoCliente() }} Selecionado:</span>
                       <strong>{{ pacienteSelecionado()?.nome }}</strong>
-                      <span class="text-emerald-700">({{ pacienteSelecionado()?.telefoneWhatsApp }})</span>
+                      <span class="text-emerald-700 font-semibold">{{ formatarTelefone(pacienteSelecionado()?.telefoneWhatsApp) }}</span>
                     </div>
                   } @else {
                     <p class="text-xs text-rose-600 font-semibold">
@@ -429,7 +430,9 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                       <div>
                         <label class="block text-[11px] font-semibold text-slate-600 mb-1">WhatsApp com DDD *</label>
                         <input 
-                          type="text" 
+                          type="tel" 
+                          appPhoneMask
+                          maxlength="16"
                           [(ngModel)]="novoClienteWhatsApp" 
                           placeholder="(11) 99999-8888" 
                           class="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900" />
@@ -479,9 +482,11 @@ import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
                   <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Seu WhatsApp com DDD *</label>
                     <input 
-                      type="text" 
+                      type="tel" 
+                      appPhoneMask
+                      maxlength="16"
                       [(ngModel)]="whatsappClienteOnline" 
-                      placeholder="(61) 98226-1155" 
+                      placeholder="(11) 99999-8888" 
                       class="w-full p-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
                   </div>
                 </div>

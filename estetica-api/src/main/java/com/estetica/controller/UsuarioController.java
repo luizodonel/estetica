@@ -60,7 +60,7 @@ public class UsuarioController {
 
         String email = (request.email() != null && !request.email().isBlank())
                 ? request.email().toLowerCase().trim()
-                : "tel" + cleanPhone + "@cliente.local";
+                : null;
 
         if (request.email() != null && !request.email().isBlank() && usuarioRepository.existsByEmail(email)) {
             throw new RegraNegocioException("Já existe um cliente cadastrado com o e-mail: " + email);

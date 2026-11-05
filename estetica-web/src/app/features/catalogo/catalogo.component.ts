@@ -6,7 +6,9 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { SetorService } from '../../core/services/setor.service';
-import { Categoria, Procedimento, Profissional, SlotDisponivel } from '../../core/models';
+import { Categoria, Procedimento, Profissional, SlotDisponivel, Usuario } from '../../core/models';
+import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive';
+import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 
 interface DiaCarrossel {
   dataStr: string;
@@ -18,7 +20,7 @@ interface DiaCarrossel {
 @Component({
   selector: 'app-catalogo',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PhoneMaskDirective],
   template: `
     <div class="min-h-screen bg-[#f8fafc] text-stone-800 flex flex-col">
       
@@ -519,6 +521,51 @@ interface DiaCarrossel {
               }
             </div>
 
+            <!-- SELEÇÃO / CADASTRO DE CLIENTE (MODO GESTÃO / ESPECIALISTA) -->
+            @if (authService.isAdminOrProfissional()) {
+              <div class="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                    Cliente do Atendimento:
+                  </span>
+                  <button 
+                    type="button" 
+                    (click)="modoNovoClienteAdmin.set(!modoNovoClienteAdmin())"
+                    class="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline">
+                    {{ modoNovoClienteAdmin() ? '← Selecionar Cadastrado' : '+ Novo ' + setorService.termoCliente() }}
+                  </button>
+                </div>
+
+                @if (!modoNovoClienteAdmin()) {
+                  <select 
+                    [(ngModel)]="clienteIdSelecionadoAdmin" 
+                    class="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:outline-none">
+                    <option [ngValue]="null">-- Selecione o {{ setorService.termoCliente() }} --</option>
+                    @for (c of clientes(); track c.id) {
+                      <option [ngValue]="c.id">
+                        {{ c.nome }} • {{ formatarTelefoneBR(c.telefoneWhatsApp) }}
+                      </option>
+                    }
+                  </select>
+                } @else {
+                  <div class="space-y-2">
+                    <input 
+                      type="text" 
+                      [(ngModel)]="nomeClienteAdmin" 
+                      placeholder="Nome do {{ setorService.termoCliente() }} *"
+                      class="w-full p-2.5 rounded-xl border border-slate-300 text-xs bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                    <input 
+                      type="tel" 
+                      appPhoneMask
+                      [(ngModel)]="whatsappClienteAdmin" 
+                      maxlength="16"
+                      placeholder="WhatsApp com DDD *"
+                      class="w-full p-2.5 rounded-xl border border-slate-300 text-xs bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                  </div>
+                }
+              </div>
+            }
+
             <!-- TOTAL E BOTÃO CONFIRMAR -->
             <div class="pt-4 border-t border-slate-100 space-y-3">
               <div class="flex items-center justify-between">
@@ -598,10 +645,11 @@ interface DiaCarrossel {
                 <label class="block text-xs font-semibold text-stone-700 mb-1">Seu WhatsApp *</label>
                 <input
                   type="tel"
+                  appPhoneMask
                   [(ngModel)]="whatsappRapido"
                   name="whatsappRapido"
                   required
-                  maxlength="20"
+                  maxlength="16"
                   placeholder="(11) 99999-9999"
                   class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-slate-50" />
               </div>
@@ -763,6 +811,13 @@ export class CatalogoComponent implements OnInit {
   erroClienteRapido = signal<string | null>(null);
   agendamentoConcluido = signal<boolean>(false);
 
+  // Seleção e Cadastro de Cliente para Admin / Especialista
+  clientes = signal<Usuario[]>([]);
+  clienteIdSelecionadoAdmin: number | null = null;
+  modoNovoClienteAdmin = signal<boolean>(false);
+  nomeClienteAdmin = '';
+  whatsappClienteAdmin = '';
+
   // Banner Personalizado
   modalBannerAberto = signal<boolean>(false);
   salvandoBanner = signal<boolean>(false);
@@ -820,6 +875,18 @@ export class CatalogoComponent implements OnInit {
   ngOnInit(): void {
     this.gerarDiasCarrossel();
     this.carregarDadosDoLink();
+
+    if (this.authService.isAdminOrProfissional()) {
+      this.api.getClientes().subscribe({
+        next: (clis) => {
+          this.clientes.set(clis || []);
+          if (clis && clis.length > 0 && !this.clienteIdSelecionadoAdmin) {
+            this.clienteIdSelecionadoAdmin = clis[0].id;
+          }
+        },
+        error: () => {}
+      });
+    }
   }
 
   obterDataLocal(): string {
@@ -984,6 +1051,10 @@ export class CatalogoComponent implements OnInit {
     return this.api.formatarUrlImagem(url);
   }
 
+  formatarTelefoneBR(tel: string | null | undefined): string {
+    return formatarTelefoneBR(tel);
+  }
+
   finalizarAgendamento(): void {
     const proc = this.servicosSelecionados()[0];
     const slot = this.slotSelecionado();
@@ -1054,6 +1125,32 @@ export class CatalogoComponent implements OnInit {
     const slot = this.slotSelecionado();
     if (!proc || !slot) return;
 
+    let clienteId: number | undefined = undefined;
+    let clienteNome: string | undefined = undefined;
+    let clienteTelefone: string | undefined = undefined;
+
+    if (this.authService.isAdminOrProfissional()) {
+      if (!this.modoNovoClienteAdmin()) {
+        if (!this.clienteIdSelecionadoAdmin) {
+          this.erroAgendamento.set(`Selecione um ${this.setorService.termoCliente()} cadastrado ou cadastre um novo.`);
+          return;
+        }
+        clienteId = Number(this.clienteIdSelecionadoAdmin);
+      } else {
+        if (!this.nomeClienteAdmin.trim() || !this.whatsappClienteAdmin.trim()) {
+          this.erroAgendamento.set(`Por favor, informe o Nome e WhatsApp do ${this.setorService.termoCliente()}.`);
+          return;
+        }
+        const telLimpo = this.whatsappClienteAdmin.replaceAll(/[^0-9]/g, '');
+        if (telLimpo.length < 8) {
+          this.erroAgendamento.set('Por favor, informe um WhatsApp válido com DDD.');
+          return;
+        }
+        clienteNome = this.nomeClienteAdmin.trim();
+        clienteTelefone = telLimpo;
+      }
+    }
+
     this.salvando.set(true);
     this.erroAgendamento.set(null);
 
@@ -1067,6 +1164,10 @@ export class CatalogoComponent implements OnInit {
     }
 
     this.api.criarAgendamento({
+      clienteId: clienteId,
+      clienteNome: clienteNome,
+      clienteTelefone: clienteTelefone,
+      slug: this.tenantService.obterSlugAtual(),
       procedimentoId: proc.id,
       profissionalId: slot.profissionalId,
       dataHoraInicio: dataHoraInicio,
@@ -1076,6 +1177,9 @@ export class CatalogoComponent implements OnInit {
         this.salvando.set(false);
         this.gavetaMobileAberta.set(false);
         this.agendamentoConcluido.set(true);
+        if (this.authService.isAdminOrProfissional()) {
+          this.api.getClientes().subscribe(clis => this.clientes.set(clis || []));
+        }
       },
       error: (err) => {
         this.salvando.set(false);

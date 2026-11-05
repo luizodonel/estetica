@@ -531,40 +531,69 @@ public class TenantService {
 
     @Transactional
     public void limparDadosDoTenantPorMudancaDeSetor(Long tenantId) {
-        log.warn("[TenantService] Limpando dados do tenant {} devido a mudanca de nicho...", tenantId);
+        log.warn("[TenantService] Limpando TODOS os dados operacionais do tenant {} devido a mudanca de nicho...", tenantId);
         try {
             // 1. Histórico de atendimento
-            entityManager.createNativeQuery("DELETE FROM tb_historico_atendimento WHERE tenant_id = :tid OR agendamento_id IN (SELECT a.id FROM tb_agendamento a WHERE a.tenant_id = :tid)")
-                    .setParameter("tid", tenantId)
-                    .executeUpdate();
+            entityManager.createNativeQuery(
+                "DELETE FROM tb_historico_atendimento WHERE tenant_id = :tid " +
+                "OR agendamento_id IN (SELECT a.id FROM tb_agendamento a WHERE a.tenant_id = :tid) " +
+                "OR profissional_id IN (SELECT p.id FROM tb_profissional p WHERE p.tenant_id = :tid) " +
+                "OR cliente_id IN (SELECT u.id FROM tb_usuario u WHERE u.tenant_id = :tid)"
+            ).setParameter("tid", tenantId).executeUpdate();
 
-            // 2. Bloqueios de agenda
-            entityManager.createNativeQuery("DELETE FROM tb_bloqueio_agenda WHERE profissional_id IN (SELECT p.id FROM tb_profissional p WHERE p.tenant_id = :tid)")
-                    .setParameter("tid", tenantId)
-                    .executeUpdate();
+            // 2. Agendamentos
+            entityManager.createNativeQuery(
+                "DELETE FROM tb_agendamento WHERE tenant_id = :tid " +
+                "OR profissional_id IN (SELECT p.id FROM tb_profissional p WHERE p.tenant_id = :tid) " +
+                "OR cliente_id IN (SELECT u.id FROM tb_usuario u WHERE u.tenant_id = :tid)"
+            ).setParameter("tid", tenantId).executeUpdate();
 
-            // 3. Agendamentos
-            entityManager.createNativeQuery("DELETE FROM tb_agendamento WHERE tenant_id = :tid")
-                    .setParameter("tid", tenantId)
-                    .executeUpdate();
+            // 3. Bloqueios de agenda dos profissionais do tenant
+            entityManager.createNativeQuery(
+                "DELETE FROM tb_bloqueio_agenda WHERE profissional_id IN (SELECT p.id FROM tb_profissional p WHERE p.tenant_id = :tid)"
+            ).setParameter("tid", tenantId).executeUpdate();
 
-            // 4. Associação de procedimentos com profissionais
-            entityManager.createNativeQuery("DELETE FROM tb_profissional_procedimento WHERE procedimento_id IN (SELECT p.id FROM tb_procedimento p WHERE p.tenant_id = :tid)")
-                    .setParameter("tid", tenantId)
-                    .executeUpdate();
+            // 4. Horários de trabalho dos profissionais do tenant
+            entityManager.createNativeQuery(
+                "DELETE FROM tb_horario_trabalho WHERE profissional_id IN (SELECT p.id FROM tb_profissional p WHERE p.tenant_id = :tid)"
+            ).setParameter("tid", tenantId).executeUpdate();
 
-            // 5. Procedimentos
+            // 5. Associação de procedimentos com profissionais
+            entityManager.createNativeQuery(
+                "DELETE FROM tb_profissional_procedimento WHERE profissional_id IN (SELECT p.id FROM tb_profissional p WHERE p.tenant_id = :tid) " +
+                "OR procedimento_id IN (SELECT pr.id FROM tb_procedimento pr WHERE pr.tenant_id = :tid)"
+            ).setParameter("tid", tenantId).executeUpdate();
+
+            // 6. Procedimentos do tenant
             entityManager.createNativeQuery("DELETE FROM tb_procedimento WHERE tenant_id = :tid")
                     .setParameter("tid", tenantId)
                     .executeUpdate();
 
-            // 6. Categorias
+            // 7. Categorias do tenant
             entityManager.createNativeQuery("DELETE FROM tb_categoria WHERE tenant_id = :tid")
                     .setParameter("tid", tenantId)
                     .executeUpdate();
 
+            // 8. Desvincular e remover profissionais/especialistas e seus usuários de acesso (ROLE_PROFISSIONAL)
+            entityManager.createNativeQuery(
+                "UPDATE tb_profissional SET usuario_id = NULL WHERE tenant_id = :tid"
+            ).setParameter("tid", tenantId).executeUpdate();
+
+            entityManager.createNativeQuery("DELETE FROM tb_profissional WHERE tenant_id = :tid")
+                    .setParameter("tid", tenantId)
+                    .executeUpdate();
+
+            entityManager.createNativeQuery(
+                "DELETE FROM tb_usuario WHERE tenant_id = :tid AND role = 'ROLE_PROFISSIONAL'"
+            ).setParameter("tid", tenantId).executeUpdate();
+
+            // 9. Excluir pacientes/clientes cadastrados (ROLE_CLIENTE), mantendo intacto apenas os administradores (ROLE_ADMIN)
+            entityManager.createNativeQuery(
+                "DELETE FROM tb_usuario WHERE tenant_id = :tid AND role = 'ROLE_CLIENTE'"
+            ).setParameter("tid", tenantId).executeUpdate();
+
             entityManager.flush();
-            log.info("[TenantService] Limpeza de dados do tenant {} concluída com sucesso.", tenantId);
+            log.info("[TenantService] Limpeza total de dados operacionais do tenant {} concluída com sucesso (admin e assinatura preservados).", tenantId);
         } catch (Exception e) {
             log.error("[TenantService] Erro ao limpar dados do tenant {}: {}", tenantId, e.getMessage(), e);
         }

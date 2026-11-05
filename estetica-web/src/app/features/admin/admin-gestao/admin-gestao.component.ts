@@ -252,34 +252,6 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                 </span>
               </div>
 
-              <!-- Prévia em Tempo Real -->
-                <div class="p-5 rounded-3xl border border-nude-200 bg-stone-50/60 space-y-3">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Prévia da Barra do Seu Sistema</span>
-                  <div class="p-3.5 rounded-2xl border border-nude-200 flex items-center justify-between bg-white shadow-sm">
-                    <div class="flex items-center gap-3">
-                      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm bg-gradient-to-tr from-rose-500 to-rose-600">
-                        @if (formIdentidade.get('logoUrl')?.value) {
-                          <img [src]="obterImagemUrl(formIdentidade.get('logoUrl')?.value)" class="w-full h-full object-contain p-1" />
-                        } @else {
-                          ★
-                        }
-                      </div>
-                      <div>
-                        <span class="font-serif font-bold text-xs text-stone-900 block leading-tight">
-                          {{ formIdentidade.get('nomeEmpresa')?.value || 'Seu Espaço' }}
-                        </span>
-                        <span class="text-[9px] uppercase tracking-wider text-stone-400 font-semibold">Portal Oficial</span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      class="px-4 py-2 rounded-xl text-white font-semibold text-xs shadow-sm bg-rose-600">
-                      {{ setorService.termoAgendar() }}
-                    </button>
-                  </div>
-                </div>
-
               <div class="pt-2 flex justify-end">
                 <button
                   type="submit"
@@ -649,7 +621,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                             <span>{{ cli.telefoneWhatsApp | telefone }}</span>
                           </a>
                         </td>
-                        <td class="py-3.5 px-5 text-stone-500">{{ cli.email }}</td>
+                        <td class="py-3.5 px-5 text-stone-500">{{ (cli.email && !cli.email.endsWith('@cliente.local')) ? cli.email : '—' }}</td>
                         <td class="py-3.5 px-5">
                           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
                                 [class.bg-emerald-100]="cli.ativo !== false"

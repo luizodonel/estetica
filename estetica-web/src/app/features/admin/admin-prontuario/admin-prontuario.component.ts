@@ -38,7 +38,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
             <option [ngValue]="null">-- Selecione um {{ setorService.termoCliente() }} Cadastrado --</option>
             @for (p of clientes(); track p.id) {
               <option [ngValue]="p.id">
-                {{ p.nome }} • WhatsApp: {{ formatarTelefone(p.telefoneWhatsApp) }} ({{ p.email }})
+                {{ p.nome }} • {{ formatarTelefone(p.telefoneWhatsApp) }}
               </option>
             }
           </select>
@@ -56,11 +56,13 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
             <div>
               <span class="text-[10px] uppercase font-bold text-rose-600 block">{{ setorService.termoCliente() }} em Atendimento</span>
               <h4 class="font-serif font-bold text-stone-900 text-base">{{ pacienteSelecionado()?.nome }}</h4>
-              <span class="text-stone-500">E-mail: {{ pacienteSelecionado()?.email }}</span>
+              @if (pacienteSelecionado()?.email && !pacienteSelecionado()?.email?.endsWith('@cliente.local')) {
+                <span class="text-stone-500 block">E-mail: {{ pacienteSelecionado()?.email }}</span>
+              }
             </div>
             <div class="text-right">
               <span class="text-[10px] uppercase font-bold text-stone-400 block">Contato WhatsApp</span>
-              <span class="font-bold text-emerald-700 text-sm">{{ pacienteSelecionado()?.telefoneWhatsApp }}</span>
+              <span class="font-bold text-emerald-700 text-sm">{{ formatarTelefone(pacienteSelecionado()?.telefoneWhatsApp) }}</span>
             </div>
           </div>
         }

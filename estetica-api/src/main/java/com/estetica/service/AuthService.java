@@ -45,7 +45,7 @@ public class AuthService {
 
         String email = (request.email() != null && !request.email().isBlank()) 
                 ? request.email().toLowerCase().trim() 
-                : "tel" + telefone + "@cliente.local";
+                : null;
 
         if (request.email() != null && !request.email().isBlank() && usuarioRepository.existsByEmail(email)) {
             throw new RegraNegocioException("O e-mail informado já está cadastrado.");
