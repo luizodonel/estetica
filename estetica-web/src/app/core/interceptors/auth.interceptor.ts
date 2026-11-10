@@ -9,8 +9,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = authService.token();
 
+  if (token && authService.isJwtExpired(token)) {
+    authService.logout();
+    router.navigate(['/login']);
+  }
+
   let modifiedReq = req;
-  if (token) {
+  if (token && !authService.isJwtExpired(token)) {
     modifiedReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
@@ -20,7 +25,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(modifiedReq).pipe(
     catchError((err) => {
-      if (err.status === 401) {
+      if (err.status === 401 || (err.status === 403 && !authService.isAuthenticated())) {
         authService.logout();
         router.navigate(['/login']);
       }

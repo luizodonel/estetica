@@ -18,7 +18,10 @@ export class AuthService {
   currentUser = signal<Usuario | null>(this.getStoredUser());
   token = signal<string | null>(this.getStoredToken());
 
-  isAuthenticated = computed(() => !!this.token() && !!this.currentUser());
+  isAuthenticated = computed(() => {
+    const tk = this.token();
+    return !!tk && !this.isJwtExpired(tk) && !!this.currentUser();
+  });
   isAdmin = computed(() => this.currentUser()?.role === 'ROLE_ADMIN');
   isProfissional = computed(() => this.currentUser()?.role === 'ROLE_PROFISSIONAL');
   isAdminOrProfissional = computed(() => this.isAdmin() || this.isProfissional());
@@ -129,16 +132,40 @@ export class AuthService {
   }
 
   private getStoredToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    const tk = localStorage.getItem(this.TOKEN_KEY);
+    if (tk && this.isJwtExpired(tk)) {
+      localStorage.removeItem(this.TOKEN_KEY);
+      localStorage.removeItem(this.USER_KEY);
+      return null;
+    }
+    return tk;
   }
 
   private getStoredUser(): Usuario | null {
+    const tk = localStorage.getItem(this.TOKEN_KEY);
+    if (!tk || this.isJwtExpired(tk)) {
+      return null;
+    }
     const data = localStorage.getItem(this.USER_KEY);
     if (!data) return null;
     try {
       return JSON.parse(data) as Usuario;
     } catch {
       return null;
+    }
+  }
+
+  isJwtExpired(token: string | null): boolean {
+    if (!token) return true;
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64));
+      if (!payload || typeof payload.exp !== 'number') return false;
+      return payload.exp * 1000 <= Date.now();
+    } catch {
+      return true;
     }
   }
 }

@@ -96,4 +96,3 @@ public class Usuario implements UserDetails {
         return Boolean.TRUE.equals(this.ativo);
     }
 }
-
