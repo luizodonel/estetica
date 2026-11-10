@@ -23,11 +23,7 @@ import {
   RelatorioGeralResponse,
   PrimeiroAcessoRequest,
   VerificarPrimeiroAcessoResponse,
-  AuthResponse,
-  InstagramStatusResponse,
-  AuthUrlResponse,
-  PublicarInstagramRequest,
-  PostSocial
+  AuthResponse
 } from '../models';
 
 @Injectable({
@@ -373,23 +369,5 @@ export class ApiService {
     if (filtros?.profissionalId) params = params.set('profissionalId', filtros.profissionalId.toString());
     if (filtros?.status) params = params.set('status', filtros.status);
     return this.http.get<RelatorioGeralResponse>(`${this.baseUrl}/relatorios/especialistas`, { params });
-  }
-
-  // Integração Oficial Instagram
-  getInstagramStatus(): Observable<InstagramStatusResponse> {
-    return this.http.get<InstagramStatusResponse>(`${this.baseUrl}/redes-sociais/instagram/status`);
-  }
-
-  getInstagramAuthUrl(origin: string): Observable<AuthUrlResponse> {
-    const params = new HttpParams().set('origin', origin);
-    return this.http.get<AuthUrlResponse>(`${this.baseUrl}/redes-sociais/instagram/auth-url`, { params });
-  }
-
-  desconectarInstagram(): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/redes-sociais/instagram/desconectar`, {});
-  }
-
-  publicarNoInstagram(request: PublicarInstagramRequest): Observable<PostSocial> {
-    return this.http.post<PostSocial>(`${this.baseUrl}/redes-sociais/instagram/publicar`, request);
   }
 }

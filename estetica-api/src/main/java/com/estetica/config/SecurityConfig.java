@@ -54,10 +54,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/disponibilidade/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/agendamentos").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/redes-sociais/instagram/callback").permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/v1/redes-sociais/instagram/deauthorize",
-                                "/api/v1/redes-sociais/instagram/data-deletion").permitAll()
 
                         // Swagger / OpenAPI
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -71,8 +67,7 @@ public class SecurityConfig {
                                 "/assets/**", "/media/**")
                         .permitAll()
                         .requestMatchers("/catalogo/**", "/agendar/**", "/meus-agendamentos/**", "/admin/**",
-                                "/login/**", "/registrar/**", "/parceiro/**",
-                                "/termos-de-uso/**", "/privacidade/**", "/exclusao-de-dados/**")
+                                "/login/**", "/registrar/**", "/parceiro/**")
                         .permitAll()
 
                         // Endpoints protegidos da API
