@@ -74,6 +74,13 @@ public class TenantResolverService {
         return getTenantDoUsuarioAutenticado();
     }
 
+    public void validarPertenceAoTenantAtual(ClinicaTenant entidadeTenant, String mensagemErro) {
+        ClinicaTenant tenantAtual = getTenantDoUsuarioAutenticado();
+        if (tenantAtual != null && entidadeTenant != null && !entidadeTenant.getId().equals(tenantAtual.getId())) {
+            throw new com.estetica.exception.RegraNegocioException(mensagemErro);
+        }
+    }
+
     public String extrairSlugDaRequisicaoHttp() {
         if (httpServletRequest == null) return null;
         try {

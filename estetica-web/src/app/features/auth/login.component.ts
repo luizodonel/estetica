@@ -388,10 +388,13 @@ export class LoginComponent implements OnDestroy {
           this.mensagemSucesso.set('🎉 Pagamento PIX aprovado com sucesso! Acesso liberado!');
 
           if (res.token) {
-            localStorage.setItem('auth_token', res.token);
-            if (res.usuario) {
-              this.auth.currentUser.set(res.usuario);
-            }
+            this.auth.salvarSessaoDireta(
+              res.token,
+              res.usuario,
+              res.slug || res.tenant?.slug,
+              res.tenant?.nomeEmpresa,
+              res.tenant?.logoUrl
+            );
           }
 
           setTimeout(() => {

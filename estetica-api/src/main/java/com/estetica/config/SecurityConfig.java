@@ -38,8 +38,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints Públicos
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/onboarding/**").permitAll()
-                        .requestMatchers("/api/v1/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/onboarding/lojista", "/api/v1/onboarding/webhook-mercadopago").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/onboarding/tenant/**",
+                                "/api/v1/onboarding/verificar-slug",
+                                "/api/v1/onboarding/meu-tenant",
+                                "/api/v1/onboarding/status-pagamento/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/uploads").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/procedimentos/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/disponibilidade/**").permitAll()

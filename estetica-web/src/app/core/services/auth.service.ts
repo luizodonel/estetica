@@ -84,6 +84,32 @@ export class AuthService {
     this.currentUser.set(null);
   }
 
+  salvarSessaoDireta(token: string, usuario?: Usuario | null, tenantSlug?: string, nomeEmpresa?: string, logoUrl?: string): void {
+    const user: Usuario = usuario
+      ? {
+          ...usuario,
+          ativo: true,
+          tenantSlug: usuario.tenantSlug ?? tenantSlug,
+          nomeEmpresa: usuario.nomeEmpresa ?? nomeEmpresa,
+          logoUrl: usuario.logoUrl ?? logoUrl
+        }
+      : {
+          id: 0,
+          nome: nomeEmpresa || 'Administrador',
+          email: '',
+          telefoneWhatsApp: '',
+          role: 'ROLE_ADMIN',
+          ativo: true,
+          tenantSlug,
+          nomeEmpresa,
+          logoUrl
+        };
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    this.token.set(token);
+    this.currentUser.set(user);
+  }
+
   private handleAuthSuccess(res: AuthResponse): void {
     const user: Usuario = {
       id: res.id,

@@ -18,6 +18,8 @@ public class AgendamentoDTOs {
         @NotNull(message = "Procedimento é obrigatório")
         Long procedimentoId,
 
+        java.util.List<Long> procedimentosIds, // Opcional: usado quando o cliente seleciona múltiplos serviços (Combo)
+
         Long profissionalId, // Se nulo, escolhe o primeiro disponível
 
         @NotNull(message = "Data e horário de início são obrigatórios")

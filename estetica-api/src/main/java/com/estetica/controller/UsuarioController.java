@@ -54,7 +54,13 @@ public class UsuarioController {
             throw new RegraNegocioException("Número de WhatsApp inválido.");
         }
 
-        if (usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+        com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        Long tenantId = tenant != null ? tenant.getId() : null;
+
+        boolean telExiste = (tenantId != null)
+                ? usuarioRepository.existsByTenantIdAndTelefoneWhatsApp(tenantId, cleanPhone)
+                : usuarioRepository.existsByTelefoneWhatsApp(cleanPhone);
+        if (telExiste) {
             throw new RegraNegocioException("Já existe um cliente cadastrado com este WhatsApp: " + cleanPhone);
         }
 
@@ -62,11 +68,15 @@ public class UsuarioController {
                 ? request.email().toLowerCase().trim()
                 : null;
 
-        if (request.email() != null && !request.email().isBlank() && usuarioRepository.existsByEmail(email)) {
-            throw new RegraNegocioException("Já existe um cliente cadastrado com o e-mail: " + email);
+        if (email != null) {
+            boolean emailExiste = (tenantId != null)
+                    ? usuarioRepository.existsByTenantIdAndEmailIgnoreCase(tenantId, email)
+                    : usuarioRepository.existsByEmail(email);
+            if (emailExiste) {
+                throw new RegraNegocioException("Já existe um cliente cadastrado com o e-mail: " + email);
+            }
         }
 
-        com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         String senha = (request.senha() != null && !request.senha().isBlank())
                 ? request.senha()
                 : java.util.UUID.randomUUID().toString();
@@ -98,19 +108,26 @@ public class UsuarioController {
         if (tenant != null && cliente.getTenant() != null && !cliente.getTenant().getId().equals(tenant.getId())) {
             throw new RegraNegocioException("Acesso negado: Este cliente pertence a outro estabelecimento parceiro.");
         }
+        Long tenantId = tenant != null ? tenant.getId() : null;
 
         cliente.setNome(request.nome().trim());
 
         if (request.email() != null && !request.email().isBlank()) {
             String novoEmail = request.email().toLowerCase().trim();
-            if (!novoEmail.equalsIgnoreCase(cliente.getEmail()) && usuarioRepository.existsByEmail(novoEmail)) {
+            boolean emailExiste = (tenantId != null)
+                    ? usuarioRepository.existsByTenantIdAndEmailIgnoreCase(tenantId, novoEmail)
+                    : usuarioRepository.existsByEmail(novoEmail);
+            if (!novoEmail.equalsIgnoreCase(cliente.getEmail()) && emailExiste) {
                 throw new RegraNegocioException("Já existe um cliente cadastrado com o e-mail: " + novoEmail);
             }
             cliente.setEmail(novoEmail);
         }
 
         String cleanPhone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
-        if (!cleanPhone.equals(cliente.getTelefoneWhatsApp()) && usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+        boolean telExiste = (tenantId != null)
+                ? usuarioRepository.existsByTenantIdAndTelefoneWhatsApp(tenantId, cleanPhone)
+                : usuarioRepository.existsByTelefoneWhatsApp(cleanPhone);
+        if (!cleanPhone.equals(cliente.getTelefoneWhatsApp()) && telExiste) {
             throw new RegraNegocioException("Já existe um cliente cadastrado com este WhatsApp: " + cleanPhone);
         }
         cliente.setTelefoneWhatsApp(cleanPhone);

@@ -7,9 +7,9 @@ import java.sql.Statement;
 
 public class DatabaseMigrationUtil {
     public static void main(String[] args) {
-        String url = "jdbc:postgresql://93.127.212.65:3008/postgres";
-        String user = "postgres";
-        String pass = "vra7v6XMf3798kBc2AADCLIYqUmag5OfHgdfB6j10ENx9rP5vC0bFsMufGdLIY1n";
+        String url = System.getenv().getOrDefault("SPRING_DATASOURCE_URL", "jdbc:postgresql://localhost:5432/clinica_estetica");
+        String user = System.getenv().getOrDefault("SPRING_DATASOURCE_USERNAME", "postgres");
+        String pass = System.getenv().getOrDefault("SPRING_DATASOURCE_PASSWORD", "");
 
         try (Connection conn = DriverManager.getConnection(url, user, pass);
              Statement stmt = conn.createStatement()) {

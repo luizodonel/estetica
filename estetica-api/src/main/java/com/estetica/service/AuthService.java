@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -38,24 +40,33 @@ public class AuthService {
 
     @Transactional
     public AuthResponse registrarCliente(RegisterRequest request) {
+        String slugReq = request.slug();
+        if (slugReq == null || slugReq.isBlank()) {
+            slugReq = tenantResolverService.extrairSlugDaRequisicaoHttp();
+        }
+        ClinicaTenant tenantAlvo = tenantResolverService.resolverTenantPorSlugOuAutenticado(slugReq);
+        Long tenantId = tenantAlvo != null ? tenantAlvo.getId() : null;
+
         String telefone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
-        if (usuarioRepository.existsByTelefoneWhatsApp(telefone)) {
-            throw new RegraNegocioException("O WhatsApp informado já está cadastrado.");
+        boolean telExiste = (tenantId != null)
+                ? usuarioRepository.existsByTenantIdAndTelefoneWhatsApp(tenantId, telefone)
+                : usuarioRepository.existsByTelefoneWhatsApp(telefone);
+        if (telExiste) {
+            throw new RegraNegocioException("O WhatsApp informado já está cadastrado neste estabelecimento.");
         }
 
         String email = (request.email() != null && !request.email().isBlank()) 
                 ? request.email().toLowerCase().trim() 
                 : null;
 
-        if (request.email() != null && !request.email().isBlank() && usuarioRepository.existsByEmail(email)) {
-            throw new RegraNegocioException("O e-mail informado já está cadastrado.");
+        if (email != null) {
+            boolean emailExiste = (tenantId != null)
+                    ? usuarioRepository.existsByTenantIdAndEmailIgnoreCase(tenantId, email)
+                    : usuarioRepository.existsByEmail(email);
+            if (emailExiste) {
+                throw new RegraNegocioException("O e-mail informado já está cadastrado neste estabelecimento.");
+            }
         }
-
-        String slugReq = request.slug();
-        if (slugReq == null || slugReq.isBlank()) {
-            slugReq = tenantResolverService.extrairSlugDaRequisicaoHttp();
-        }
-        ClinicaTenant tenantAlvo = tenantResolverService.resolverTenantPorSlugOuAutenticado(slugReq);
 
         Usuario usuario = Usuario.builder()
                 .nome(request.nome().trim())
@@ -163,20 +174,22 @@ public class AuthService {
         }
 
         // =========================================================================
-        // 2. TENTA AUTENTICAR COMO USUÁRIO COMUM (tb_usuario: ADMIN MASTER, ESPECIALISTA, CLIENTE)
+        // 2. TENTA AUTENTICAR COMO USUÁRIO (tb_usuario: ADMIN MASTER, ESPECIALISTA)
         // =========================================================================
-        Usuario usuario = usuarioRepository.findByLoginIgnoreCase(iden).orElse(null);
+        final String targetSlug = slugAmbiente;
+        Usuario usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByLoginIgnoreCase(iden), targetSlug);
 
         if (usuario == null) {
-            usuario = usuarioRepository.findByEmail(iden.toLowerCase().trim()).orElse(null);
+            usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByEmailIgnoreCase(iden.trim()), targetSlug);
         }
 
         if (usuario == null) {
             String digits = iden.replaceAll("[^0-9]", "");
             if (digits.length() >= 8) {
-                usuario = usuarioRepository.findByTelefoneWhatsApp(digits)
-                        .or(() -> usuarioRepository.findByTelefoneWhatsApp(iden))
-                        .orElse(null);
+                usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByTelefoneWhatsApp(digits), targetSlug);
+                if (usuario == null) {
+                    usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByTelefoneWhatsApp(iden), targetSlug);
+                }
             }
         }
 
@@ -185,6 +198,22 @@ public class AuthService {
         }
 
         return autenticarUsuario(usuario, request, slugAmbiente);
+    }
+
+    private Usuario selecionarUsuarioDoAmbiente(List<Usuario> candidatos, String slugAmbiente) {
+        if (candidatos == null || candidatos.isEmpty()) return null;
+        return candidatos.stream()
+                .filter(u -> {
+                    boolean isMaster = "admin@logistadigital.com.br".equalsIgnoreCase(u.getEmail())
+                            || (u.getTenant() == null && u.getRole() == Role.ROLE_ADMIN);
+                    if (isMaster) {
+                        return "estetica".equalsIgnoreCase(slugAmbiente);
+                    }
+                    return u.getTenant() != null && u.getTenant().getSlug() != null
+                            && slugAmbiente.equalsIgnoreCase(u.getTenant().getSlug().trim());
+                })
+                .findFirst()
+                .orElse(null);
     }
 
     private AuthResponse autenticarLojista(Lojista lojista, LoginRequest request, String slugAmbiente) {
@@ -201,21 +230,44 @@ public class AuthService {
             throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
-        // Validação de Pagamento PIX do Lojista
-        if (!"APROVADO".equalsIgnoreCase(lojista.getStatusPagamento()) || Boolean.FALSE.equals(lojista.getAtivo())) {
-            // Se o PIX não estava gerado, gera sob demanda
-            if (lojista.getPixQrCodeBase64() == null || lojista.getPixCopiaCola() == null) {
+        // Validação de Pagamento PIX Inicial OU Assinatura Mensal Vencida
+        LocalDateTime agora = LocalDateTime.now();
+        boolean pendenteInicial = !"APROVADO".equalsIgnoreCase(lojista.getStatusPagamento()) || Boolean.FALSE.equals(lojista.getAtivo());
+        boolean assinaturaVencida = !pendenteInicial && lojista.getDataVencimento() != null && agora.isAfter(lojista.getDataVencimento());
+
+        if (pendenteInicial || assinaturaVencida) {
+            String payIdAtual = assinaturaVencida ? lojista.getRenovacaoPaymentId() : lojista.getMercadoPagoPaymentId();
+            String pixCopiaColaAtual = assinaturaVencida ? lojista.getRenovacaoPixCopiaCola() : lojista.getPixCopiaCola();
+            String pixQrAtual = assinaturaVencida ? lojista.getRenovacaoPixQrCodeBase64() : lojista.getPixQrCodeBase64();
+            boolean precisaGerarNovoPix = (pixQrAtual == null || pixCopiaColaAtual == null)
+                    || (assinaturaVencida && lojista.getRenovacaoCriadaEm() != null && lojista.getRenovacaoCriadaEm().isBefore(agora.minusMinutes(25)));
+
+            if (precisaGerarNovoPix) {
                 try {
                     ClinicaTenant tenant = tenantRepository.findBySlugIgnoreCase(lojistaSlug).orElse(null);
                     if (tenant != null) {
-                        Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(tenant, lojista, lojista.getValorAdesao() != null ? lojista.getValorAdesao() : new BigDecimal("149.90"));
+                        BigDecimal valorCobrar = lojista.getValorAdesao() != null ? lojista.getValorAdesao() : new BigDecimal("149.90");
+                        String desc = assinaturaVencida
+                                ? "Renovação Mensal da Assinatura - " + lojista.getNomeEmpresa()
+                                : "Ativação Sistema Lojista Digital - " + lojista.getNomeEmpresa();
+                        Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(tenant, lojista, valorCobrar, desc);
                         if (mp != null) {
-                            lojista.setMercadoPagoPaymentId(String.valueOf(mp.get("id")));
+                            payIdAtual = String.valueOf(mp.get("id"));
                             Map<String, Object> poi = (Map<String, Object>) mp.get("point_of_interaction");
                             if (poi != null && poi.get("transaction_data") != null) {
                                 Map<String, Object> td = (Map<String, Object>) poi.get("transaction_data");
-                                lojista.setPixCopiaCola((String) td.get("qr_code"));
-                                lojista.setPixQrCodeBase64((String) td.get("qr_code_base64"));
+                                pixCopiaColaAtual = (String) td.get("qr_code");
+                                pixQrAtual = (String) td.get("qr_code_base64");
+                                if (assinaturaVencida) {
+                                    lojista.setRenovacaoPaymentId(payIdAtual);
+                                    lojista.setRenovacaoPixCopiaCola(pixCopiaColaAtual);
+                                    lojista.setRenovacaoPixQrCodeBase64(pixQrAtual);
+                                    lojista.setRenovacaoCriadaEm(agora);
+                                } else {
+                                    lojista.setMercadoPagoPaymentId(payIdAtual);
+                                    lojista.setPixCopiaCola(pixCopiaColaAtual);
+                                    lojista.setPixQrCodeBase64(pixQrAtual);
+                                }
                                 lojista = lojistaRepository.save(lojista);
                             }
                         }
@@ -223,11 +275,15 @@ public class AuthService {
                 } catch (Exception ignored) {}
             }
 
+            String msgPendencia = assinaturaVencida
+                    ? "Sua assinatura mensal venceu. Realize o pagamento PIX de renovação (R$ 149,90) para reativar seu painel."
+                    : "O seu acesso está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).";
+
             throw new PagamentoPendenteException(
-                    "O seu acesso está aguardando a confirmação do pagamento PIX de ativação (R$ 149,90).",
-                    lojista.getMercadoPagoPaymentId(),
-                    lojista.getPixCopiaCola(),
-                    lojista.getPixQrCodeBase64(),
+                    msgPendencia,
+                    payIdAtual,
+                    pixCopiaColaAtual,
+                    pixQrAtual,
                     lojista.getValorAdesao() != null ? lojista.getValorAdesao() : new BigDecimal("149.90")
             );
         }
@@ -276,13 +332,8 @@ public class AuthService {
             }
         }
 
-        // Clientes: login exclusivo via Telefone / WhatsApp
-        if (usuario.getRole() == Role.ROLE_CLIENTE) {
-            String digits = request.getIdentificador().replaceAll("[^0-9]", "");
-            String userDigits = usuario.getTelefoneWhatsApp() != null ? usuario.getTelefoneWhatsApp().replaceAll("[^0-9]", "") : "";
-            if (digits.length() < 8 || !userDigits.endsWith(digits.substring(Math.max(0, digits.length() - 8)))) {
-                throw new BadCredentialsException("Para clientes/pacientes, o acesso é realizado exclusivamente pelo número do WhatsApp.");
-            }
+        if (usuario.getRole() == Role.ROLE_CLIENTE || "SEM_LOGIN".equals(usuario.getSenhaHash())) {
+            throw new BadCredentialsException("Login exclusivo para Administradores e Especialistas. Clientes agendam diretamente pelo catálogo.");
         }
 
         // Se estiver no primeiro acesso ou sem senha definida
@@ -296,6 +347,16 @@ public class AuthService {
 
         if (tenant != null && Boolean.FALSE.equals(tenant.getAtivo())) {
             throw new RegraNegocioException("Este estabelecimento está temporariamente desativado. Entre em contato com o suporte.");
+        }
+
+        if (!isMasterAdmin && tenant != null) {
+            Lojista lojistaDono = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+            LocalDateTime venc = lojistaDono != null && lojistaDono.getDataVencimento() != null
+                    ? lojistaDono.getDataVencimento()
+                    : tenant.getDataVencimento();
+            if (venc != null && LocalDateTime.now().isAfter(venc)) {
+                throw new RegraNegocioException("A assinatura deste estabelecimento está vencida. Solicite ao administrador a renovação no painel.");
+            }
         }
 
         if (!usuario.isEnabled()) {
@@ -367,7 +428,7 @@ public class AuthService {
     }
 
     // =========================================================================
-    // PRIMEIRO ACESSO: DEFINIÇÃO DE SENHA PARA ESPECIALISTAS E CLIENTES
+    // PRIMEIRO ACESSO: DEFINIÇÃO DE SENHA PARA ESPECIALISTAS
     // =========================================================================
     @Transactional(readOnly = true)
     public VerificarPrimeiroAcessoResponse verificarPrimeiroAcesso(String telefone) {
@@ -376,10 +437,13 @@ public class AuthService {
             return new VerificarPrimeiroAcessoResponse(false, "", false);
         }
 
-        Usuario usuario = usuarioRepository.findByTelefoneWhatsApp(digits)
-                .orElse(usuarioRepository.findByTelefoneWhatsApp(telefone).orElse(null));
+        String slugAmbiente = extrairSlugDoAmbiente(null);
+        Usuario usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByTelefoneWhatsApp(digits), slugAmbiente);
+        if (usuario == null && telefone != null) {
+            usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByTelefoneWhatsApp(telefone), slugAmbiente);
+        }
 
-        if (usuario == null) {
+        if (usuario == null || usuario.getRole() == Role.ROLE_CLIENTE) {
             return new VerificarPrimeiroAcessoResponse(false, "", false);
         }
 
@@ -390,12 +454,21 @@ public class AuthService {
     @Transactional
     public AuthResponse primeiroAcesso(PrimeiroAcessoRequest request) {
         String digits = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
-        Usuario usuario = usuarioRepository.findByTelefoneWhatsApp(digits)
-                .orElse(usuarioRepository.findByTelefoneWhatsApp(request.telefoneWhatsApp())
-                        .orElseThrow(() -> new RegraNegocioException("Nenhum cadastro encontrado com o WhatsApp: " + request.telefoneWhatsApp())));
+        String slugAmbiente = extrairSlugDoAmbiente(null);
+        Usuario usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByTelefoneWhatsApp(digits), slugAmbiente);
+        if (usuario == null) {
+            usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByTelefoneWhatsApp(request.telefoneWhatsApp()), slugAmbiente);
+        }
+        if (usuario == null || usuario.getRole() == Role.ROLE_CLIENTE) {
+            throw new RegraNegocioException("Nenhum especialista cadastrado encontrado neste link com o WhatsApp: " + request.telefoneWhatsApp());
+        }
 
         if (!usuario.isEnabled()) {
             throw new RegraNegocioException("Usuário inativo. Entre em contato com o responsável.");
+        }
+
+        if (!Boolean.TRUE.equals(usuario.getPrimeiroAcesso()) && usuario.getSenhaHash() != null) {
+            throw new RegraNegocioException("Sua senha já foi definida anteriormente. Use o login normal ou peça a redefinição ao administrador.");
         }
 
         usuario.setSenhaHash(passwordEncoder.encode(request.novaSenha()));

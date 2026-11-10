@@ -74,7 +74,14 @@ public class RelatorioService {
         // Busca a lista de profissionais aplicáveis para montar a estrutura
         List<Profissional> profissionais;
         if (profissionalId != null) {
-            profissionais = profissionalRepository.findById(profissionalId).map(List::of).orElseGet(List::of);
+            Profissional profFiltrado = profissionalRepository.findById(profissionalId).orElse(null);
+            if (profFiltrado != null) {
+                tenantResolverService.validarPertenceAoTenantAtual(profFiltrado.getTenant(),
+                        "Acesso negado: Este especialista pertence a outro estabelecimento.");
+                profissionais = List.of(profFiltrado);
+            } else {
+                profissionais = List.of();
+            }
         } else {
             profissionais = tenantId != null
                     ? profissionalRepository.findByTenantIdAndAtivoTrueOrderByNomeAsc(tenantId)

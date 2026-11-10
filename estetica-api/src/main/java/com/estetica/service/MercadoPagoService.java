@@ -23,8 +23,14 @@ public class MercadoPagoService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${mercadopago.access-token:APP_USR-5741665921712781-082413-bc420761bcc13420c1489262ecbf2c81-3412978164}")
+    @Value("${mercadopago.access-token:${MERCADOPAGO_ACCESS_TOKEN:}}")
     private String accessToken;
+
+    private boolean isMockMode() {
+        return accessToken == null || accessToken.isBlank()
+                || accessToken.contains("TEST-XXXXXXXX")
+                || accessToken.contains("placeholder");
+    }
 
     public MercadoPagoService() {
         this.restTemplate = new RestTemplate();
@@ -40,7 +46,7 @@ public class MercadoPagoService {
         String slug = lojista != null ? lojista.getSlug() : (tenant != null ? tenant.getSlug() : "clinica");
         String externalRef = lojista != null ? "LOJISTA-" + lojista.getId() : (tenant != null ? "TENANT-" + tenant.getId() : "REF-PIX");
 
-        if (accessToken == null || accessToken.contains("TEST-XXXXXXXX") || accessToken.contains("placeholder") || accessToken.trim().isEmpty()) {
+        if (isMockMode()) {
             log.info("[MercadoPago] Utilizando mock de pagamento PIX para ambiente de teste");
             Map<String, Object> mockResponse = new HashMap<>();
             mockResponse.put("id", "999" + (System.currentTimeMillis() / 1000));
@@ -89,11 +95,6 @@ public class MercadoPagoService {
         payer.put("first_name", firstName);
         payer.put("last_name", lastName);
 
-        Map<String, String> identification = new HashMap<>();
-        identification.put("type", "CPF");
-        identification.put("number", "19119119100");
-        payer.put("identification", identification);
-
         requestBody.put("payer", payer);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
@@ -119,7 +120,7 @@ public class MercadoPagoService {
      */
     public Map<String, Object> criarPagamentoPix(ClinicaTenant tenant, Usuario admin, BigDecimal valor) {
         // Se for token placeholder de teste local
-        if (accessToken == null || accessToken.contains("TEST-XXXXXXXX") || accessToken.contains("placeholder") || accessToken.trim().isEmpty()) {
+        if (isMockMode()) {
             log.info("[MercadoPago] Utilizando mock de pagamento PIX para ambiente de teste");
             Map<String, Object> mockResponse = new HashMap<>();
             mockResponse.put("id", "999" + (System.currentTimeMillis() / 1000));
@@ -167,11 +168,6 @@ public class MercadoPagoService {
         payer.put("first_name", firstName);
         payer.put("last_name", lastName);
 
-        Map<String, String> identification = new HashMap<>();
-        identification.put("type", "CPF");
-        identification.put("number", "19119119100");
-        payer.put("identification", identification);
-
         requestBody.put("payer", payer);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
@@ -200,7 +196,7 @@ public class MercadoPagoService {
      * Consulta o status de um pagamento Pix pelo ID no Mercado Pago.
      */
     public Map<String, Object> consultarStatusPagamento(String mercadoPagoId) {
-        if (mercadoPagoId != null && mercadoPagoId.startsWith("999")) {
+        if (isMockMode() && mercadoPagoId != null && mercadoPagoId.startsWith("999")) {
             Map<String, Object> mockResponse = new HashMap<>();
             mockResponse.put("id", mercadoPagoId);
             mockResponse.put("status", "approved");

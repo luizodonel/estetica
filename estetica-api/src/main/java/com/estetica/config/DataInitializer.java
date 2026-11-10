@@ -31,6 +31,11 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_lojista ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
 
+            // Remove restrições únicas globais legadas em tb_usuario (email e login são isolados por tenant)
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario DROP CONSTRAINT IF EXISTS uk_spmnyb4dsul95fjmr5kmdmvub");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario DROP CONSTRAINT IF EXISTS uk_1vofibjsgo77e7km8wowva1qe");
+            jdbcTemplate.execute("UPDATE tb_usuario SET email = NULL WHERE email LIKE '%@cliente.local' OR email LIKE '%@especialista.local'");
+
             // Remove restrições de unicidade legadas na tabela tb_categoria para permitir
             // que cada tenant e nicho tenha suas próprias categorias sem colisão de nomes.
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_categoria DROP CONSTRAINT IF EXISTS uk_at5cf41guxjf4dkdeo5qxva9");

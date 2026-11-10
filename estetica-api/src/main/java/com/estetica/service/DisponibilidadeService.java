@@ -34,12 +34,21 @@ public class DisponibilidadeService {
 
     @Transactional(readOnly = true)
     public DisponibilidadeResponseDTO calcularSlots(Long procedimentoId, Long profissionalId, LocalDate data) {
+        return calcularSlots(procedimentoId, profissionalId, data, null);
+    }
+
+    @Transactional(readOnly = true)
+    public DisponibilidadeResponseDTO calcularSlots(Long procedimentoId, Long profissionalId, LocalDate data, Integer duracaoCustomizada) {
         Procedimento procedimento = procedimentoRepository.findById(procedimentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Procedimento não encontrado com ID: " + procedimentoId));
 
+        int duracaoEfetiva = (duracaoCustomizada != null && duracaoCustomizada > 0)
+                ? duracaoCustomizada
+                : procedimento.getDuracaoMinutos();
+
         LocalDate hoje = LocalDate.now(ZONE_BRASIL);
         if (data.isBefore(hoje)) {
-            return new DisponibilidadeResponseDTO(data, procedimentoId, procedimento.getTitulo(), procedimento.getDuracaoMinutos(), List.of());
+            return new DisponibilidadeResponseDTO(data, procedimentoId, procedimento.getTitulo(), duracaoEfetiva, List.of());
         }
 
         List<Profissional> profissionaisAlvo;
@@ -65,7 +74,7 @@ public class DisponibilidadeService {
         LocalDateTime agora = LocalDateTime.now(ZONE_BRASIL);
 
         List<SlotDisponivelDTO> slotsDisponiveis = new ArrayList<>();
-        int duracao = procedimento.getDuracaoMinutos();
+        int duracao = duracaoEfetiva;
 
         for (Profissional prof : profissionaisAlvo) {
             Optional<HorarioTrabalho> horarioOpt = horarioTrabalhoRepository.findByProfissionalIdAndDiaSemanaAndAtivoTrue(prof.getId(), diaSemana);
@@ -144,7 +153,7 @@ public class DisponibilidadeService {
                 data,
                 procedimento.getId(),
                 procedimento.getTitulo(),
-                procedimento.getDuracaoMinutos(),
+                duracaoEfetiva,
                 slotsDisponiveis
         );
     }

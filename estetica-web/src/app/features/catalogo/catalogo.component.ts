@@ -1017,7 +1017,7 @@ export class CatalogoComponent implements OnInit {
     const profId = this.profissionalSelecionado()?.id;
     this.carregandoSlots.set(true);
 
-    this.api.getSlotsDisponiveis(procPrincipal.id, this.dataSelecionada(), profId).subscribe({
+    this.api.getSlotsDisponiveis(procPrincipal.id, this.dataSelecionada(), profId, this.totalMinutos()).subscribe({
       next: (res) => {
         this.slots.set(res.slots || []);
         this.carregandoSlots.set(false);
@@ -1103,6 +1103,7 @@ export class CatalogoComponent implements OnInit {
       clienteEmail: this.emailRapido ? this.emailRapido.trim() : undefined,
       slug: slug,
       procedimentoId: proc.id,
+      procedimentosIds: this.servicosSelecionados().map(s => s.id),
       profissionalId: slot.profissionalId,
       dataHoraInicio: dataHoraInicio,
       observacoesCliente: obs || undefined
@@ -1169,6 +1170,7 @@ export class CatalogoComponent implements OnInit {
       clienteTelefone: clienteTelefone,
       slug: this.tenantService.obterSlugAtual(),
       procedimentoId: proc.id,
+      procedimentosIds: this.servicosSelecionados().map(s => s.id),
       profissionalId: slot.profissionalId,
       dataHoraInicio: dataHoraInicio,
       observacoesCliente: obs || undefined

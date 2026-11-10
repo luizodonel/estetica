@@ -91,20 +91,29 @@ public class ProfissionalService {
             throw new RegraNegocioException("Número de WhatsApp inválido.");
         }
 
-        if (usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+        ClinicaTenant adminTenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+        Long tenantId = adminTenant != null ? adminTenant.getId() : null;
+
+        boolean telExiste = (tenantId != null)
+                ? usuarioRepository.existsByTenantIdAndTelefoneWhatsApp(tenantId, cleanPhone)
+                : usuarioRepository.existsByTelefoneWhatsApp(cleanPhone);
+        if (telExiste) {
             throw new RegraNegocioException(
-                    "Já existe um especialista ou usuário cadastrado com o WhatsApp: " + cleanPhone);
+                    "Já existe um especialista ou usuário cadastrado neste estabelecimento com o WhatsApp: " + cleanPhone);
         }
 
         String email = (request.email() != null && !request.email().isBlank())
                 ? request.email().toLowerCase().trim()
-                : "tel" + cleanPhone + "@especialista.local";
+                : null;
 
-        if (request.email() != null && !request.email().isBlank() && usuarioRepository.existsByEmail(email)) {
-            throw new RegraNegocioException("Já existe um usuário com o e-mail: " + email);
+        if (email != null) {
+            boolean emailExiste = (tenantId != null)
+                    ? usuarioRepository.existsByTenantIdAndEmailIgnoreCase(tenantId, email)
+                    : usuarioRepository.existsByEmail(email);
+            if (emailExiste) {
+                throw new RegraNegocioException("Já existe um usuário neste estabelecimento com o e-mail: " + email);
+            }
         }
-
-        ClinicaTenant adminTenant = tenantResolverService.getTenantDoUsuarioAutenticado();
 
         // Senha temporária caso não informada (o especialista definirá no Primeiro
         // Acesso via WhatsApp)
@@ -116,9 +125,14 @@ public class ProfissionalService {
                 ? request.login().trim().toLowerCase()
                 : null;
 
-        if (cleanLogin != null && usuarioRepository.existsByLoginIgnoreCase(cleanLogin)) {
-            throw new RegraNegocioException(
-                    "Já existe um especialista ou usuário cadastrado com o login: " + cleanLogin);
+        if (cleanLogin != null) {
+            boolean loginExiste = (tenantId != null)
+                    ? usuarioRepository.existsByTenantIdAndLoginIgnoreCase(tenantId, cleanLogin)
+                    : usuarioRepository.existsByLoginIgnoreCase(cleanLogin);
+            if (loginExiste) {
+                throw new RegraNegocioException(
+                        "Já existe um especialista ou usuário neste estabelecimento com o login: " + cleanLogin);
+            }
         }
 
         // Cria a conta de acesso como ROLE_PROFISSIONAL com primeiro_acesso = true
@@ -199,20 +213,25 @@ public class ProfissionalService {
             prof.setCorIdentificacao(request.corIdentificacao());
         }
 
+        Long tenantId = adminTenant != null ? adminTenant.getId() : null;
         if (prof.getUsuario() != null) {
             prof.getUsuario().setNome(request.nome().trim());
             if (request.email() != null && !request.email().isBlank()) {
                 String novoEmail = request.email().toLowerCase().trim();
-                if (!novoEmail.equalsIgnoreCase(prof.getUsuario().getEmail())
-                        && usuarioRepository.existsByEmail(novoEmail)) {
+                boolean emailExiste = (tenantId != null)
+                        ? usuarioRepository.existsByTenantIdAndEmailIgnoreCase(tenantId, novoEmail)
+                        : usuarioRepository.existsByEmail(novoEmail);
+                if (!novoEmail.equalsIgnoreCase(prof.getUsuario().getEmail()) && emailExiste) {
                     throw new RegraNegocioException("Já existe um usuário com o e-mail: " + novoEmail);
                 }
                 prof.getUsuario().setEmail(novoEmail);
             }
             if (request.telefoneWhatsApp() != null && !request.telefoneWhatsApp().isBlank()) {
                 String cleanPhone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
-                if (!cleanPhone.equals(prof.getUsuario().getTelefoneWhatsApp())
-                        && usuarioRepository.existsByTelefoneWhatsApp(cleanPhone)) {
+                boolean telExiste = (tenantId != null)
+                        ? usuarioRepository.existsByTenantIdAndTelefoneWhatsApp(tenantId, cleanPhone)
+                        : usuarioRepository.existsByTelefoneWhatsApp(cleanPhone);
+                if (!cleanPhone.equals(prof.getUsuario().getTelefoneWhatsApp()) && telExiste) {
                     throw new RegraNegocioException("Já existe um usuário cadastrado com este WhatsApp: " + cleanPhone);
                 }
                 prof.getUsuario().setTelefoneWhatsApp(cleanPhone);
@@ -237,6 +256,8 @@ public class ProfissionalService {
     public void alternarStatus(Long id) {
         Profissional prof = profissionalRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + id));
+        tenantResolverService.validarPertenceAoTenantAtual(prof.getTenant(),
+                "Acesso negado: Este especialista pertence a outro estabelecimento.");
         boolean novoStatus = !Boolean.TRUE.equals(prof.getAtivo());
         prof.setAtivo(novoStatus);
         if (prof.getUsuario() != null) {
@@ -283,6 +304,10 @@ public class ProfissionalService {
     // =========================================================================
     @Transactional(readOnly = true)
     public List<BloqueioAgendaDTO> listarBloqueios(Long profissionalId) {
+        Profissional prof = profissionalRepository.findById(profissionalId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + profissionalId));
+        tenantResolverService.validarPertenceAoTenantAtual(prof.getTenant(),
+                "Acesso negado: Este especialista pertence a outro estabelecimento.");
         return bloqueioAgendaRepository.findByProfissionalIdOrderByDataInicioDesc(profissionalId)
                 .stream()
                 .map(b -> new BloqueioAgendaDTO(
@@ -299,6 +324,8 @@ public class ProfissionalService {
         Profissional prof = profissionalRepository.findById(profissionalId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "Profissional não encontrado com ID: " + profissionalId));
+        tenantResolverService.validarPertenceAoTenantAtual(prof.getTenant(),
+                "Acesso negado: Este especialista pertence a outro estabelecimento.");
 
         if (request.dataInicio() == null || request.dataFim() == null) {
             throw new RegraNegocioException("Data de início e data de término são obrigatórias para travar a agenda.");
@@ -326,10 +353,13 @@ public class ProfissionalService {
 
     @Transactional
     public void removerBloqueio(Long bloqueioId) {
-        if (!bloqueioAgendaRepository.existsById(bloqueioId)) {
-            throw new RecursoNaoEncontradoException("Bloqueio de agenda não encontrado com ID: " + bloqueioId);
+        BloqueioAgenda bloqueio = bloqueioAgendaRepository.findById(bloqueioId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Bloqueio de agenda não encontrado com ID: " + bloqueioId));
+        if (bloqueio.getProfissional() != null) {
+            tenantResolverService.validarPertenceAoTenantAtual(bloqueio.getProfissional().getTenant(),
+                    "Acesso negado: Este bloqueio pertence a outro estabelecimento.");
         }
-        bloqueioAgendaRepository.deleteById(bloqueioId);
+        bloqueioAgendaRepository.delete(bloqueio);
     }
 
     // =========================================================================
@@ -340,6 +370,8 @@ public class ProfissionalService {
         Profissional prof = profissionalRepository.findById(profissionalId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "Profissional não encontrado com ID: " + profissionalId));
+        tenantResolverService.validarPertenceAoTenantAtual(prof.getTenant(),
+                "Acesso negado: Este especialista pertence a outro estabelecimento.");
 
         if (itens != null) {
             for (SalvarJornadaItemRequest item : itens) {

@@ -26,7 +26,7 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, length = 120)
     private String nome;
 
-    @Column(length = 100, unique = true)
+    @Column(length = 100)
     private String login;
 
     @Column(length = 120)

@@ -728,10 +728,13 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
 
           // Salva sessão autenticada com o token liberado pelo backend
           if (res.token) {
-            localStorage.setItem('auth_token', res.token);
-            if (res.usuario) {
-              this.authService.currentUser.set(res.usuario);
-            }
+            this.authService.salvarSessaoDireta(
+              res.token,
+              res.usuario,
+              res.slug || res.tenant?.slug,
+              res.tenant?.nomeEmpresa,
+              res.tenant?.logoUrl
+            );
           }
           if (res.tenant) {
             this.tenantCriado.set(res.tenant);

@@ -18,7 +18,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    @Value("${jwt.secret:${JWT_SECRET:}}")
     private String secretKey;
 
     @Value("${jwt.expiration:86400000}") // 24 horas em milissegundos
@@ -39,6 +39,10 @@ public class JwtService {
         extraClaims.put("nome", usuario.getNome());
         extraClaims.put("role", usuario.getRole().name());
         extraClaims.put("whatsapp", usuario.getTelefoneWhatsApp());
+        extraClaims.put("tipo", "USUARIO");
+        if (usuario.getTenant() != null) {
+            extraClaims.put("slug", usuario.getTenant().getSlug());
+        }
 
         return Jwts.builder()
                 .claims(extraClaims)
@@ -56,6 +60,7 @@ public class JwtService {
         extraClaims.put("role", com.estetica.model.Role.ROLE_ADMIN.name());
         extraClaims.put("whatsapp", lojista.getTelefoneWhatsApp());
         extraClaims.put("slug", lojista.getSlug());
+        extraClaims.put("tipo", "LOJISTA");
 
         return Jwts.builder()
                 .claims(extraClaims)
@@ -79,15 +84,7 @@ public class JwtService {
         return extrairClaim(token, Claims::getExpiration);
     }
 
-    private Claims extraTodosClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(obterChaveAssinatura())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-
-    private Claims extrairTodosClaims(String token) {
+    public Claims extrairTodosClaims(String token) {
         return Jwts.parser()
                 .verifyWith(obterChaveAssinatura())
                 .build()

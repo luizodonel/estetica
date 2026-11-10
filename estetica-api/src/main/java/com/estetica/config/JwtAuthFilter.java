@@ -39,24 +39,44 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         final String jwt = authHeader.substring(7);
         try {
-            final String userEmail = jwtService.extrairUsername(jwt);
+            final io.jsonwebtoken.Claims claims = jwtService.extrairTodosClaims(jwt);
+            final String userSubject = claims.getSubject();
 
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = usuarioRepository.findByEmail(userEmail)
-                        .or(() -> usuarioRepository.findByLoginIgnoreCase(userEmail))
-                        .or(() -> usuarioRepository.findByTelefoneWhatsApp(userEmail))
-                        .map(u -> (UserDetails) u)
-                        .orElse(null);
+            if (userSubject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = null;
+                Number idClaim = claims.get("id", Number.class);
+                String tipoClaim = claims.get("tipo", String.class);
 
-                if (userDetails == null) {
-                    userDetails = lojistaRepository.findByEmail(userEmail)
-                            .or(() -> lojistaRepository.findByLoginIgnoreCase(userEmail))
-                            .or(() -> lojistaRepository.findByTelefoneWhatsApp(userEmail))
+                if (idClaim != null && "LOJISTA".equals(tipoClaim)) {
+                    userDetails = lojistaRepository.findById(idClaim.longValue()).map(l -> (UserDetails) l).orElse(null);
+                } else if (idClaim != null && "USUARIO".equals(tipoClaim)) {
+                    userDetails = usuarioRepository.findById(idClaim.longValue()).map(u -> (UserDetails) u).orElse(null);
+                }
+
+                // Fallback seguro para tokens antigos sem claim "tipo"
+                if (userDetails == null && !"LOJISTA".equals(tipoClaim)) {
+                    String slugClaim = claims.get("slug", String.class);
+                    if (idClaim != null && slugClaim == null) {
+                        userDetails = usuarioRepository.findById(idClaim.longValue()).map(u -> (UserDetails) u).orElse(null);
+                    }
+                    if (userDetails == null) {
+                        userDetails = usuarioRepository.findAllByEmailIgnoreCase(userSubject).stream().findFirst()
+                                .or(() -> usuarioRepository.findAllByLoginIgnoreCase(userSubject).stream().findFirst())
+                                .or(() -> usuarioRepository.findAllByTelefoneWhatsApp(userSubject).stream().findFirst())
+                                .map(u -> (UserDetails) u)
+                                .orElse(null);
+                    }
+                }
+
+                if (userDetails == null && !"USUARIO".equals(tipoClaim)) {
+                    userDetails = lojistaRepository.findByEmail(userSubject)
+                            .or(() -> lojistaRepository.findByLoginIgnoreCase(userSubject))
+                            .or(() -> lojistaRepository.findByTelefoneWhatsApp(userSubject))
                             .map(l -> (UserDetails) l)
                             .orElse(null);
                 }
 
-                if (userDetails != null && jwtService.isTokenValido(jwt, userDetails)) {
+                if (userDetails != null && userDetails.isEnabled() && jwtService.isTokenValido(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,

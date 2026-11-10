@@ -28,6 +28,10 @@ public class ProntuarioService {
 
     @Transactional(readOnly = true)
     public List<HistoricoAtendimentoDTO> buscarHistoricoPorCliente(Long clienteId) {
+        Usuario cliente = usuarioRepository.findById(clienteId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
+        tenantResolverService.validarPertenceAoTenantAtual(cliente.getTenant(),
+                "Acesso negado: Este prontuário pertence a outro estabelecimento.");
         return historicoAtendimentoRepository.findByClienteIdOrderByDataAtendimentoDesc(clienteId)
                 .stream()
                 .map(this::toDTO)
@@ -38,6 +42,8 @@ public class ProntuarioService {
     public HistoricoAtendimentoDTO salvarAtendimento(SalvarProntuarioRequest req) {
         Usuario cliente = usuarioRepository.findById(req.clienteId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
+        tenantResolverService.validarPertenceAoTenantAtual(cliente.getTenant(),
+                "Acesso negado: Este cliente pertence a outro estabelecimento.");
 
         Profissional prof = null;
         if (req.profissionalId() != null) {

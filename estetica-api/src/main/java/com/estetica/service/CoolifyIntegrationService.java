@@ -19,18 +19,25 @@ public class CoolifyIntegrationService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${coolify.base-url:http://93.127.212.65:8000}")
+    @Value("${coolify.base-url:${COOLIFY_BASE_URL:}}")
     private String baseUrl;
 
-    @Value("${coolify.token:6|m7T16Ph8guHOWj8tPJnGaPPoGkJnYEaPaEdPwoGfb3498437}")
+    @Value("${coolify.token:${COOLIFY_TOKEN:}}")
     private String token;
 
-    @Value("${coolify.app-uuid:msz9q9dwvhrtskj4jmd1bomn}")
+    @Value("${coolify.app-uuid:${COOLIFY_APP_UUID:}}")
     private String appUuid;
+
+    @Value("${coolify.auto-restart-on-domain:false}")
+    private boolean autoRestartOnDomain;
 
     @Async
     public void adicionarDominioLojista(String slug) {
         if (slug == null || slug.isBlank() || "estetica".equalsIgnoreCase(slug)) {
+            return;
+        }
+        if (baseUrl == null || baseUrl.isBlank() || token == null || token.isBlank() || appUuid == null || appUuid.isBlank()) {
+            log.debug("[CoolifyIntegration] Variáveis COOLIFY_* não configuradas; pulando registro automático de domínio para {}", slug);
             return;
         }
 
@@ -47,7 +54,7 @@ public class CoolifyIntegrationService {
 
             if (getRes.getBody() != null) {
                 String fqdnAtual = (String) getRes.getBody().get("fqdn");
-                if (fqdnAtual == null || !fqdnAtual.contains(novoDominio)) {
+                if (fqdnAtual == null || (!fqdnAtual.contains(novoDominio) && !fqdnAtual.contains("*.logistadigital.com.br"))) {
                     String novoFqdn = (fqdnAtual != null && !fqdnAtual.isBlank())
                             ? fqdnAtual + "," + novoDominio
                             : novoDominio;
@@ -56,9 +63,13 @@ public class CoolifyIntegrationService {
                     HttpEntity<Map<String, String>> patchEntity = new HttpEntity<>(Map.of("fqdn", novoFqdn), headers);
                     restTemplate.exchange(url, HttpMethod.PATCH, patchEntity, Void.class);
 
-                    // Reinicia para aplicar o novo router Traefik/Caddy
-                    restTemplate.exchange(url + "/restart", HttpMethod.POST, getEntity, Void.class);
-                    log.info("[CoolifyIntegration] Subdomínio {} configurado e reinício do proxy disparado com sucesso!", novoDominio);
+                    // Reinício opcional (desabilitado por padrão se houver wildcard DNS/Traefik para não derrubar sessões ativas)
+                    if (autoRestartOnDomain) {
+                        restTemplate.exchange(url + "/restart", HttpMethod.POST, getEntity, Void.class);
+                        log.info("[CoolifyIntegration] Subdomínio {} configurado e reinício disparado.", novoDominio);
+                    } else {
+                        log.info("[CoolifyIntegration] Subdomínio {} registrado no FQDN sem reiniciar conexões ativas.", novoDominio);
+                    }
                 }
             }
         } catch (Exception ex) {

@@ -126,6 +126,8 @@ public class ProcedimentoService {
     public CategoriaDTO atualizarCategoria(Long id, SalvarCategoriaRequest req) {
         Categoria c = categoriaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria não encontrada com ID: " + id));
+        tenantResolverService.validarPertenceAoTenantAtual(c.getTenant(),
+                "Acesso negado: Esta categoria pertence a outro estabelecimento.");
 
         c.setNome(req.nome().trim());
         c.setDescricao(req.descricao() != null ? req.descricao().trim() : null);
@@ -157,6 +159,8 @@ public class ProcedimentoService {
     public void excluirCategoria(Long id) {
         Categoria c = categoriaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria não encontrada com ID: " + id));
+        tenantResolverService.validarPertenceAoTenantAtual(c.getTenant(),
+                "Acesso negado: Esta categoria pertence a outro estabelecimento.");
 
         List<Procedimento> procs = procedimentoRepository.findByCategoriaIdAndAtivoTrueOrderByTituloAsc(id);
         if (!procs.isEmpty()) {
@@ -595,6 +599,8 @@ public class ProcedimentoService {
     public void alternarStatus(Long id) {
         Procedimento p = procedimentoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Procedimento não encontrado com ID: " + id));
+        tenantResolverService.validarPertenceAoTenantAtual(p.getTenant(),
+                "Acesso negado: Este procedimento pertence a outro estabelecimento.");
         p.setAtivo(!Boolean.TRUE.equals(p.getAtivo()));
         procedimentoRepository.save(p);
     }

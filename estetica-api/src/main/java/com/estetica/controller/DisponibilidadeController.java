@@ -24,8 +24,9 @@ public class DisponibilidadeController {
     public ResponseEntity<DisponibilidadeResponseDTO> obterSlots(
             @RequestParam Long procedimentoId,
             @RequestParam(required = false) Long profissionalId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
-        return ResponseEntity.ok(disponibilidadeService.calcularSlots(procedimentoId, profissionalId, data));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+            @RequestParam(required = false) Integer duracaoMinutos) {
+        return ResponseEntity.ok(disponibilidadeService.calcularSlots(procedimentoId, profissionalId, data, duracaoMinutos));
     }
 }
 

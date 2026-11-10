@@ -65,9 +65,7 @@ public class AgendamentoService {
             }
 
             final Long tid = tenant != null ? tenant.getId() : null;
-            cliente = usuarioRepository.findByTelefoneWhatsApp(telefoneLimpo)
-                    .filter(u -> tid == null || (u.getTenant() != null && u.getTenant().getId().equals(tid)))
-                    .orElse(null);
+            cliente = buscarClientePorTelefoneNoTenant(tid, telefoneLimpo);
 
             if (cliente == null) {
                 cliente = Usuario.builder()
@@ -98,20 +96,21 @@ public class AgendamentoService {
             if (request.clienteId() != null) {
                 cliente = usuarioRepository.findById(request.clienteId())
                         .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente selecionado não encontrado com ID: " + request.clienteId()));
+                if (tenant != null && cliente.getTenant() != null && !cliente.getTenant().getId().equals(tenant.getId())) {
+                    throw new RegraNegocioException("Acesso negado: Este cliente pertence a outro estabelecimento.");
+                }
             } else if (request.clienteNome() != null && request.clienteTelefone() != null) {
                 String telLimpo = request.clienteTelefone().replaceAll("[^0-9]", "");
                 if (telLimpo.length() > 30) {
                     telLimpo = telLimpo.substring(0, 30);
                 }
                 final Long tid = tenant != null ? tenant.getId() : null;
-                cliente = usuarioRepository.findByTelefoneWhatsApp(telLimpo)
-                        .filter(u -> tid == null || (u.getTenant() != null && u.getTenant().getId().equals(tid)))
-                        .orElse(null);
+                cliente = buscarClientePorTelefoneNoTenant(tid, telLimpo);
                 if (cliente == null) {
                     cliente = Usuario.builder()
                             .nome(request.clienteNome().trim())
                             .telefoneWhatsApp(telLimpo)
-                            .email(request.clienteEmail() != null ? request.clienteEmail().trim() : null)
+                            .email(request.clienteEmail() != null && !request.clienteEmail().isBlank() ? request.clienteEmail().trim() : null)
                             .role(Role.ROLE_CLIENTE)
                             .ativo(true)
                             .tenant(tenant)
@@ -129,20 +128,21 @@ public class AgendamentoService {
                 if (request.clienteId() != null) {
                     cliente = usuarioRepository.findById(request.clienteId())
                             .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente selecionado não encontrado com ID: " + request.clienteId()));
+                    if (tenant != null && cliente.getTenant() != null && !cliente.getTenant().getId().equals(tenant.getId())) {
+                        throw new RegraNegocioException("Acesso negado: Este cliente pertence a outro estabelecimento.");
+                    }
                 } else if (request.clienteNome() != null && request.clienteTelefone() != null) {
                     String telLimpo = request.clienteTelefone().replaceAll("[^0-9]", "");
-                if (telLimpo.length() > 30) {
-                    telLimpo = telLimpo.substring(0, 30);
-                }
+                    if (telLimpo.length() > 30) {
+                        telLimpo = telLimpo.substring(0, 30);
+                    }
                     final Long tid = tenant != null ? tenant.getId() : null;
-                    cliente = usuarioRepository.findByTelefoneWhatsApp(telLimpo)
-                            .filter(u -> tid == null || (u.getTenant() != null && u.getTenant().getId().equals(tid)))
-                            .orElse(null);
+                    cliente = buscarClientePorTelefoneNoTenant(tid, telLimpo);
                     if (cliente == null) {
                         cliente = Usuario.builder()
                                 .nome(request.clienteNome().trim())
                                 .telefoneWhatsApp(telLimpo)
-                                .email(request.clienteEmail() != null ? request.clienteEmail().trim() : null)
+                                .email(request.clienteEmail() != null && !request.clienteEmail().isBlank() ? request.clienteEmail().trim() : null)
                                 .role(Role.ROLE_CLIENTE)
                                 .ativo(true)
                                 .tenant(tenant)
@@ -167,15 +167,49 @@ public class AgendamentoService {
             throw new RegraNegocioException("Procedimento inativo no momento.");
         }
 
+        if (tenant == null && procedimento.getTenant() != null) {
+            tenant = procedimento.getTenant();
+        }
+
+        int duracaoTotalMinutos = procedimento.getDuracaoMinutos();
+        java.math.BigDecimal valorTotalCobrado = procedimento.getPreco();
+
+        if (request.procedimentosIds() != null && request.procedimentosIds().size() > 1) {
+            List<Procedimento> combo = procedimentoRepository.findAllById(request.procedimentosIds());
+            if (!combo.isEmpty()) {
+                int somaDuracao = 0;
+                java.math.BigDecimal somaValor = java.math.BigDecimal.ZERO;
+                for (Procedimento pItem : combo) {
+                    if (!Boolean.TRUE.equals(pItem.getAtivo())) {
+                        throw new RegraNegocioException("Um dos procedimentos selecionados está inativo: " + pItem.getTitulo());
+                    }
+                    if (tenant != null && pItem.getTenant() != null && !pItem.getTenant().getId().equals(tenant.getId())) {
+                        throw new RegraNegocioException("Procedimento não pertence a este estabelecimento.");
+                    }
+                    somaDuracao += pItem.getDuracaoMinutos() != null ? pItem.getDuracaoMinutos() : 30;
+                    somaValor = somaValor.add(pItem.getPreco() != null ? pItem.getPreco() : java.math.BigDecimal.ZERO);
+                }
+                duracaoTotalMinutos = somaDuracao;
+                valorTotalCobrado = somaValor;
+            }
+        }
+
         Profissional profissional;
         if (request.profissionalId() != null && request.profissionalId() > 0) {
             profissional = profissionalRepository.findById(request.profissionalId())
                     .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado com ID: " + request.profissionalId()));
+            if (tenant != null && profissional.getTenant() != null && !profissional.getTenant().getId().equals(tenant.getId())) {
+                throw new RegraNegocioException("O especialista selecionado não pertence a este estabelecimento.");
+            }
         } else {
-            // Primeiro profissional habilitado disponível
-            List<Profissional> habilitados = profissionalRepository.findHabilitadosParaProcedimento(procedimento.getId());
+            // Primeiro profissional habilitado disponível do próprio tenant
+            List<Profissional> habilitados = (tenant != null)
+                    ? profissionalRepository.findHabilitadosParaProcedimentoETenant(procedimento.getId(), tenant.getId())
+                    : profissionalRepository.findHabilitadosParaProcedimento(procedimento.getId());
             if (habilitados.isEmpty()) {
-                habilitados = profissionalRepository.findByAtivoTrueOrderByNomeAsc();
+                habilitados = (tenant != null)
+                        ? profissionalRepository.findByTenantIdAndAtivoTrueOrderByNomeAsc(tenant.getId())
+                        : profissionalRepository.findByAtivoTrueOrderByNomeAsc();
             }
             if (habilitados.isEmpty()) {
                 throw new RegraNegocioException("Nenhum profissional disponível no momento.");
@@ -184,7 +218,7 @@ public class AgendamentoService {
         }
 
         LocalDateTime inicio = request.dataHoraInicio();
-        LocalDateTime fim = inicio.plusMinutes(procedimento.getDuracaoMinutos());
+        LocalDateTime fim = inicio.plusMinutes(duracaoTotalMinutos);
 
         LocalDateTime agoraBrasil = LocalDateTime.now(DisponibilidadeService.ZONE_BRASIL);
         if (inicio.isBefore(agoraBrasil.minusMinutes(5))) {
@@ -224,7 +258,7 @@ public class AgendamentoService {
                 .dataHoraInicio(inicio)
                 .dataHoraFim(fim)
                 .status(StatusAgendamento.CONFIRMADO)
-                .valorCobrado(procedimento.getPreco())
+                .valorCobrado(valorTotalCobrado)
                 .observacoesCliente(request.observacoesCliente())
                 .dataCriacao(LocalDateTime.now())
                 .build();
@@ -282,10 +316,19 @@ public class AgendamentoService {
                 .toList();
     }
 
+    private Usuario buscarClientePorTelefoneNoTenant(Long tenantId, String telefone) {
+        if (tenantId != null) {
+            return usuarioRepository.findFirstByTenantIdAndTelefoneWhatsApp(tenantId, telefone).orElse(null);
+        }
+        return usuarioRepository.findAllByTelefoneWhatsApp(telefone).stream().findFirst().orElse(null);
+    }
+
     @Transactional
     public AgendamentoDTO cancelarAgendamento(Long agendamentoId, Object principal, String motivo) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Agendamento não encontrado com ID: " + agendamentoId));
+        tenantResolverService.validarPertenceAoTenantAtual(agendamento.getTenant(),
+                "Acesso negado: Este agendamento pertence a outro estabelecimento.");
 
         boolean isAdmin = false;
         Long usuarioId = null;
@@ -334,6 +377,8 @@ public class AgendamentoService {
     public AgendamentoDTO remarcarAgendamento(Long agendamentoId, Object principal, RemarcarAgendamentoRequest request) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Agendamento não encontrado com ID: " + agendamentoId));
+        tenantResolverService.validarPertenceAoTenantAtual(agendamento.getTenant(),
+                "Acesso negado: Este agendamento pertence a outro estabelecimento.");
 
         boolean isAdmin = false;
         Long usuarioId = null;
@@ -368,7 +413,10 @@ public class AgendamentoService {
         }
 
         LocalDateTime novoInicio = request.novaDataHoraInicio();
-        LocalDateTime novoFim = novoInicio.plusMinutes(agendamento.getProcedimento().getDuracaoMinutos());
+        long duracaoOriginal = (agendamento.getDataHoraInicio() != null && agendamento.getDataHoraFim() != null)
+                ? Math.max(15, ChronoUnit.MINUTES.between(agendamento.getDataHoraInicio(), agendamento.getDataHoraFim()))
+                : agendamento.getProcedimento().getDuracaoMinutos();
+        LocalDateTime novoFim = novoInicio.plusMinutes(duracaoOriginal);
 
         if (novoInicio.isBefore(LocalDateTime.now(DisponibilidadeService.ZONE_BRASIL).minusMinutes(5))) {
             throw new RegraNegocioException("Não é permitido remarcar para horários passados.");
@@ -404,6 +452,8 @@ public class AgendamentoService {
     public AgendamentoDTO atualizarStatusOperacional(Long agendamentoId, AtualizarStatusRequest request) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Agendamento não encontrado com ID: " + agendamentoId));
+        tenantResolverService.validarPertenceAoTenantAtual(agendamento.getTenant(),
+                "Acesso negado: Este agendamento pertence a outro estabelecimento.");
 
         agendamento.setStatus(request.status());
         if (request.notasInternas() != null && !request.notasInternas().isBlank()) {
@@ -415,6 +465,12 @@ public class AgendamentoService {
     }
 
     public AgendamentoDTO toDTO(Agendamento a) {
+        int duracaoEfetiva = (a.getDataHoraInicio() != null && a.getDataHoraFim() != null)
+                ? (int) Math.max(1, ChronoUnit.MINUTES.between(a.getDataHoraInicio(), a.getDataHoraFim()))
+                : a.getProcedimento().getDuracaoMinutos();
+        String tituloExibicao = (a.getObservacoesCliente() != null && a.getObservacoesCliente().startsWith("Combo: "))
+                ? a.getObservacoesCliente()
+                : a.getProcedimento().getTitulo();
         return new AgendamentoDTO(
                 a.getId(),
                 a.getCliente().getId(),
@@ -426,8 +482,8 @@ public class AgendamentoService {
                 a.getProfissional().getFotoUrl(),
                 a.getProfissional().getCorIdentificacao(),
                 a.getProcedimento().getId(),
-                a.getProcedimento().getTitulo(),
-                a.getProcedimento().getDuracaoMinutos(),
+                tituloExibicao,
+                duracaoEfetiva,
                 a.getValorCobrado(),
                 a.getDataHoraInicio(),
                 a.getDataHoraFim(),

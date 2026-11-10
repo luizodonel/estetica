@@ -167,9 +167,6 @@ public class TenantService {
                 tenant = tenantRepository.save(tenant);
                 lojista = lojistaRepository.save(lojista);
             }
-
-            // Provisiona automaticamente o subdomínio da loja no Coolify / Traefik
-            coolifyIntegrationService.adicionarDominioLojista(cleanSlug);
         } catch (Exception ex) {
             log.error("[TenantService] Erro ao gerar PIX de adesão no Mercado Pago: {}", ex.getMessage(), ex);
             throw new RegraNegocioException("Erro ao gerar QR Code PIX de adesão no Mercado Pago: " + ex.getMessage());
@@ -233,44 +230,65 @@ public class TenantService {
             boolean ehRenovacao = (lojista != null && paymentId.equals(lojista.getRenovacaoPaymentId()))
                     || (tenant != null && paymentId.equals(tenant.getRenovacaoPaymentId()));
 
-            // REGRA DE CÁLCULO DE VENCIMENTO:
-            // "caso o usuario pague antes dos 30 dias EX: faltando 4 dias para acabar e ele fizer o pagamento,
-            // sera contado somente apos acabar os 4 dias restantes"
-            LocalDateTime baseDate = agora;
-            LocalDateTime vencimentoAtual = lojista != null ? lojista.getDataVencimento() : (tenant != null ? tenant.getDataVencimento() : null);
-            if (vencimentoAtual != null && vencimentoAtual.isAfter(agora)) {
-                baseDate = vencimentoAtual; // Soma +30 dias a partir do vencimento futuro restante
-            }
-            LocalDateTime novaDataVencimento = baseDate.plusDays(30);
+            boolean jaProcessado = (lojista != null && paymentId.equals(lojista.getUltimoPaymentIdAprovado()))
+                    || (tenant != null && paymentId.equals(tenant.getUltimoPaymentIdAprovado()));
 
-            if (tenant != null) {
-                log.info("[TenantService] Pagamento aprovado para a loja: {}. Nova data de vencimento: {}", tenant.getNomeEmpresa(), novaDataVencimento);
-                tenant.setAtivo(true);
-                tenant.setStatusPagamento("APROVADO");
-                tenant.setDataPagamento(agora);
-                tenant.setDataVencimento(novaDataVencimento);
-                if (ehRenovacao) {
-                    tenant.setRenovacaoPaymentId(null);
-                    tenant.setRenovacaoPixCopiaCola(null);
-                    tenant.setRenovacaoPixQrCodeBase64(null);
-                    tenant.setRenovacaoCriadaEm(null);
-                }
-                tenant = tenantRepository.save(tenant);
-            }
+            if (!jaProcessado) {
+                boolean eraInativo = (tenant != null && !Boolean.TRUE.equals(tenant.getAtivo()))
+                        || (lojista != null && !Boolean.TRUE.equals(lojista.getAtivo()));
 
-            if (lojista != null) {
-                log.info("[TenantService] Pagamento aprovado para o lojista: {}. Nova data de vencimento: {}", lojista.getNomeEmpresa(), novaDataVencimento);
-                lojista.setAtivo(true);
-                lojista.setStatusPagamento("APROVADO");
-                lojista.setDataPagamento(agora);
-                lojista.setDataVencimento(novaDataVencimento);
-                if (ehRenovacao) {
-                    lojista.setRenovacaoPaymentId(null);
-                    lojista.setRenovacaoPixCopiaCola(null);
-                    lojista.setRenovacaoPixQrCodeBase64(null);
-                    lojista.setRenovacaoCriadaEm(null);
+                // REGRA DE CÁLCULO DE VENCIMENTO:
+                // Caso o usuário pague antes do vencimento, soma +30 dias a partir do vencimento futuro restante.
+                LocalDateTime baseDate = agora;
+                LocalDateTime vencimentoAtual = lojista != null ? lojista.getDataVencimento() : (tenant != null ? tenant.getDataVencimento() : null);
+                if (vencimentoAtual != null && vencimentoAtual.isAfter(agora)) {
+                    baseDate = vencimentoAtual;
                 }
-                lojista = lojistaRepository.save(lojista);
+                LocalDateTime novaDataVencimento = baseDate.plusDays(30);
+
+                if (tenant != null) {
+                    log.info("[TenantService] Pagamento {} aprovado para a loja: {}. Nova data de vencimento: {}", paymentId, tenant.getNomeEmpresa(), novaDataVencimento);
+                    tenant.setAtivo(true);
+                    tenant.setStatusPagamento("APROVADO");
+                    tenant.setDataPagamento(agora);
+                    tenant.setDataVencimento(novaDataVencimento);
+                    tenant.setUltimoPaymentIdAprovado(paymentId);
+                    if (ehRenovacao) {
+                        tenant.setRenovacaoPaymentId(null);
+                        tenant.setRenovacaoPixCopiaCola(null);
+                        tenant.setRenovacaoPixQrCodeBase64(null);
+                        tenant.setRenovacaoCriadaEm(null);
+                    }
+                    tenant = tenantRepository.save(tenant);
+
+                    if (eraInativo && categoriaRepository.findByTenantIdOrderByOrdemExibicaoAsc(tenant.getId()).isEmpty()) {
+                        com.estetica.model.SetorAtuacao setorAtivo = tenant.getSetor() != null ? tenant.getSetor() : com.estetica.model.SetorAtuacao.CLINICA_ESTETICA;
+                        procedimentoService.inicializarCategoriasPadraoParaTenant(tenant, setorAtivo);
+                    }
+                }
+
+                if (lojista != null) {
+                    log.info("[TenantService] Pagamento {} aprovado para o lojista: {}. Nova data de vencimento: {}", paymentId, lojista.getNomeEmpresa(), novaDataVencimento);
+                    lojista.setAtivo(true);
+                    lojista.setStatusPagamento("APROVADO");
+                    lojista.setDataPagamento(agora);
+                    lojista.setDataVencimento(novaDataVencimento);
+                    lojista.setUltimoPaymentIdAprovado(paymentId);
+                    if (ehRenovacao) {
+                        lojista.setRenovacaoPaymentId(null);
+                        lojista.setRenovacaoPixCopiaCola(null);
+                        lojista.setRenovacaoPixQrCodeBase64(null);
+                        lojista.setRenovacaoCriadaEm(null);
+                    }
+                    lojista = lojistaRepository.save(lojista);
+                }
+
+                // Provisiona subdomínio somente após confirmação real do pagamento PIX
+                if (eraInativo && slug != null) {
+                    coolifyIntegrationService.adicionarDominioLojista(slug);
+                }
+            } else {
+                log.debug("[TenantService] Pagamento {} já havia sido creditado anteriormente (idempotência).", paymentId);
             }
 
             String token = null;

@@ -155,12 +155,15 @@ export class ApiService {
   }
 
   // Motor de Slots em Tempo Real
-  getSlotsDisponiveis(procedimentoId: number, data: string, profissionalId?: number): Observable<DisponibilidadeResponse> {
+  getSlotsDisponiveis(procedimentoId: number, data: string, profissionalId?: number, duracaoMinutos?: number): Observable<DisponibilidadeResponse> {
     let params = new HttpParams()
       .set('procedimentoId', procedimentoId.toString())
       .set('data', data);
     if (profissionalId) {
       params = params.set('profissionalId', profissionalId.toString());
+    }
+    if (duracaoMinutos && duracaoMinutos > 0) {
+      params = params.set('duracaoMinutos', duracaoMinutos.toString());
     }
     return this.http.get<DisponibilidadeResponse>(`${this.baseUrl}/disponibilidade/slots`, { params });
   }
@@ -200,6 +203,7 @@ export class ApiService {
     clienteEmail?: string;
     slug?: string;
     procedimentoId: number;
+    procedimentosIds?: number[];
     profissionalId?: number;
     dataHoraInicio: string; // ISO string
     observacoesCliente?: string;

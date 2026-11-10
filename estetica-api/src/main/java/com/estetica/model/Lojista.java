@@ -119,6 +119,9 @@ public class Lojista implements UserDetails {
     @Column(name = "renovacao_criada_em")
     private LocalDateTime renovacaoCriadaEm;
 
+    @Column(name = "ultimo_payment_id_aprovado", length = 100)
+    private String ultimoPaymentIdAprovado;
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean ativo = true;

@@ -38,18 +38,25 @@ public class UploadController {
         String originalFilename = file.getOriginalFilename();
         String contentType = file.getContentType();
 
-        // Validar tipo de imagem
-        if (contentType != null && !contentType.startsWith("image/") && !contentType.equals("application/octet-stream")) {
+        // Validar tipo de imagem (rejeita SVG/HTML/JS para evitar XSS)
+        java.util.Set<String> allowedMimes = java.util.Set.of("image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif");
+        if (contentType != null && !allowedMimes.contains(contentType.toLowerCase())) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                    .body(Map.of("message", "Apenas arquivos de imagem são permitidos (.jpg, .jpeg, .png, .webp, .svg, .gif)"));
+                    .body(Map.of("message", "Apenas imagens JPG, PNG, WEBP ou GIF são permitidas."));
         }
 
-        // Extrair extensão
+        // Extrair e validar extensão permitida (whitelist estrita)
         String extension = ".jpg";
         if (originalFilename != null && originalFilename.contains(".")) {
             extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
         } else if (contentType != null && contentType.contains("/")) {
-            extension = "." + contentType.substring(contentType.lastIndexOf("/") + 1).replace("jpeg", "jpg").replace("+xml", "");
+            extension = "." + contentType.substring(contentType.lastIndexOf("/") + 1).replace("jpeg", "jpg");
+        }
+
+        java.util.Set<String> allowedExts = java.util.Set.of(".jpg", ".jpeg", ".png", ".webp", ".gif");
+        if (!allowedExts.contains(extension)) {
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                    .body(Map.of("message", "Extensão não permitida. Use apenas .jpg, .jpeg, .png, .webp ou .gif."));
         }
 
         // Gerar nome único seguro
