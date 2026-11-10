@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SetorService } from '../../../core/services/setor.service';
@@ -10,7 +11,7 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
 @Component({
   selector: 'app-admin-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalTravaAgendaComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ModalTravaAgendaComponent],
   template: `
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12 font-sans">
       
@@ -36,10 +37,10 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
             Hoje
           </button>
           <a 
-            routerLink="/agendar"
-            class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2d7a58] hover:bg-[#236347] text-white text-xs font-bold shadow-sm transition-all">
+            routerLink="/catalogo"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2d7a58] hover:bg-[#236347] text-white text-xs font-bold shadow-sm transition-all cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span>+ Agendar Paciente</span>
+            <span>Agendar {{ setorService.termoCliente() }}</span>
           </a>
           <button 
             (click)="abrirModalAgenda()"
@@ -97,10 +98,10 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
           <p class="font-bold text-slate-800 text-lg">Nenhum atendimento agendado para esta data.</p>
           <p class="text-xs text-slate-400 mt-1 max-w-sm mb-5">Selecione outro dia ou agende um paciente diretamente para este ou outro horário.</p>
           <a
-            routerLink="/agendar"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow transition-all">
+            routerLink="/catalogo"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow transition-all cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span>+ Agendar Atendimento</span>
+            <span>Agendar Atendimento</span>
           </a>
         </div>
       } @else {
