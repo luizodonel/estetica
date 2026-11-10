@@ -170,6 +170,15 @@ import { SetorService } from '../core/services/setor.service';
                 </a>
 
                 <a 
+                  routerLink="/admin/redes-sociais" 
+                  routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
+                  title="Publicação Oficial no Instagram"
+                  class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent">
+                  <span>📸</span>
+                  <span>Instagram</span>
+                </a>
+
+                <a 
                   routerLink="/admin/assinatura" 
                   routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
                   title="Minha Assinatura & Renovação"
@@ -224,6 +233,9 @@ import { SetorService } from '../core/services/setor.service';
               <span>⚙️</span> Cadastros
             </a>
             @if (authService.isAdmin()) {
+              <a routerLink="/admin/redes-sociais" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
+                <span>📸</span> Instagram
+              </a>
               <a routerLink="/admin/assinatura" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
                 <span>💳</span> Assinatura
               </a>

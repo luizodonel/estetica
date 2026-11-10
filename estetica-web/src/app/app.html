@@ -17,7 +17,14 @@
         <span class="font-bold text-base text-slate-900">{{ tenantService.nomeEmpresa() }}</span>
         <span class="text-slate-400">• {{ tenantService.tenant() ? 'Portal Oficial' : 'Portal de Agendamento' }}</span>
       </div>
-      <p class="text-slate-400">© 2026 {{ tenantService.nomeEmpresa() }}. Todos os direitos reservados.</p>
+      <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-5 text-slate-400">
+        <div class="flex items-center gap-4">
+          <a routerLink="/termos-de-uso" class="hover:text-slate-700 transition-colors">Termos de Uso</a>
+          <a routerLink="/privacidade" class="hover:text-slate-700 transition-colors">Privacidade</a>
+          <a routerLink="/exclusao-de-dados" class="hover:text-slate-700 transition-colors">Exclusão de Dados</a>
+        </div>
+        <p>© 2026 {{ tenantService.nomeEmpresa() }}. Todos os direitos reservados.</p>
+      </div>
     </div>
   </footer>
 

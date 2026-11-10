@@ -310,4 +310,43 @@ export interface RelatorioGeralResponse {
   especialistas: RelatorioEspecialista[];
 }
 
+export interface PostSocial {
+  id: number;
+  plataforma: string;
+  tipoMidia: 'FEED' | 'STORIES';
+  imagemUrl: string;
+  legenda?: string;
+  igMediaId?: string;
+  permalink?: string;
+  status: 'PENDENTE' | 'PUBLICADO' | 'ERRO';
+  mensagemErro?: string;
+  publicadoEm?: string;
+  criadoEm: string;
+}
+
+export interface InstagramStatusResponse {
+  appConfigurado: boolean;
+  conectado: boolean;
+  igUserId?: string;
+  igUsername?: string;
+  igName?: string;
+  igAccountType?: string;
+  igProfilePictureUrl?: string;
+  tokenExpiraEm?: string;
+  redirectUriConfigurada?: string;
+  historicoPosts: PostSocial[];
+}
+
+export interface AuthUrlResponse {
+  authUrl: string;
+  redirectUri: string;
+}
+
+export interface PublicarInstagramRequest {
+  imagemUrl: string;
+  legenda?: string;
+  tipoMidia: 'FEED' | 'STORIES';
+}
+
+
 

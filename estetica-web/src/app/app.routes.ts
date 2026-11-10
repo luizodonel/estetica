@@ -52,6 +52,23 @@ export const routes: Routes = [
     loadComponent: () => import('./features/admin/admin-assinatura/admin-assinatura.component').then(m => m.AdminAssinaturaComponent)
   },
   {
+    path: 'admin/redes-sociais',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/admin-redes-sociais/admin-redes-sociais.component').then(m => m.AdminRedesSociaisComponent)
+  },
+  {
+    path: 'termos-de-uso',
+    loadComponent: () => import('./features/legal/termos-uso.component').then(m => m.TermosUsoComponent)
+  },
+  {
+    path: 'privacidade',
+    loadComponent: () => import('./features/legal/politica-privacidade.component').then(m => m.PoliticaPrivacidadeComponent)
+  },
+  {
+    path: 'exclusao-de-dados',
+    loadComponent: () => import('./features/legal/exclusao-dados.component').then(m => m.ExclusaoDadosComponent)
+  },
+  {
     path: 'login',
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
   },
