@@ -90,7 +90,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
           [class.bg-white]="abaAtiva() !== 'clientes'"
           [class.text-slate-700]="abaAtiva() !== 'clientes'"
           class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200">
-          <span>👤 Pacientes & Clientes</span>
+          <span>👤 Clientes</span>
           <span class="text-[10px] px-1.5 py-0.5 rounded-full" [class.bg-slate-700]="abaAtiva() === 'clientes'" [class.bg-slate-100]="abaAtiva() !== 'clientes'">
             {{ clientes().length }}
           </span>
@@ -585,21 +585,21 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
               (click)="abrirModalCliente()"
               class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-              <span>+ Novo Paciente</span>
+              <span>+ Novo Cliente</span>
             </button>
           </div>
 
           @if (carregando()) {
-            <div class="py-16 text-center text-xs text-stone-400">Carregando lista de pacientes...</div>
+            <div class="py-16 text-center text-xs text-stone-400">Carregando lista de clientes...</div>
           } @else if (clientesFiltrados().length === 0) {
-            <div class="py-16 text-center text-xs text-stone-400">Nenhum paciente cadastrado.</div>
+            <div class="py-16 text-center text-xs text-stone-400">Nenhum cliente cadastrado.</div>
           } @else {
             <div class="bg-white rounded-3xl border border-nude-200 overflow-hidden shadow-sm">
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                   <thead class="bg-stone-50 border-b border-nude-200 text-stone-500 font-bold uppercase tracking-wider text-[10px]">
                     <tr>
-                      <th class="py-3.5 px-5">Paciente</th>
+                      <th class="py-3.5 px-5">Cliente</th>
                       <th class="py-3.5 px-5">WhatsApp</th>
                       <th class="py-3.5 px-5">E-mail</th>
                       <th class="py-3.5 px-5">Status</th>
@@ -922,9 +922,12 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
 
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">
-                  {{ profissionalEmEdicao() ? 'Alterar Senha de Acesso (opcional)' : 'Senha de Acesso (padrão 123456)' }}
+                  {{ profissionalEmEdicao() ? 'Alterar Senha de Acesso (opcional)' : 'Senha de Acesso (padrão: 123456)' }}
                 </label>
-                <input type="password" formControlName="senha" placeholder="Mínimo 6 caracteres" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+                <input type="text" formControlName="senha" placeholder="123456" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50 font-mono" />
+                <span class="text-[10px] text-slate-400 mt-0.5 block">
+                  {{ profissionalEmEdicao() ? 'Deixe em branco para manter a senha atual' : 'Senha inicial de acesso do especialista (padrão: 123456)' }}
+                </span>
               </div>
 
               <div>
@@ -974,9 +977,9 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
             <!-- Cabeçalho Fixo / Sticky Header -->
             <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
               <div>
-                <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Base de Pacientes</span>
+                <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Base de Clientes</span>
                 <h3 class="font-extrabold text-lg sm:text-xl text-slate-900">
-                  {{ clienteEmEdicao() ? 'Editar Paciente' : 'Novo Paciente' }}
+                  {{ clienteEmEdicao() ? 'Editar Cliente' : 'Novo Cliente' }}
                 </h3>
               </div>
               <button 
@@ -997,26 +1000,19 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
               }
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Completo do Paciente *</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Completo do Cliente *</label>
                 <input type="text" formControlName="nome" placeholder="Ex: Fernanda Alencar" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp com DDD (Login de Acesso) *</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp com DDD *</label>
                 <input type="text" appPhoneMask formControlName="telefoneWhatsApp" placeholder="(11) 98765-4321" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
-                <span class="text-[10px] text-slate-400 mt-0.5 block">Usado para o cliente entrar na plataforma</span>
+                <span class="text-[10px] text-slate-400 mt-0.5 block">WhatsApp com DDD para avisos do agendamento</span>
               </div>
 
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail (opcional)</label>
                 <input type="email" formControlName="email" placeholder="fernanda@exemplo.com" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">
-                  {{ clienteEmEdicao() ? 'Alterar Senha (opcional)' : 'Senha de Acesso (opcional - cliente cadastrará no primeiro acesso)' }}
-                </label>
-                <input type="password" formControlName="senha" placeholder="Mínimo 6 caracteres" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
               </div>
             </div>
 
@@ -1032,7 +1028,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                 type="submit" 
                 [disabled]="formCliente.invalid || salvando()" 
                 class="px-6 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 disabled:opacity-50 transition-colors shadow">
-                {{ salvando() ? 'Salvando...' : 'Salvar Paciente' }}
+                {{ salvando() ? 'Salvando...' : 'Salvar Cliente' }}
               </button>
             </div>
 
@@ -1437,10 +1433,8 @@ export class AdminGestaoComponent implements OnInit {
 
     this.formCliente = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(3)]],
-      login: [''],
       email: [''],
-      telefoneWhatsApp: ['', Validators.required],
-      senha: ['']
+      telefoneWhatsApp: ['', Validators.required]
     });
 
     this.formIdentidade = this.fb.group({
@@ -1722,7 +1716,7 @@ export class AdminGestaoComponent implements OnInit {
       this.procedimentosSelecionadosIds.set([]);
       this.formProfissional.reset({
         corIdentificacao: '#f43f5e',
-        senha: ''
+        senha: '123456'
       });
     }
     this.modalProfissionalAberto.set(true);
@@ -1759,8 +1753,10 @@ export class AdminGestaoComponent implements OnInit {
     }
 
     this.salvando.set(true);
+    const formVals = this.formProfissional.value;
     const dados = {
-      ...this.formProfissional.value,
+      ...formVals,
+      senha: (formVals.senha && formVals.senha.trim()) ? formVals.senha.trim() : (this.profissionalEmEdicao() ? undefined : '123456'),
       procedimentosIds: this.procedimentosSelecionadosIds()
     };
     const emEdicao = this.profissionalEmEdicao();
@@ -1805,14 +1801,11 @@ export class AdminGestaoComponent implements OnInit {
       this.formCliente.patchValue({
         nome: cli.nome,
         email: cli.email,
-        telefoneWhatsApp: cli.telefoneWhatsApp,
-        senha: ''
+        telefoneWhatsApp: cli.telefoneWhatsApp
       });
     } else {
       this.clienteEmEdicao.set(null);
-      this.formCliente.reset({
-        senha: ''
-      });
+      this.formCliente.reset();
     }
     this.modalClienteAberto.set(true);
   }
@@ -1844,12 +1837,12 @@ export class AdminGestaoComponent implements OnInit {
       next: () => {
         this.salvando.set(false);
         this.fecharModalCliente();
-        this.mensagemSucesso.set(`Paciente ${emEdicao ? 'atualizado' : 'cadastrado'} com sucesso!`);
+        this.mensagemSucesso.set(`Cliente ${emEdicao ? 'atualizado' : 'cadastrado'} com sucesso!`);
         this.carregarDados();
       },
       error: (err) => {
         this.salvando.set(false);
-        this.mensagemErro.set(err.error?.detail || err.error?.message || 'Erro ao salvar paciente.');
+        this.mensagemErro.set(err.error?.detail || err.error?.message || 'Erro ao salvar cliente.');
       }
     });
   }
@@ -1857,10 +1850,10 @@ export class AdminGestaoComponent implements OnInit {
   alternarStatusCliente(cli: Usuario): void {
     this.api.alternarStatusCliente(cli.id).subscribe({
       next: () => {
-        this.mensagemSucesso.set('Status do paciente alterado com sucesso!');
+        this.mensagemSucesso.set('Status do cliente alterado com sucesso!');
         this.carregarDados();
       },
-      error: () => this.mensagemErro.set('Erro ao alternar status do paciente.')
+      error: () => this.mensagemErro.set('Erro ao alternar status do cliente.')
     });
   }
 

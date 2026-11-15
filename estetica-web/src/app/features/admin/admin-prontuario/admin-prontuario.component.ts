@@ -137,7 +137,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
             <div class="py-12 text-center text-stone-400 text-xs animate-pulse">Carregando prontuário...</div>
           } @else if (historico().length === 0) {
             <div class="p-8 rounded-2xl bg-white border border-nude-200 text-center text-xs text-stone-400">
-              Nenhuma anotação ou atendimento anterior registrado para este paciente.
+              Nenhuma anotação ou atendimento anterior registrado para este cliente.
             </div>
           } @else {
             <div class="space-y-4">
@@ -177,7 +177,7 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
         </div>
       } @else {
         <div class="p-12 rounded-3xl bg-white border border-nude-200 text-center text-stone-500 text-xs">
-          Selecione um paciente na lista acima para visualizar seu prontuário e histórico clínico.
+          Selecione um cliente na lista acima para visualizar seu prontuário e histórico clínico.
         </div>
       }
 
@@ -253,7 +253,7 @@ export class AdminProntuarioComponent implements OnInit {
 
   salvarEntrada(): void {
     if (!this.clienteId) {
-      this.mensagemErro.set('Selecione um paciente cadastrado.');
+      this.mensagemErro.set('Selecione um cliente cadastrado.');
       return;
     }
     if (!this.notasAnamnese) {

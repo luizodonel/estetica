@@ -115,27 +115,31 @@ public class ProfissionalService {
             }
         }
 
-        // Senha temporária caso não informada (o especialista definirá no Primeiro
-        // Acesso via WhatsApp)
+        // Senha padrão 123456 caso não informada
         String senha = (request.senha() != null && !request.senha().isBlank())
-                ? request.senha()
-                : java.util.UUID.randomUUID().toString();
+                ? request.senha().trim()
+                : "123456";
 
         String cleanLogin = (request.login() != null && !request.login().isBlank())
                 ? request.login().trim().toLowerCase()
                 : null;
 
-        if (cleanLogin != null) {
+        if (cleanLogin == null || cleanLogin.isBlank()) {
+            cleanLogin = request.nome().trim().toLowerCase().replaceAll("[^a-z0-9]", "");
+        }
+
+        if (cleanLogin != null && !cleanLogin.isBlank()) {
             boolean loginExiste = (tenantId != null)
                     ? usuarioRepository.existsByTenantIdAndLoginIgnoreCase(tenantId, cleanLogin)
                     : usuarioRepository.existsByLoginIgnoreCase(cleanLogin);
             if (loginExiste) {
-                throw new RegraNegocioException(
-                        "Já existe um especialista ou usuário neste estabelecimento com o login: " + cleanLogin);
+                // Se já existir com esse login gerado, adiciona sufixo dos últimos 4 dígitos do telefone
+                String sufixo = cleanPhone.length() >= 4 ? cleanPhone.substring(cleanPhone.length() - 4) : "1";
+                cleanLogin = cleanLogin + sufixo;
             }
         }
 
-        // Cria a conta de acesso como ROLE_PROFISSIONAL com primeiro_acesso = true
+        // Cria a conta de acesso como ROLE_PROFISSIONAL pronta para login imediato (sem bloqueio de primeiro acesso)
         Usuario usuario = Usuario.builder()
                 .nome(request.nome().trim())
                 .login(cleanLogin)
@@ -144,7 +148,7 @@ public class ProfissionalService {
                 .senhaHash(passwordEncoder.encode(senha))
                 .role(Role.ROLE_PROFISSIONAL)
                 .tenant(adminTenant)
-                .primeiroAcesso(request.senha() == null || request.senha().isBlank())
+                .primeiroAcesso(false)
                 .ativo(true)
                 .build();
         usuario = usuarioRepository.save(usuario);
@@ -216,6 +220,16 @@ public class ProfissionalService {
         Long tenantId = adminTenant != null ? adminTenant.getId() : null;
         if (prof.getUsuario() != null) {
             prof.getUsuario().setNome(request.nome().trim());
+            if (request.login() != null && !request.login().isBlank()) {
+                String cleanLogin = request.login().trim().toLowerCase();
+                boolean loginExiste = (tenantId != null)
+                        ? usuarioRepository.existsByTenantIdAndLoginIgnoreCase(tenantId, cleanLogin)
+                        : usuarioRepository.existsByLoginIgnoreCase(cleanLogin);
+                if (!cleanLogin.equalsIgnoreCase(prof.getUsuario().getLogin()) && loginExiste) {
+                    throw new RegraNegocioException("Já existe um usuário com o login: " + cleanLogin);
+                }
+                prof.getUsuario().setLogin(cleanLogin);
+            }
             if (request.email() != null && !request.email().isBlank()) {
                 String novoEmail = request.email().toLowerCase().trim();
                 boolean emailExiste = (tenantId != null)

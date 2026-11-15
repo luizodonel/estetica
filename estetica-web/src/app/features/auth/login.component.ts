@@ -147,13 +147,13 @@ interface PixPendenteInfo {
         @if (modo() === 'login') {
           <form (ngSubmit)="entrar()" class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1">Usuário ou E-mail:</label>
+              <label class="block text-xs font-semibold text-stone-700 mb-1">Usuário, WhatsApp ou E-mail:</label>
               <input 
                 type="text" 
                 [(ngModel)]="loginIdentificador" 
                 name="loginIdentificador"
                 required
-                placeholder="Seu usuário de acesso ou e-mail" 
+                placeholder="Seu usuário, WhatsApp ou e-mail" 
                 class="w-full p-3 rounded-xl border border-nude-300 text-xs font-medium focus:ring-2 focus:ring-slate-900 focus:outline-none" />
               <span class="text-[11px] text-stone-400 mt-1 block">
                 Exclusivo para Administradores e Especialistas.

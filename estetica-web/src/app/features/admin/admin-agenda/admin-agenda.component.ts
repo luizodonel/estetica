@@ -96,7 +96,7 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
             📅
           </div>
           <p class="font-bold text-slate-800 text-lg">Nenhum atendimento agendado para esta data.</p>
-          <p class="text-xs text-slate-400 mt-1 max-w-sm mb-5">Selecione outro dia ou agende um paciente diretamente para este ou outro horário.</p>
+          <p class="text-xs text-slate-400 mt-1 max-w-sm mb-5">Selecione outro dia ou agende um cliente diretamente para este ou outro horário.</p>
           <a
             routerLink="/catalogo"
             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow transition-all cursor-pointer">

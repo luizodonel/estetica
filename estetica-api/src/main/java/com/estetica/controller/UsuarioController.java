@@ -77,18 +77,14 @@ public class UsuarioController {
             }
         }
 
-        String senha = (request.senha() != null && !request.senha().isBlank())
-                ? request.senha()
-                : java.util.UUID.randomUUID().toString();
-
         Usuario cliente = Usuario.builder()
                 .nome(request.nome().trim())
                 .email(email)
                 .telefoneWhatsApp(cleanPhone)
-                .senhaHash(passwordEncoder.encode(senha))
+                .senhaHash("SEM_LOGIN")
                 .role(Role.ROLE_CLIENTE)
                 .tenant(tenant)
-                .primeiroAcesso(request.senha() == null || request.senha().isBlank())
+                .primeiroAcesso(false)
                 .ativo(true)
                 .build();
 

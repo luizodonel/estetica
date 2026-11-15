@@ -820,7 +820,7 @@ export class AgendamentoWizardComponent implements OnInit {
       },
       error: (err) => {
         this.salvandoNovoCliente.set(false);
-        const msg = err?.error?.message || err?.error?.detail || 'Erro ao cadastrar paciente.';
+        const msg = err?.error?.message || err?.error?.detail || 'Erro ao cadastrar cliente.';
         this.erroNovoCliente.set(msg);
       }
     });

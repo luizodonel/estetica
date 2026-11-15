@@ -16,6 +16,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findFirstByTenantIdAndLoginIgnoreCase(Long tenantId, String login);
     boolean existsByTenantIdAndLoginIgnoreCase(Long tenantId, String login);
 
+    List<Usuario> findAllByNomeIgnoreCase(String nome);
+    List<Usuario> findAllByRole(Role role);
+
     Optional<Usuario> findByEmail(String email);
     List<Usuario> findAllByEmailIgnoreCase(String email);
     boolean existsByEmail(String email);

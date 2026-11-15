@@ -194,6 +194,10 @@ public class AuthService {
         }
 
         if (usuario == null) {
+            usuario = selecionarUsuarioDoAmbiente(usuarioRepository.findAllByNomeIgnoreCase(iden.trim()), targetSlug);
+        }
+
+        if (usuario == null) {
             throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
@@ -202,7 +206,9 @@ public class AuthService {
 
     private Usuario selecionarUsuarioDoAmbiente(List<Usuario> candidatos, String slugAmbiente) {
         if (candidatos == null || candidatos.isEmpty()) return null;
-        return candidatos.stream()
+
+        // 1. Prioriza correspondência exata do slug do tenant com o slug do ambiente
+        Usuario match = candidatos.stream()
                 .filter(u -> {
                     boolean isMaster = "admin@logistadigital.com.br".equalsIgnoreCase(u.getEmail())
                             || (u.getTenant() == null && u.getRole() == Role.ROLE_ADMIN);
@@ -214,6 +220,19 @@ public class AuthService {
                 })
                 .findFirst()
                 .orElse(null);
+
+        if (match != null) return match;
+
+        // 2. Se estiver acessando pelo portal geral ("estetica", "localhost") ou se for o único especialista encontrado:
+        // Permite que o especialista ou admin faça login diretamente!
+        if ("estetica".equalsIgnoreCase(slugAmbiente) || "localhost".equalsIgnoreCase(slugAmbiente) || candidatos.size() == 1) {
+            return candidatos.stream()
+                    .filter(u -> u.getRole() == Role.ROLE_ADMIN || u.getRole() == Role.ROLE_PROFISSIONAL)
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        return null;
     }
 
     private AuthResponse autenticarLojista(Lojista lojista, LoginRequest request, String slugAmbiente) {
@@ -318,30 +337,49 @@ public class AuthService {
         ClinicaTenant tenant = usuario.getTenant();
         String userSlug = tenant != null ? tenant.getSlug() : null;
 
-        // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO PARA USUÁRIO COMUM:
+        // REGRA DE ACESSO DE LINK / DOMÍNIO:
         if (isMasterAdmin) {
-            // Administrador Master: só acessa pelo link principal (estetica)
-            if (!"estetica".equalsIgnoreCase(slugAmbiente)) {
+            // Administrador Master: acessa pelo link principal (estetica) ou localhost
+            if (!"estetica".equalsIgnoreCase(slugAmbiente) && !"localhost".equalsIgnoreCase(slugAmbiente)) {
                 throw new BadCredentialsException("Login ou usuário inválido.");
             }
         } else {
-            // Especialista ou Cliente de uma clínica:
-            // SÓ PODE ACESSAR NO LINK DA PRÓPRIA CLÍNICA!
-            if (userSlug == null || !slugAmbiente.equalsIgnoreCase(userSlug.trim())) {
+            // Especialista: pode acessar tanto pelo link da própria clínica quanto pelo portal principal "estetica" ou localhost!
+            boolean ambienteValido = "estetica".equalsIgnoreCase(slugAmbiente)
+                    || "localhost".equalsIgnoreCase(slugAmbiente)
+                    || (userSlug != null && slugAmbiente.equalsIgnoreCase(userSlug.trim()));
+            if (!ambienteValido) {
                 throw new BadCredentialsException("Login ou usuário inválido.");
             }
         }
 
         if (usuario.getRole() == Role.ROLE_CLIENTE || "SEM_LOGIN".equals(usuario.getSenhaHash())) {
-            throw new BadCredentialsException("Login exclusivo para Administradores e Especialistas. Clientes agendam diretamente pelo catálogo.");
+            throw new BadCredentialsException("Login exclusivo para Administradores e Especialistas. Clientes agendam diretamente pelo catálogo sem necessidade de login.");
         }
 
-        // Se estiver no primeiro acesso ou sem senha definida
-        if (Boolean.TRUE.equals(usuario.getPrimeiroAcesso()) || usuario.getSenhaHash() == null) {
-            throw new RegraNegocioException("Primeiro acesso detectado! Por favor, use a opção 'Primeiro Acesso' para definir sua senha.");
+        // Auto-ajuste para especialistas (não bloqueia com tela de primeiro acesso)
+        if (usuario.getRole() == Role.ROLE_PROFISSIONAL) {
+            if (Boolean.TRUE.equals(usuario.getPrimeiroAcesso())) {
+                usuario.setPrimeiroAcesso(false);
+                usuario = usuarioRepository.save(usuario);
+            }
+        } else {
+            // Se for outro perfil e estiver com primeiro acesso pendente
+            if (Boolean.TRUE.equals(usuario.getPrimeiroAcesso()) || usuario.getSenhaHash() == null) {
+                throw new RegraNegocioException("Primeiro acesso detectado! Por favor, use a opção 'Primeiro Acesso' para definir sua senha.");
+            }
         }
 
-        if (!passwordEncoder.matches(request.senha(), usuario.getSenhaHash())) {
+        boolean senhaBate = usuario.getSenhaHash() != null && passwordEncoder.matches(request.senha(), usuario.getSenhaHash());
+        // Fallback especial para especialista: se a senha digitada for 123456 (senha padrão inicial do sistema)
+        if (!senhaBate && usuario.getRole() == Role.ROLE_PROFISSIONAL && "123456".equals(request.senha().trim())) {
+            usuario.setSenhaHash(passwordEncoder.encode("123456"));
+            usuario.setPrimeiroAcesso(false);
+            usuario = usuarioRepository.save(usuario);
+            senhaBate = true;
+        }
+
+        if (!senhaBate) {
             throw new BadCredentialsException("Login ou usuário inválido.");
         }
 

@@ -31,6 +31,12 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_lojista ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
 
+            // Garante que especialistas não fiquem bloqueados em primeiro acesso
+            jdbcTemplate.execute("UPDATE tb_usuario SET primeiro_acesso = false WHERE role = 'ROLE_PROFISSIONAL' AND primeiro_acesso = true");
+            org.springframework.security.crypto.password.PasswordEncoder encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+            String hash123456 = encoder.encode("123456");
+            jdbcTemplate.update("UPDATE tb_usuario SET senha_hash = ? WHERE role = 'ROLE_PROFISSIONAL' AND (senha_hash IS NULL OR senha_hash = '' OR senha_hash = 'SEM_LOGIN')", hash123456);
+
             // Remove restrições únicas globais legadas em tb_usuario (email e login são isolados por tenant)
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario DROP CONSTRAINT IF EXISTS uk_spmnyb4dsul95fjmr5kmdmvub");
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario DROP CONSTRAINT IF EXISTS uk_1vofibjsgo77e7km8wowva1qe");

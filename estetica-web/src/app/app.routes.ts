@@ -13,7 +13,6 @@ export const routes: Routes = [
   },
   {
     path: 'agendar',
-    canActivate: [adminGuard],
     loadComponent: () => import('./features/agendamento-wizard/agendamento-wizard.component').then(m => m.AgendamentoWizardComponent)
   },
   {
