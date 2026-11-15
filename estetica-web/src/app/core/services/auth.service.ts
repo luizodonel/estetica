@@ -58,6 +58,10 @@ export class AuthService {
     );
   }
 
+  alterarSenha(novaSenha: string): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.apiUrl}/alterar-senha`, { novaSenha });
+  }
+
   primeiroAcesso(dados: { telefoneWhatsApp: string; novaSenha: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/primeiro-acesso`, dados).pipe(
       tap(res => this.handleAuthSuccess(res))

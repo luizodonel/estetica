@@ -42,7 +42,7 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, length = 25)
     private Role role;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tenant_id")
     private ClinicaTenant tenant;
 
@@ -73,7 +73,16 @@ public class Usuario implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.email;
+        if (this.email != null && !this.email.isBlank()) {
+            return this.email;
+        }
+        if (this.login != null && !this.login.isBlank()) {
+            return this.login;
+        }
+        if (this.telefoneWhatsApp != null && !this.telefoneWhatsApp.isBlank()) {
+            return this.telefoneWhatsApp;
+        }
+        return String.valueOf(this.id);
     }
 
     @Override

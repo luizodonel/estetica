@@ -142,7 +142,16 @@ public class Lojista implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.email;
+        if (this.email != null && !this.email.isBlank()) {
+            return this.email;
+        }
+        if (this.login != null && !this.login.isBlank()) {
+            return this.login;
+        }
+        if (this.telefoneWhatsApp != null && !this.telefoneWhatsApp.isBlank()) {
+            return this.telefoneWhatsApp;
+        }
+        return String.valueOf(this.id);
     }
 
     @Override

@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { TenantService } from '../core/services/tenant.service';
@@ -8,7 +9,7 @@ import { SetorService } from '../core/services/setor.service';
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40 transition-all shadow-sm">
       
@@ -78,11 +79,21 @@ import { SetorService } from '../core/services/setor.service';
                 </span>
               </div>
 
+              <!-- Botão Alterar Senha -->
+              <button 
+                type="button"
+                (click)="abrirModalSenha()"
+                title="Alterar Minha Senha"
+                class="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 rounded-xl transition-colors ml-0.5 text-xs font-semibold flex items-center gap-1">
+                <span>🔑</span>
+                <span class="hidden xl:inline text-[11px]">Senha</span>
+              </button>
+
               <!-- Botão Sair -->
               <button 
                 (click)="logout()"
                 title="Sair do Sistema"
-                class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-xl transition-colors ml-1">
+                class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-xl transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                 </svg>
@@ -186,8 +197,9 @@ import { SetorService } from '../core/services/setor.service';
             <!-- Botão de Acesso Rápido ao Catálogo e Agendamento -->
             <a 
               routerLink="/catalogo" 
-              class="text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl shrink-0 hidden sm:flex items-center gap-1.5 transition-all shadow-sm">
-              <span>Agendar Horários</span>
+              class="text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl shrink-0 hidden sm:flex items-center gap-1.5 transition-all shadow-sm whitespace-nowrap">
+              <span class="hidden lg:inline">Agendar Horários</span>
+              <span class="lg:hidden">Agendar</span>
               <span>↗</span>
             </a>
 
@@ -220,14 +232,85 @@ import { SetorService } from '../core/services/setor.service';
             <a routerLink="/admin/relatorios" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
               <span>📈</span> Relatórios
             </a>
-            <a routerLink="/admin/gestao" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
-              <span>⚙️</span> Cadastros
-            </a>
             @if (authService.isAdmin()) {
+              <a routerLink="/admin/gestao" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
+                <span>⚙️</span> Cadastros
+              </a>
               <a routerLink="/admin/assinatura" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
                 <span>💳</span> Assinatura
               </a>
             }
+            <button type="button" (click)="menuMobileAberto.set(false); abrirModalSenha()" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5 text-left">
+              <span>🔑</span> Alterar Senha
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Modal Alterar Senha do Especialista / Administrador -->
+      @if (modalSenhaAberto()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Segurança da Conta</span>
+                <h3 class="font-bold text-lg text-slate-900">Alterar Minha Senha</h3>
+              </div>
+              <button type="button" (click)="modalSenhaAberto.set(false)" class="text-slate-400 hover:text-slate-700 p-1.5 font-bold">✕</button>
+            </div>
+
+            @if (erroSenha()) {
+              <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {{ erroSenha() }}
+              </div>
+            }
+
+            @if (sucessoSenha()) {
+              <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                {{ sucessoSenha() }}
+              </div>
+            }
+
+            <form (ngSubmit)="salvarNovaSenha()" class="space-y-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nova Senha (mínimo 6 caracteres) *</label>
+                <input
+                  type="password"
+                  [(ngModel)]="novaSenhaInput"
+                  name="novaSenhaInput"
+                  required
+                  minlength="6"
+                  placeholder="Digite sua nova senha"
+                  class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Confirmar Nova Senha *</label>
+                <input
+                  type="password"
+                  [(ngModel)]="confirmarSenhaInput"
+                  name="confirmarSenhaInput"
+                  required
+                  minlength="6"
+                  placeholder="Repita a nova senha"
+                  class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 focus:outline-none bg-slate-50" />
+              </div>
+
+              <div class="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  (click)="modalSenhaAberto.set(false)"
+                  class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50">
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="salvandoSenha() || !novaSenhaInput || novaSenhaInput.length < 6"
+                  class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm disabled:opacity-50">
+                  {{ salvandoSenha() ? 'Salvando...' : 'Salvar Senha' }}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       }
@@ -241,6 +324,47 @@ export class NavbarComponent {
   private router = inject(Router);
 
   menuMobileAberto = signal<boolean>(false);
+  modalSenhaAberto = signal<boolean>(false);
+  salvandoSenha = signal<boolean>(false);
+  erroSenha = signal<string | null>(null);
+  sucessoSenha = signal<string | null>(null);
+  novaSenhaInput = '';
+  confirmarSenhaInput = '';
+
+  abrirModalSenha(): void {
+    this.novaSenhaInput = '';
+    this.confirmarSenhaInput = '';
+    this.erroSenha.set(null);
+    this.sucessoSenha.set(null);
+    this.modalSenhaAberto.set(true);
+  }
+
+  salvarNovaSenha(): void {
+    if (!this.novaSenhaInput || this.novaSenhaInput.trim().length < 6) {
+      this.erroSenha.set('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    if (this.novaSenhaInput !== this.confirmarSenhaInput) {
+      this.erroSenha.set('As senhas não coincidem.');
+      return;
+    }
+
+    this.salvandoSenha.set(true);
+    this.erroSenha.set(null);
+    this.authService.alterarSenha(this.novaSenhaInput.trim()).subscribe({
+      next: () => {
+        this.salvandoSenha.set(false);
+        this.sucessoSenha.set('✓ Senha atualizada com sucesso!');
+        setTimeout(() => {
+          this.modalSenhaAberto.set(false);
+        }, 1000);
+      },
+      error: (err) => {
+        this.salvandoSenha.set(false);
+        this.erroSenha.set(err?.error?.detail || err?.error?.message || 'Erro ao atualizar senha.');
+      }
+    });
+  }
 
   logout(): void {
     this.authService.logout();

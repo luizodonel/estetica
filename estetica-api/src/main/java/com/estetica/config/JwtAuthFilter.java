@@ -41,11 +41,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             final io.jsonwebtoken.Claims claims = jwtService.extrairTodosClaims(jwt);
             final String userSubject = claims.getSubject();
+            final Number idClaim = claims.get("id", Number.class);
+            final String tipoClaim = claims.get("tipo", String.class);
 
-            if (userSubject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if ((userSubject != null || idClaim != null) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = null;
-                Number idClaim = claims.get("id", Number.class);
-                String tipoClaim = claims.get("tipo", String.class);
 
                 if (idClaim != null && "LOJISTA".equals(tipoClaim)) {
                     userDetails = lojistaRepository.findById(idClaim.longValue()).map(l -> (UserDetails) l).orElse(null);
@@ -59,7 +59,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     if (idClaim != null && slugClaim == null) {
                         userDetails = usuarioRepository.findById(idClaim.longValue()).map(u -> (UserDetails) u).orElse(null);
                     }
-                    if (userDetails == null) {
+                    if (userDetails == null && userSubject != null) {
                         userDetails = usuarioRepository.findAllByEmailIgnoreCase(userSubject).stream().findFirst()
                                 .or(() -> usuarioRepository.findAllByLoginIgnoreCase(userSubject).stream().findFirst())
                                 .or(() -> usuarioRepository.findAllByTelefoneWhatsApp(userSubject).stream().findFirst())
@@ -68,7 +68,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     }
                 }
 
-                if (userDetails == null && !"USUARIO".equals(tipoClaim)) {
+                if (userDetails == null && !"USUARIO".equals(tipoClaim) && userSubject != null) {
                     userDetails = lojistaRepository.findByEmail(userSubject)
                             .or(() -> lojistaRepository.findByLoginIgnoreCase(userSubject))
                             .or(() -> lojistaRepository.findByTelefoneWhatsApp(userSubject))

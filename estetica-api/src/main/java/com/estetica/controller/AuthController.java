@@ -77,5 +77,17 @@ public class AuthController {
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+
+    @PutMapping("/alterar-senha")
+    @Operation(summary = "Permite que o especialista ou administrador logado altere sua própria senha de acesso")
+    public ResponseEntity<java.util.Map<String, String>> alterarSenha(
+            @AuthenticationPrincipal Object principal,
+            @Valid @RequestBody AlterarSenhaRequest request) {
+        if (principal == null || "anonymousUser".equals(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        authService.alterarSenhaAutenticado(principal, request.novaSenha());
+        return ResponseEntity.ok(java.util.Map.of("message", "Senha atualizada com sucesso!"));
+    }
 }
 

@@ -357,17 +357,10 @@ public class AuthService {
             throw new BadCredentialsException("Login exclusivo para Administradores e Especialistas. Clientes agendam diretamente pelo catálogo sem necessidade de login.");
         }
 
-        // Auto-ajuste para especialistas (não bloqueia com tela de primeiro acesso)
-        if (usuario.getRole() == Role.ROLE_PROFISSIONAL) {
-            if (Boolean.TRUE.equals(usuario.getPrimeiroAcesso())) {
-                usuario.setPrimeiroAcesso(false);
-                usuario = usuarioRepository.save(usuario);
-            }
-        } else {
-            // Se for outro perfil e estiver com primeiro acesso pendente
-            if (Boolean.TRUE.equals(usuario.getPrimeiroAcesso()) || usuario.getSenhaHash() == null) {
-                throw new RegraNegocioException("Primeiro acesso detectado! Por favor, use a opção 'Primeiro Acesso' para definir sua senha.");
-            }
+        // Qualquer especialista ou administrador faz login direto com a senha cadastrada
+        if (Boolean.TRUE.equals(usuario.getPrimeiroAcesso())) {
+            usuario.setPrimeiroAcesso(false);
+            usuario = usuarioRepository.save(usuario);
         }
 
         boolean senhaBate = usuario.getSenhaHash() != null && passwordEncoder.matches(request.senha(), usuario.getSenhaHash());
@@ -529,6 +522,33 @@ public class AuthService {
                 t != null ? t.getLogoUrl() : null,
                 t != null && t.getSetor() != null ? t.getSetor().name() : null
         );
+    }
+
+    @Transactional
+    public void alterarSenhaAutenticado(Object principal, String novaSenha) {
+        if (novaSenha == null || novaSenha.trim().length() < 6) {
+            throw new RegraNegocioException("A nova senha deve ter no mínimo 6 caracteres.");
+        }
+        String hash = passwordEncoder.encode(novaSenha.trim());
+
+        if (principal instanceof Usuario usuario) {
+            Usuario u = usuarioRepository.findById(usuario.getId())
+                    .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado."));
+            u.setSenhaHash(hash);
+            u.setPrimeiroAcesso(false);
+            usuarioRepository.save(u);
+            return;
+        }
+
+        if (principal instanceof Lojista lojista) {
+            Lojista l = lojistaRepository.findById(lojista.getId())
+                    .orElseThrow(() -> new RegraNegocioException("Lojista não encontrado."));
+            l.setSenhaHash(hash);
+            lojistaRepository.save(l);
+            return;
+        }
+
+        throw new BadCredentialsException("Sessão inválida para alteração de senha.");
     }
 }
 

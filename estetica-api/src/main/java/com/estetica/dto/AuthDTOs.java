@@ -85,6 +85,12 @@ public class AuthDTOs {
         String senha
     ) {}
 
+    public record AlterarSenhaRequest(
+        @NotBlank(message = "A nova senha é obrigatória")
+        @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
+        String novaSenha
+    ) {}
+
     public record UsuarioDTO(
         Long id,
         String nome,

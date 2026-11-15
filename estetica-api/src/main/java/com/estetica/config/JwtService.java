@@ -44,9 +44,14 @@ public class JwtService {
             extraClaims.put("slug", usuario.getTenant().getSlug());
         }
 
+        String subject = usuario.getUsername();
+        if (subject == null || subject.isBlank()) {
+            subject = String.valueOf(usuario.getId());
+        }
+
         return Jwts.builder()
                 .claims(extraClaims)
-                .subject(usuario.getUsername())
+                .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(obterChaveAssinatura())
@@ -62,9 +67,14 @@ public class JwtService {
         extraClaims.put("slug", lojista.getSlug());
         extraClaims.put("tipo", "LOJISTA");
 
+        String subject = lojista.getUsername();
+        if (subject == null || subject.isBlank()) {
+            subject = String.valueOf(lojista.getId());
+        }
+
         return Jwts.builder()
                 .claims(extraClaims)
-                .subject(lojista.getUsername())
+                .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(obterChaveAssinatura())
@@ -72,8 +82,25 @@ public class JwtService {
     }
 
     public boolean isTokenValido(String token, UserDetails userDetails) {
+        if (isTokenExpirado(token)) {
+            return false;
+        }
         final String username = extrairUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpirado(token);
+        if (username != null && userDetails.getUsername() != null && username.equals(userDetails.getUsername())) {
+            return true;
+        }
+        // Validação por ID do claim quando o usuário foi carregado diretamente pelo ID do banco
+        Claims claims = extrairTodosClaims(token);
+        Number idClaim = claims.get("id", Number.class);
+        if (idClaim != null) {
+            if (userDetails instanceof Usuario u && idClaim.longValue() == u.getId()) {
+                return true;
+            }
+            if (userDetails instanceof com.estetica.model.Lojista l && idClaim.longValue() == l.getId()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isTokenExpirado(String token) {

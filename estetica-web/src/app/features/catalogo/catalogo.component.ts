@@ -43,14 +43,14 @@ interface DiaCarrossel {
       }
 
       <!-- ========================================================================= -->
-      <!-- CORPO PRINCIPAL RESPONSIVO (DESKTOP: 3 COLUNAS, TABLET: 2 COLUNAS, MOBILE: 1 COLUNA) -->
+      <!-- CORPO PRINCIPAL RESPONSIVO (DESKTOP XL: 3 COLUNAS, TABLET MD/LG: 2 COLUNAS, MOBILE: 1 COLUNA) -->
       <!-- ========================================================================= -->
-      <div class="flex-1 flex flex-col lg:flex-row w-full max-w-[1600px] mx-auto min-h-screen">
+      <div class="flex-1 flex flex-col md:flex-row w-full max-w-[1600px] mx-auto min-h-screen">
         
         <!-- --------------------------------------------------------------------- -->
-        <!-- COLUNA 1: SIDEBAR LATERAL ESQUERDA (DESKTOP >= 1024px) -->
+        <!-- COLUNA 1: SIDEBAR LATERAL ESQUERDA (DESKTOP >= 1280px) -->
         <!-- --------------------------------------------------------------------- -->
-        <aside class="hidden lg:flex flex-col w-72 xl:w-80 bg-white border-r border-slate-200 p-6 shrink-0 sticky top-0 h-screen overflow-y-auto">
+        <aside class="hidden xl:flex flex-col w-72 2xl:w-80 bg-white border-r border-slate-200 p-6 shrink-0 sticky top-0 h-screen overflow-y-auto">
           
           <!-- Logo & Nome da Empresa -->
           <div class="flex flex-col items-center text-center pb-6 border-b border-slate-100">
@@ -134,11 +134,11 @@ interface DiaCarrossel {
         <!-- --------------------------------------------------------------------- -->
         <!-- COLUNA 2: CONTEÚDO CENTRAL (CATÁLOGO DE SERVIÇOS) -->
         <!-- --------------------------------------------------------------------- -->
-        <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main class="flex-1 min-w-0 p-4 sm:p-6 xl:p-8 overflow-y-auto">
           
-          <!-- HEADER COMPACTO PARA TABLET & MOBILE (< 1024px) -->
-          <div class="lg:hidden mb-5 bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
+          <!-- HEADER COMPACTO PARA TABLET & MOBILE (< 1280px) -->
+          <div class="xl:hidden mb-5 bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
               <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center shrink-0 overflow-hidden">
                 @if (tenantService.logoUrl()) {
                   <img [src]="tenantService.logoUrl()" [alt]="tenantService.nomeEmpresa()" class="w-full h-full object-contain" />
@@ -146,8 +146,8 @@ interface DiaCarrossel {
                   <div class="text-2xl text-rose-500">🌸</div>
                 }
               </div>
-              <div>
-                <h1 class="font-serif text-base sm:text-lg font-bold text-stone-900 leading-tight">
+              <div class="min-w-0">
+                <h1 class="font-serif text-base sm:text-lg font-bold text-stone-900 leading-tight truncate">
                   {{ tenantService.nomeEmpresa() }}
                 </h1>
                 <p class="text-[11px] text-stone-500 truncate max-w-[200px] sm:max-w-xs mt-0.5">
@@ -173,8 +173,8 @@ interface DiaCarrossel {
               class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent shadow-sm" />
           </div>
 
-          <!-- PÍLULAS DE CATEGORIAS (TABLET & MOBILE) -->
-          <div class="lg:hidden flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
+          <!-- PÍLULAS DE CATEGORIAS (TABLET & MOBILE < 1280px) -->
+          <div class="xl:hidden flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
             <button
               type="button"
               (click)="filtrarCategoria(null)"
@@ -215,14 +215,14 @@ interface DiaCarrossel {
             </div>
           } @else {
             
-            <!-- Grid Responsivo: Lista Horizontal no Desktop e Grid no Tablet -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-1 gap-4">
+            <!-- Grid Responsivo: Lista Horizontal em todas as telas para máxima legibilidade -->
+            <div class="grid grid-cols-1 gap-4">
               @for (proc of procedimentosFiltrados(); track proc.id) {
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center group">
                   
                   <!-- Foto e Textos -->
-                  <div class="flex items-start sm:items-center gap-4 flex-1 min-w-0">
-                    <div class="w-24 sm:w-32 h-24 sm:h-28 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100 relative">
+                  <div class="flex items-start sm:items-center gap-3.5 sm:gap-4 flex-1 min-w-0 w-full">
+                    <div class="w-20 sm:w-24 xl:w-28 h-20 sm:h-24 xl:h-28 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100 relative">
                       <img
                         [src]="formatarUrl(proc.imagemUrl) || 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=600'"
                         [alt]="proc.titulo"
@@ -230,18 +230,18 @@ interface DiaCarrossel {
                     </div>
 
                     <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[10px] font-semibold text-stone-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                        <span class="text-[10px] font-semibold text-stone-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
                           ⏱️ {{ proc.duracaoMinutos }} min
                         </span>
                         @if (proc.categoriaNome) {
-                          <span class="text-[10px] font-medium text-stone-400">
+                          <span class="text-[10px] font-medium text-stone-400 truncate">
                             • {{ proc.categoriaNome }}
                           </span>
                         }
                       </div>
 
-                      <h3 class="font-serif font-bold text-sm sm:text-base text-stone-900 group-hover:text-rose-600 transition-colors leading-snug">
+                      <h3 class="font-serif font-bold text-sm sm:text-base text-stone-900 group-hover:text-rose-600 transition-colors leading-snug break-words">
                         {{ proc.titulo }}
                       </h3>
 
@@ -249,7 +249,7 @@ interface DiaCarrossel {
                         {{ proc.descricao || 'Serviço especializado com profissionais certificados e produtos de primeira linha.' }}
                       </p>
 
-                      <div class="mt-2 sm:hidden flex items-center justify-between">
+                      <div class="mt-2.5 sm:hidden flex items-center justify-between gap-2">
                         <span class="text-sm font-bold text-stone-900">
                           {{ proc.preco | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
                         </span>
@@ -260,7 +260,7 @@ interface DiaCarrossel {
                           [class.text-white]="isServicoSelecionado(proc.id)"
                           [class.bg-slate-100]="!isServicoSelecionado(proc.id)"
                           [class.text-stone-800]="!isServicoSelecionado(proc.id)"
-                          class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm">
+                          class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm shrink-0">
                           {{ isServicoSelecionado(proc.id) ? '✓ Adicionado' : '+ Adicionar' }}
                         </button>
                       </div>
@@ -269,7 +269,7 @@ interface DiaCarrossel {
 
                   <!-- Preço e Botão Adicionar (Desktop / Tablet) -->
                   <div class="hidden sm:flex flex-col items-end gap-2 shrink-0 pl-2">
-                    <span class="font-serif font-bold text-base sm:text-lg text-stone-900">
+                    <span class="font-serif font-bold text-base lg:text-lg text-stone-900 whitespace-nowrap">
                       {{ proc.preco | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
                     </span>
 
@@ -281,7 +281,7 @@ interface DiaCarrossel {
                       [class.bg-slate-100]="!isServicoSelecionado(proc.id)"
                       [class.hover:bg-slate-200]="!isServicoSelecionado(proc.id)"
                       [class.text-stone-800]="!isServicoSelecionado(proc.id)"
-                      class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                      class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap">
                       @if (isServicoSelecionado(proc.id)) {
                         <span>✓ Adicionado</span>
                       } @else {
@@ -300,7 +300,7 @@ interface DiaCarrossel {
         <!-- --------------------------------------------------------------------- -->
         <!-- COLUNA 3: PAINEL "SEU AGENDAMENTO" (DESKTOP & TABLET >= 768px) -->
         <!-- --------------------------------------------------------------------- -->
-        <aside class="hidden md:flex flex-col w-84 xl:w-96 bg-white border-l border-slate-200 p-6 shrink-0 sticky top-0 h-screen overflow-y-auto">
+        <aside class="hidden md:flex flex-col w-80 lg:w-[340px] xl:w-96 bg-white border-l border-slate-200 p-5 lg:p-6 shrink-0 sticky top-0 h-screen overflow-y-auto">
           <ng-container *ngTemplateOutlet="painelAgendamentoConteudo"></ng-container>
         </aside>
 

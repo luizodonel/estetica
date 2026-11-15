@@ -5,7 +5,6 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { SetorService } from '../../core/services/setor.service';
-import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive';
 
 interface PixPendenteInfo {
   paymentId?: string;
@@ -18,7 +17,7 @@ interface PixPendenteInfo {
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PhoneMaskDirective],
+  imports: [CommonModule, FormsModule, RouterModule],
   template: `
     <div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div class="max-w-md w-full bg-white rounded-3xl p-8 border border-nude-200 shadow-xl shadow-nude-200/50">
@@ -30,37 +29,11 @@ interface PixPendenteInfo {
             </svg>
           </div>
           <h2 class="font-sans text-2xl font-extrabold text-slate-900 tracking-tight">
-            {{ modo() === 'login' ? 'Acesso da Equipe' : 'Primeiro Acesso do Especialista' }}
+            Acesso da Equipe
           </h2>
           <p class="text-xs text-slate-500 mt-1">
-            {{ modo() === 'login' 
-              ? 'Área restrita para Administradores e Especialistas.' 
-              : 'Defina sua senha de acesso com seu WhatsApp cadastrado pela gestão.' }}
+            Área restrita para Administradores e Especialistas.
           </p>
-        </div>
-
-        <!-- Alternador entre Login e Primeiro Acesso -->
-        <div class="grid grid-cols-2 p-1 bg-stone-100 rounded-2xl mb-6 text-xs font-semibold">
-          <button
-            type="button"
-            (click)="setModo('login')"
-            [class.bg-white]="modo() === 'login'"
-            [class.text-stone-900]="modo() === 'login'"
-            [class.shadow-sm]="modo() === 'login'"
-            [class.text-stone-500]="modo() !== 'login'"
-            class="py-2.5 rounded-xl transition-all">
-            Já Tenho Senha
-          </button>
-          <button
-            type="button"
-            (click)="setModo('primeiro-acesso')"
-            [class.bg-white]="modo() === 'primeiro-acesso'"
-            [class.text-stone-900]="modo() === 'primeiro-acesso'"
-            [class.shadow-sm]="modo() === 'primeiro-acesso'"
-            [class.text-stone-500]="modo() !== 'primeiro-acesso'"
-            class="py-2.5 rounded-xl transition-all">
-            Primeiro Acesso
-          </button>
         </div>
 
         <!-- Mensagens de Feedback -->
@@ -143,99 +116,40 @@ interface PixPendenteInfo {
           </div>
         }
 
-        <!-- ================= FORMULÁRIO 1: LOGIN TRADICIONAL ================= -->
-        @if (modo() === 'login') {
-          <form (ngSubmit)="entrar()" class="space-y-4">
-            <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1">Usuário, WhatsApp ou E-mail:</label>
-              <input 
-                type="text" 
-                [(ngModel)]="loginIdentificador" 
-                name="loginIdentificador"
-                required
-                placeholder="Seu usuário, WhatsApp ou e-mail" 
-                class="w-full p-3 rounded-xl border border-nude-300 text-xs font-medium focus:ring-2 focus:ring-slate-900 focus:outline-none" />
-              <span class="text-[11px] text-stone-400 mt-1 block">
-                Exclusivo para Administradores e Especialistas.
-              </span>
-            </div>
+        <!-- ================= FORMULÁRIO DE LOGIN ================= -->
+        <form (ngSubmit)="entrar()" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">Usuário, WhatsApp ou E-mail:</label>
+            <input 
+              type="text" 
+              [(ngModel)]="loginIdentificador" 
+              name="loginIdentificador"
+              required
+              placeholder="Seu usuário, WhatsApp ou e-mail" 
+              class="w-full p-3 rounded-xl border border-nude-300 text-xs font-medium focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+            <span class="text-[11px] text-stone-400 mt-1 block">
+              Exclusivo para Administradores e Especialistas.
+            </span>
+          </div>
 
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="block text-xs font-semibold text-stone-700">Sua Senha:</label>
-                <button type="button" (click)="setModo('primeiro-acesso')" class="text-[11px] text-rose-600 font-semibold hover:underline">
-                  Primeiro acesso?
-                </button>
-              </div>
-              <input 
-                type="password" 
-                [(ngModel)]="senha" 
-                name="senha"
-                required
-                placeholder="••••••••" 
-                class="w-full p-3 rounded-xl border border-nude-300 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none" />
-            </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">Sua Senha:</label>
+            <input 
+              type="password" 
+              [(ngModel)]="senha" 
+              name="senha"
+              required
+              placeholder="••••••••" 
+              class="w-full p-3 rounded-xl border border-nude-300 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none" />
+          </div>
 
-            <button 
-              type="submit" 
-              [disabled]="carregando() || !loginIdentificador || !senha"
-              class="w-full py-3 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs transition-all shadow-md disabled:opacity-50 mt-2">
-              {{ carregando() ? 'Entrando...' : 'Entrar no Sistema' }}
-            </button>
-          </form>
-        }
-
-        <!-- ================= FORMULÁRIO 2: PRIMEIRO ACESSO ================= -->
-        @if (modo() === 'primeiro-acesso') {
-          <form (ngSubmit)="confirmarPrimeiroAcesso()" class="space-y-4">
-            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
-              💡 <strong>Já possui cadastro?</strong> Se o administrador cadastrou você como especialista ou cliente, informe seu WhatsApp abaixo para definir sua senha de acesso.
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1">Seu WhatsApp Cadastrado:</label>
-              <input 
-                type="text" 
-                appPhoneMask
-                [(ngModel)]="telefonePrimeiroAcesso" 
-                name="telefonePrimeiroAcesso"
-                required
-                placeholder="(61) 98226-1155 ou 61982261155" 
-                class="w-full p-3 rounded-xl border border-nude-300 text-xs font-medium focus:ring-2 focus:ring-rose-400 focus:outline-none" />
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1">Crie sua Senha de Acesso (Mínimo 6 dígitos):</label>
-              <input 
-                type="password" 
-                [(ngModel)]="novaSenha" 
-                name="novaSenha"
-                required
-                minlength="6"
-                placeholder="Defina uma senha segura" 
-                class="w-full p-3 rounded-xl border border-nude-300 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none" />
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1">Confirme sua Senha:</label>
-              <input 
-                type="password" 
-                [(ngModel)]="confirmarSenha" 
-                name="confirmarSenha"
-                required
-                minlength="6"
-                placeholder="Repita sua senha" 
-                class="w-full p-3 rounded-xl border border-nude-300 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none" />
-            </div>
-
-            <button 
-              type="submit" 
-              [disabled]="carregando() || !telefonePrimeiroAcesso || !novaSenha || novaSenha.length < 6"
-              class="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs transition-all shadow-md shadow-rose-200 disabled:opacity-50 mt-2">
-              {{ carregando() ? 'Ativando...' : 'Cadastrar Senha & Entrar' }}
-            </button>
-          </form>
-        }
+          <button 
+            type="submit" 
+            [disabled]="carregando() || !loginIdentificador || !senha"
+            class="w-full py-3 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs transition-all shadow-md disabled:opacity-50 mt-2">
+            {{ carregando() ? 'Entrando...' : 'Entrar no Sistema' }}
+          </button>
+        </form>
 
         <div class="mt-8 pt-6 border-t border-slate-100 text-center space-y-2">
           <p class="text-xs text-slate-500">
@@ -349,14 +263,10 @@ export class LoginComponent implements OnDestroy {
           return;
         }
 
-        if (msg && msg.toLowerCase().includes('primeiro acesso')) {
-          this.telefonePrimeiroAcesso = this.loginIdentificador;
-          this.setModo('primeiro-acesso');
-          this.erro.set(msg);
-        } else if (msg && (msg.includes('não pertence') || msg.includes('Credenciais') || msg.includes('Bad credentials') || msg.includes('não encontrado') || msg.includes('inválid') || msg.includes('pertence'))) {
-          this.erro.set('Login ou usuário inválido.');
+        if (msg && (msg.includes('não pertence') || msg.includes('Credenciais') || msg.includes('Bad credentials') || msg.includes('não encontrado') || msg.includes('inválid') || msg.includes('pertence'))) {
+          this.erro.set('Login ou senha inválidos. Verifique seu usuário/WhatsApp e senha.');
         } else {
-          this.erro.set(msg || 'Login ou usuário inválido.');
+          this.erro.set(msg || 'Login ou senha inválidos.');
         }
       }
     });
