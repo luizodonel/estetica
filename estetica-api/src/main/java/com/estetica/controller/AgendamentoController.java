@@ -76,5 +76,30 @@ public class AgendamentoController {
             @Valid @RequestBody AtualizarStatusRequest request) {
         return ResponseEntity.ok(agendamentoService.atualizarStatusOperacional(id, request));
     }
+
+    @GetMapping("/publico/{id}")
+    @Operation(summary = "Consulta pública de agendamento via token de confirmação/reagendamento enviado no WhatsApp")
+    public ResponseEntity<AgendamentoDTO> buscarPublico(
+            @PathVariable Long id,
+            @RequestParam String token) {
+        return ResponseEntity.ok(agendamentoService.buscarPublicoPorToken(id, token));
+    }
+
+    @PostMapping("/publico/{id}/confirmar")
+    @Operation(summary = "Confirma presença do cliente via link do WhatsApp")
+    public ResponseEntity<AgendamentoDTO> confirmarPublico(
+            @PathVariable Long id,
+            @RequestParam String token) {
+        return ResponseEntity.ok(agendamentoService.confirmarPresencaPorToken(id, token));
+    }
+
+    @PutMapping("/publico/{id}/reagendar")
+    @Operation(summary = "Reagenda atendimento do cliente via link do WhatsApp")
+    public ResponseEntity<AgendamentoDTO> reagendarPublico(
+            @PathVariable Long id,
+            @RequestParam String token,
+            @Valid @RequestBody RemarcarAgendamentoRequest request) {
+        return ResponseEntity.ok(agendamentoService.remarcarPublicoPorToken(id, token, request));
+    }
 }
 

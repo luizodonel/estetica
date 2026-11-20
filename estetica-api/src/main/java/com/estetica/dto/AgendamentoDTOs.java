@@ -61,6 +61,7 @@ public class AgendamentoDTOs {
         StatusAgendamento status,
         String observacoesCliente,
         String notasInternas,
+        String tokenConfirmacao,
         LocalDateTime dataCriacao
     ) {}
 }

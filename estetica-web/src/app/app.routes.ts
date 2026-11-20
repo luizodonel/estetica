@@ -19,6 +19,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/agendamento-wizard/agendamento-wizard.component').then(m => m.AgendamentoWizardComponent)
   },
   {
+    path: 'confirmar/:id',
+    loadComponent: () => import('./features/confirmar-agendamento/confirmar-agendamento.component').then(m => m.ConfirmarAgendamentoComponent)
+  },
+  {
     path: 'meus-agendamentos',
     canActivate: [authGuard],
     loadComponent: () => import('./features/meus-agendamentos/meus-agendamentos.component').then(m => m.MeusAgendamentosComponent)

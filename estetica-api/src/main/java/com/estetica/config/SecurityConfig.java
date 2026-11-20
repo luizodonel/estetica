@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/disponibilidade/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/agendamentos").permitAll()
+                        .requestMatchers("/api/v1/agendamentos/publico/**").permitAll()
 
                         // Swagger / OpenAPI
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -66,7 +67,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.jpg", "/*.svg",
                                 "/assets/**", "/media/**")
                         .permitAll()
-                        .requestMatchers("/catalogo/**", "/agendar/**", "/meus-agendamentos/**", "/admin/**",
+                        .requestMatchers("/catalogo/**", "/agendar/**", "/confirmar/**", "/meus-agendamentos/**", "/admin/**",
                                 "/login/**", "/registrar/**", "/parceiro/**")
                         .permitAll()
 

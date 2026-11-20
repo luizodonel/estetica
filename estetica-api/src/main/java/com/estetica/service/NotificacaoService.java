@@ -62,6 +62,24 @@ public class NotificacaoService {
         return "Agendoou";
     }
 
+    private String obterBaseUrlEstabelecimento(Agendamento a) {
+        if (a.getTenant() != null && a.getTenant().getSlug() != null && !a.getTenant().getSlug().isBlank()) {
+            return "https://" + a.getTenant().getSlug().trim().toLowerCase() + ".logistadigital.com.br";
+        }
+        return "https://agendoou.logistadigital.com.br";
+    }
+
+    private String montarBlocoBotoesAcao(Agendamento a) {
+        String baseUrl = obterBaseUrlEstabelecimento(a);
+        if (a.getId() != null && a.getTokenConfirmacao() != null && !a.getTokenConfirmacao().isBlank()) {
+            String linkConfirmar = baseUrl + "/confirmar/" + a.getId() + "?t=" + a.getTokenConfirmacao() + "&acao=confirmar";
+            String linkReagendar = baseUrl + "/confirmar/" + a.getId() + "?t=" + a.getTokenConfirmacao() + "&acao=reagendar";
+            return "\n\n👉 *Confirmar Presença (1 clique):*\n" + linkConfirmar +
+                   "\n\n🔄 *Precisa Reagendar? Escolha novo horário:*\n" + linkReagendar;
+        }
+        return "\n\n🔄 *Precisa Reagendar? Acesse:*\n" + baseUrl + "/catalogo";
+    }
+
     @Async
     @EventListener
     public void onAgendamentoCriado(AgendamentoCriadoEvent event) {
@@ -72,16 +90,18 @@ public class NotificacaoService {
         String nomeEmpresa = obterNomeEstabelecimento(a);
         String primeiroNomeCliente = extrairPrimeiroNome(a.getCliente().getNome());
 
-        // 1. Mensagem para o Cliente (com Spintax + Opt-in "Responda OK" Anti-Ban)
+        // 1. Mensagem para o Cliente (com Spintax + Links de Confirmar/Reagendar + Opt-in "Responda OK" Anti-Ban)
         String saudacao = sortear(SAUDACOES);
         String optIn = sortear(FECHAMENTOS_OPT_IN);
+        String botoesAcao = montarBlocoBotoesAcao(a);
         String msgCliente = String.format(
                 "✅ *Agendamento Confirmado — %s*\n\n" +
                 "%s *%s*!\n" +
                 "Seu horário foi reservado com sucesso:\n\n" +
                 "📋 *Serviço:* %s\n" +
                 "👤 *Profissional:* %s\n" +
-                "📅 *Data:* %s às *%s*\n\n" +
+                "📅 *Data:* %s às *%s*" +
+                "%s\n\n" +
                 "%s",
                 nomeEmpresa,
                 saudacao,
@@ -90,6 +110,7 @@ public class NotificacaoService {
                 a.getProfissional().getNome(),
                 dataFormatada,
                 horaFormatada,
+                botoesAcao,
                 optIn
         );
 
@@ -151,21 +172,24 @@ public class NotificacaoService {
         String horaFormatada = a.getDataHoraInicio().format(FORMATTER_HORA);
         String nomeEstabelecimento = obterNomeEstabelecimento(a);
         String primeiroNome = extrairPrimeiroNome(a.getCliente().getNome());
+        String botoesAcao = montarBlocoBotoesAcao(a);
 
         String msgLembrete = String.format(
                 "⏰ *Lembrete de Horário — %s*\n\n" +
                 "%s *%s*! Passando para lembrar do seu agendamento:\n\n" +
                 "📋 *Serviço:* %s\n" +
                 "👤 *Profissional:* %s\n" +
-                "📅 *Data:* %s às *%s*\n\n" +
-                "Responda *SIM* ou *OK* para confirmar sua presença!",
+                "📅 *Data:* %s às *%s*" +
+                "%s\n\n" +
+                "Ou responda *SIM* aqui no WhatsApp para confirmar sua presença!",
                 nomeEstabelecimento,
                 sortear(SAUDACOES),
                 primeiroNome,
                 a.getProcedimento().getTitulo(),
                 a.getProfissional().getNome(),
                 dataFormatada,
-                horaFormatada
+                horaFormatada,
+                botoesAcao
         );
 
         log.info("[LEMBRETE AUTOMÁTICO WHATSAPP] Enviando lembrete 24h para {} ({}) em {}",

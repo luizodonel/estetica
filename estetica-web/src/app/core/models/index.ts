@@ -131,6 +131,7 @@ export interface Agendamento {
   status: StatusAgendamento;
   observacoesCliente?: string;
   notasInternas?: string;
+  tokenConfirmacao?: string;
   dataCriacao: string;
 }
 

@@ -241,6 +241,21 @@ export class ApiService {
     return this.http.put<Agendamento>(`${this.baseUrl}/agendamentos/${id}/status`, { status, notasInternas });
   }
 
+  getAgendamentoPublicoPorToken(id: number, token: string): Observable<Agendamento> {
+    const params = new HttpParams().set('token', token);
+    return this.http.get<Agendamento>(`${this.baseUrl}/agendamentos/publico/${id}`, { params });
+  }
+
+  confirmarAgendamentoPublicoPorToken(id: number, token: string): Observable<Agendamento> {
+    const params = new HttpParams().set('token', token);
+    return this.http.post<Agendamento>(`${this.baseUrl}/agendamentos/publico/${id}/confirmar`, {}, { params });
+  }
+
+  reagendarAgendamentoPublicoPorToken(id: number, token: string, payload: { novaDataHoraInicio: string; novoProfissionalId?: number }): Observable<Agendamento> {
+    const params = new HttpParams().set('token', token);
+    return this.http.put<Agendamento>(`${this.baseUrl}/agendamentos/publico/${id}/reagendar`, payload, { params });
+  }
+
   // Prontuário & Anamnese
   getProntuarioPorCliente(clienteId: number): Observable<HistoricoAtendimento[]> {
     return this.http.get<HistoricoAtendimento[]>(`${this.baseUrl}/prontuarios/cliente/${clienteId}`);

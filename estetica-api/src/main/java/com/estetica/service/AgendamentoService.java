@@ -260,6 +260,7 @@ public class AgendamentoService {
                 .status(StatusAgendamento.CONFIRMADO)
                 .valorCobrado(valorTotalCobrado)
                 .observacoesCliente(request.observacoesCliente())
+                .tokenConfirmacao(java.util.UUID.randomUUID().toString().replace("-", ""))
                 .dataCriacao(LocalDateTime.now())
                 .build();
 
@@ -490,8 +491,86 @@ public class AgendamentoService {
                 a.getStatus(),
                 a.getObservacoesCliente(),
                 a.getNotasInternas(),
+                a.getTokenConfirmacao(),
                 a.getDataCriacao()
         );
+    }
+
+    @Transactional
+    public AgendamentoDTO buscarPublicoPorToken(Long id, String token) {
+        Agendamento agendamento = agendamentoRepository.findByIdAndTokenConfirmacao(id, token)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Link de agendamento inválido ou expirado."));
+        return toDTO(agendamento);
+    }
+
+    @Transactional
+    public AgendamentoDTO confirmarPresencaPorToken(Long id, String token) {
+        Agendamento agendamento = agendamentoRepository.findByIdAndTokenConfirmacao(id, token)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Link de agendamento inválido ou expirado."));
+        if (agendamento.getStatus() == StatusAgendamento.CANCELADO) {
+            throw new RegraNegocioException("Este agendamento foi cancelado. Por favor, escolha um novo horário.");
+        }
+        if (agendamento.getStatus() != StatusAgendamento.CONCLUIDO) {
+            agendamento.setStatus(StatusAgendamento.CONFIRMADO);
+            String notaAtual = agendamento.getNotasInternas() != null ? agendamento.getNotasInternas() + " | " : "";
+            if (!notaAtual.contains("Presença confirmada pelo cliente")) {
+                agendamento.setNotasInternas(notaAtual + "✅ Presença confirmada pelo cliente via WhatsApp");
+            }
+            agendamento = agendamentoRepository.save(agendamento);
+        }
+        return toDTO(agendamento);
+    }
+
+    @Transactional
+    public AgendamentoDTO remarcarPublicoPorToken(Long id, String token, RemarcarAgendamentoRequest request) {
+        Agendamento agendamento = agendamentoRepository.findByIdAndTokenConfirmacao(id, token)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Link de agendamento inválido ou expirado."));
+        if (agendamento.getStatus() == StatusAgendamento.CONCLUIDO) {
+            throw new RegraNegocioException("Este atendimento já foi concluído e não pode ser reagendado.");
+        }
+
+        Profissional profissional = agendamento.getProfissional();
+        if (request.novoProfissionalId() != null && request.novoProfissionalId() > 0) {
+            profissional = profissionalRepository.findById(request.novoProfissionalId())
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Profissional não encontrado"));
+        }
+
+        LocalDateTime novoInicio = request.novaDataHoraInicio();
+        long duracaoOriginal = (agendamento.getDataHoraInicio() != null && agendamento.getDataHoraFim() != null)
+                ? Math.max(15, ChronoUnit.MINUTES.between(agendamento.getDataHoraInicio(), agendamento.getDataHoraFim()))
+                : agendamento.getProcedimento().getDuracaoMinutos();
+        LocalDateTime novoFim = novoInicio.plusMinutes(duracaoOriginal);
+
+        if (novoInicio.isBefore(LocalDateTime.now(DisponibilidadeService.ZONE_BRASIL).minusMinutes(5))) {
+            throw new RegraNegocioException("Não é permitido reagendar para datas/horários passados.");
+        }
+
+        boolean bloqueado = bloqueioAgendaRepository.existsConflitoBloqueio(profissional.getId(), novoInicio, novoFim);
+        if (bloqueado) {
+            throw new HorarioIndisponivelException("A agenda deste especialista está bloqueada neste novo horário.");
+        }
+
+        boolean conflito = agendamentoRepository.existsConflitoHorario(
+                profissional.getId(),
+                novoInicio,
+                novoFim,
+                List.of(StatusAgendamento.PENDENTE, StatusAgendamento.CONFIRMADO),
+                agendamento.getId()
+        );
+
+        if (conflito) {
+            throw new HorarioIndisponivelException("O novo horário selecionado já está ocupado. Por favor, escolha outro horário.");
+        }
+
+        agendamento.setProfissional(profissional);
+        agendamento.setDataHoraInicio(novoInicio);
+        agendamento.setDataHoraFim(novoFim);
+        agendamento.setStatus(StatusAgendamento.CONFIRMADO);
+        String notaAtual = agendamento.getNotasInternas() != null ? agendamento.getNotasInternas() + " | " : "";
+        agendamento.setNotasInternas(notaAtual + "🔄 Reagendado pelo cliente via WhatsApp");
+        agendamento = agendamentoRepository.save(agendamento);
+
+        return toDTO(agendamento);
     }
 }
 

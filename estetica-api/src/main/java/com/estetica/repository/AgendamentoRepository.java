@@ -74,12 +74,21 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
            "JOIN FETCH a.cliente " +
            "JOIN FETCH a.procedimento " +
            "JOIN FETCH a.profissional " +
+           "LEFT JOIN FETCH a.tenant " +
            "WHERE a.status = :status " +
            "AND a.lembreteEnviado = false " +
            "AND a.dataHoraInicio BETWEEN :de AND :ate")
     List<Agendamento> findAgendamentosParaLembrete(@Param("status") StatusAgendamento status,
                                                   @Param("de") LocalDateTime de,
                                                   @Param("ate") LocalDateTime ate);
+
+    @Query("SELECT a FROM Agendamento a " +
+           "JOIN FETCH a.cliente " +
+           "JOIN FETCH a.procedimento " +
+           "JOIN FETCH a.profissional " +
+           "LEFT JOIN FETCH a.tenant " +
+           "WHERE a.id = :id AND a.tokenConfirmacao = :token")
+    java.util.Optional<Agendamento> findByIdAndTokenConfirmacao(@Param("id") Long id, @Param("token") String token);
 
     // Próximos agendamentos gerais (do momento atual em diante)
     @Query("SELECT a FROM Agendamento a " +

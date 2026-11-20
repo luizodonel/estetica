@@ -36,6 +36,8 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ADD COLUMN IF NOT EXISTS cpf_cnpj VARCHAR(30)");
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ADD COLUMN IF NOT EXISTS ip_cadastro VARCHAR(80)");
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ADD COLUMN IF NOT EXISTS device_fingerprint VARCHAR(150)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_agendamento ADD COLUMN IF NOT EXISTS token_confirmacao VARCHAR(64)");
+            jdbcTemplate.execute("UPDATE tb_agendamento SET token_confirmacao = md5(random()::text || clock_timestamp()::text || id::text) WHERE token_confirmacao IS NULL");
 
             // Índices únicos case-insensitive para garantir que nenhum link/slug seja duplicado
             jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_clinica_tenant_slug_lower ON tb_clinica_tenant (LOWER(slug))");

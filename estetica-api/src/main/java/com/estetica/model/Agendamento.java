@@ -62,6 +62,9 @@ public class Agendamento {
     @Column(name = "lembrete_enviado")
     private Boolean lembreteEnviado = false;
 
+    @Column(name = "token_confirmacao", length = 64)
+    private String tokenConfirmacao;
+
     @Builder.Default
     @Column(name = "data_criacao", nullable = false)
     private LocalDateTime dataCriacao = LocalDateTime.now();

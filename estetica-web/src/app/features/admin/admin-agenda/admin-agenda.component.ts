@@ -148,36 +148,43 @@ import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
 
               <!-- Mudança de Status Operacional Rápido & Lembrete WhatsApp 1-Clique -->
               <div class="flex flex-wrap items-center gap-1.5 self-end md:self-center">
-                @if (a.clienteWhatsApp) {
-                  <a
-                    [href]="gerarLinkLembreteWhatsApp(a)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Enviar Lembrete ou Confirmação pelo WhatsApp"
-                    class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-bold shadow-sm flex items-center gap-1 transition-all">
-                    <span>💬</span>
-                    <span>Lembrete WhatsApp</span>
-                  </a>
-                }
-                @if (a.status !== 'CONFIRMADO') {
-                  <button (click)="alterarStatus(a.id, 'CONFIRMADO')" class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-bold">
-                    ✓ Confirmar
-                  </button>
-                }
-                @if (a.status !== 'CONCLUIDO') {
-                  <button (click)="alterarStatus(a.id, 'CONCLUIDO')" class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-[11px] font-bold">
-                    ✓ Concluir
-                  </button>
-                }
-                @if (a.status !== 'NO_SHOW' && a.status !== 'CONCLUIDO') {
-                  <button (click)="alterarStatus(a.id, 'NO_SHOW')" class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 text-[11px] font-semibold">
-                    Faltou (No-Show)
-                  </button>
-                }
-                @if (a.status !== 'CANCELADO') {
-                  <button (click)="alterarStatus(a.id, 'CANCELADO')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-[11px] font-semibold">
-                    Cancelar
-                  </button>
+                @if (a.status === 'CONCLUIDO') {
+                  <span class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-[11px] font-bold flex items-center gap-1 border border-blue-200">
+                    <span>✓</span>
+                    <span>Atendimento Finalizado</span>
+                  </span>
+                } @else {
+                  @if (a.clienteWhatsApp && a.status !== 'CANCELADO' && a.status !== 'NO_SHOW') {
+                    <a
+                      [href]="gerarLinkLembreteWhatsApp(a)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Enviar Lembrete com Link de Confirmar ou Reagendar pelo WhatsApp"
+                      class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-bold shadow-sm flex items-center gap-1 transition-all">
+                      <span>💬</span>
+                      <span>Lembrete WhatsApp</span>
+                    </a>
+                  }
+                  @if (a.status !== 'CONFIRMADO' && a.status !== 'CANCELADO' && a.status !== 'NO_SHOW') {
+                    <button (click)="alterarStatus(a.id, 'CONFIRMADO')" class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-bold">
+                      ✓ Confirmar
+                    </button>
+                  }
+                  @if (a.status !== 'CANCELADO' && a.status !== 'NO_SHOW') {
+                    <button (click)="alterarStatus(a.id, 'CONCLUIDO')" class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-[11px] font-bold">
+                      ✓ Concluir
+                    </button>
+                  }
+                  @if (a.status !== 'NO_SHOW' && a.status !== 'CANCELADO') {
+                    <button (click)="alterarStatus(a.id, 'NO_SHOW')" class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 text-[11px] font-semibold">
+                      Faltou (No-Show)
+                    </button>
+                  }
+                  @if (a.status !== 'CANCELADO') {
+                    <button (click)="alterarStatus(a.id, 'CANCELADO')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-[11px] font-semibold">
+                      Cancelar
+                    </button>
+                  }
                 }
               </div>
 
@@ -214,7 +221,17 @@ export class AdminAgendaComponent implements OnInit {
     const empresa = this.tenantService.nomeEmpresa();
     const primeiroNome = (a.clienteNome || 'Cliente').split(' ')[0];
 
-    const texto = `Olá *${primeiroNome}*, tudo bem? Passando para confirmar seu agendamento de *${a.procedimentoTitulo}* em *${empresa}* no dia *${dataBR}* às *${horaBR}* com *${a.profissionalNome}*. Podemos confirmar sua presença?`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : `https://${this.tenantService.obterSlugAtual()}.logistadigital.com.br`;
+    let blocoLinks = '';
+    if (a.id && a.tokenConfirmacao) {
+      const urlConfirmar = `${origin}/confirmar/${a.id}?t=${a.tokenConfirmacao}&acao=confirmar`;
+      const urlReagendar = `${origin}/confirmar/${a.id}?t=${a.tokenConfirmacao}&acao=reagendar`;
+      blocoLinks = `\n\n✅ *Confirmar Presença (1 clique):*\n${urlConfirmar}\n\n🔄 *Reagendar Horário:*\n${urlReagendar}`;
+    } else {
+      blocoLinks = `\n\n🔄 *Precisa Reagendar? Acesse:*\n${origin}/catalogo`;
+    }
+
+    const texto = `Olá *${primeiroNome}*, tudo bem? Passando para confirmar seu agendamento de *${a.procedimentoTitulo}* em *${empresa}* no dia *${dataBR}* às *${horaBR}* com *${a.profissionalNome}*.${blocoLinks}`;
     return `https://wa.me/${fone}?text=${encodeURIComponent(texto)}`;
   }
 
