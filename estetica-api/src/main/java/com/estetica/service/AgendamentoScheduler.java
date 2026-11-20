@@ -35,11 +35,17 @@ public class AgendamentoScheduler {
 
         if (!agendamentosParaLembrar.isEmpty()) {
             log.info("[SCHEDULER] Encontrados {} agendamentos elegíveis para disparo de lembrete de consulta.", agendamentosParaLembrar.size());
-            for (Agendamento a : agendamentosParaLembrar) {
+            for (int i = 0; i < agendamentosParaLembrar.size(); i++) {
+                Agendamento a = agendamentosParaLembrar.get(i);
                 try {
                     notificacaoService.enviarLembretePreConsulta(a);
                     a.setLembreteEnviado(true);
                     agendamentoRepository.save(a);
+
+                    // Delay humanizado anti-banimento entre lembretes consecutivos (6 a 11 segundos)
+                    if (i < agendamentosParaLembrar.size() - 1) {
+                        notificacaoService.aguardarDelayHumanizado(6000, 11000);
+                    }
                 } catch (Exception e) {
                     log.error("Erro ao enviar lembrete para agendamento #{}", a.getId(), e);
                 }

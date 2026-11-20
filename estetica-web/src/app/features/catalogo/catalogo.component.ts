@@ -711,20 +711,23 @@ interface DiaCarrossel {
               </span>
             </div>
 
-            <div class="pt-2 flex flex-col sm:flex-row gap-2">
+            <div class="pt-2 flex flex-col gap-2">
+              @if (tenantService.tenant()?.telefoneWhatsApp) {
+                <a
+                  [href]="gerarLinkComprovanteWhatsAppLoja()"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow flex items-center justify-center gap-2">
+                  <span>💬</span>
+                  <span>Enviar Comprovante no WhatsApp</span>
+                </a>
+              }
               <button
                 type="button"
                 (click)="fecharModalSucesso()"
                 class="w-full py-3 rounded-xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-colors shadow">
-                Novo Agendamento
+                Concluir / Novo Agendamento
               </button>
-              @if (authService.isAuthenticated() && tenantService.isDominioMaster()) {
-                <a
-                  routerLink="/meus-agendamentos"
-                  class="w-full py-3 rounded-xl border border-slate-200 text-stone-700 font-semibold text-xs hover:bg-slate-50 transition-colors flex items-center justify-center">
-                  Ver Meus Agendamentos
-                </a>
-              }
             </div>
           </div>
         </div>
@@ -1194,6 +1197,19 @@ export class CatalogoComponent implements OnInit {
   fecharModalSucesso(): void {
     this.agendamentoConcluido.set(false);
     this.limparServicos();
+  }
+
+  gerarLinkComprovanteWhatsAppLoja(): string {
+    let fone = (this.tenantService.tenant()?.telefoneWhatsApp || '').replace(/\D/g, '');
+    if (fone.length === 10 || fone.length === 11) {
+      fone = '55' + fone;
+    }
+    const servicos = this.servicosSelecionados().map(s => s.titulo).join(' + ');
+    const dataBR = this.formatarDataBR(this.dataSelecionada());
+    const horaBR = this.formatarHora(this.slotSelecionado()?.horarioInicio || '');
+    const prof = this.slotSelecionado()?.profissionalNome || 'Especialista';
+    const texto = `Olá! Acabei de agendar *${servicos}* para o dia *${dataBR}* às *${horaBR}* com *${prof}* pelo site.`;
+    return `https://wa.me/${fone}?text=${encodeURIComponent(texto)}`;
   }
 
   abrirModalBanner(): void {

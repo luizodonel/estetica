@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SetorService } from '../../../core/services/setor.service';
+import { TenantService } from '../../../core/services/tenant.service';
 import { Agendamento, Profissional, StatusAgendamento } from '../../../core/models';
 import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trava-agenda.component';
 import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
@@ -145,8 +146,19 @@ import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
                 </div>
               </div>
 
-              <!-- Mudança de Status Operacional Rápido -->
+              <!-- Mudança de Status Operacional Rápido & Lembrete WhatsApp 1-Clique -->
               <div class="flex flex-wrap items-center gap-1.5 self-end md:self-center">
+                @if (a.clienteWhatsApp) {
+                  <a
+                    [href]="gerarLinkLembreteWhatsApp(a)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Enviar Lembrete ou Confirmação pelo WhatsApp"
+                    class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-bold shadow-sm flex items-center gap-1 transition-all">
+                    <span>💬</span>
+                    <span>Lembrete WhatsApp</span>
+                  </a>
+                }
                 @if (a.status !== 'CONFIRMADO') {
                   <button (click)="alterarStatus(a.id, 'CONFIRMADO')" class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-bold">
                     ✓ Confirmar
@@ -189,6 +201,22 @@ export class AdminAgendaComponent implements OnInit {
   private api = inject(ApiService);
   auth = inject(AuthService);
   setorService = inject(SetorService);
+  tenantService = inject(TenantService);
+
+  gerarLinkLembreteWhatsApp(a: Agendamento): string {
+    let fone = (a.clienteWhatsApp || '').replace(/\D/g, '');
+    if (fone.length === 10 || fone.length === 11) {
+      fone = '55' + fone;
+    }
+    const dataPartes = (a.dataHoraInicio || '').substring(0, 10).split('-');
+    const dataBR = dataPartes.length === 3 ? `${dataPartes[2]}/${dataPartes[1]}/${dataPartes[0]}` : '';
+    const horaBR = (a.dataHoraInicio || '').substring(11, 16);
+    const empresa = this.tenantService.nomeEmpresa();
+    const primeiroNome = (a.clienteNome || 'Cliente').split(' ')[0];
+
+    const texto = `Olá *${primeiroNome}*, tudo bem? Passando para confirmar seu agendamento de *${a.procedimentoTitulo}* em *${empresa}* no dia *${dataBR}* às *${horaBR}* com *${a.profissionalNome}*. Podemos confirmar sua presença?`;
+    return `https://wa.me/${fone}?text=${encodeURIComponent(texto)}`;
+  }
 
   dataFiltro = signal<string>(new Date().toISOString().split('T')[0]);
   profissionais = signal<Profissional[]>([]);
