@@ -42,6 +42,10 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario DROP CONSTRAINT IF EXISTS uk_1vofibjsgo77e7km8wowva1qe");
             jdbcTemplate.execute("UPDATE tb_usuario SET email = NULL WHERE email LIKE '%@cliente.local' OR email LIKE '%@especialista.local'");
 
+            // Atualiza eventual nome legado "L'Élégance" no tenant master para "Agendar."
+            jdbcTemplate.execute("UPDATE tb_clinica_tenant SET nome_empresa = 'Agendar.' WHERE nome_empresa ILIKE '%Élégance%' OR nome_empresa ILIKE '%Elegance%'");
+            jdbcTemplate.execute("UPDATE tb_lojista SET nome_empresa = 'Agendar.' WHERE nome_empresa ILIKE '%Élégance%' OR nome_empresa ILIKE '%Elegance%'");
+
             // Remove restrições de unicidade legadas na tabela tb_categoria para permitir
             // que cada tenant e nicho tenha suas próprias categorias sem colisão de nomes.
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_categoria DROP CONSTRAINT IF EXISTS uk_at5cf41guxjf4dkdeo5qxva9");

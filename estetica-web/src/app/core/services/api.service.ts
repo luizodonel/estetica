@@ -350,9 +350,11 @@ export class ApiService {
     return this.http.get<AssinaturaStatusResponse>(`${this.baseUrl}/onboarding/assinatura`, { params });
   }
 
-  forcarGerarPixRenovacao(slug?: string): Observable<AssinaturaStatusResponse> {
+  forcarGerarPixRenovacao(slug?: string, plano?: string, ciclo?: string): Observable<AssinaturaStatusResponse> {
     let params = new HttpParams();
     if (slug) params = params.set('slug', slug);
+    if (plano) params = params.set('plano', plano);
+    if (ciclo) params = params.set('ciclo', ciclo);
     return this.http.post<AssinaturaStatusResponse>(`${this.baseUrl}/onboarding/assinatura/gerar-pix`, null, { params });
   }
 

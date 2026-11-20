@@ -41,6 +41,7 @@ public class TenantService {
     private final com.estetica.repository.ProcedimentoRepository procedimentoRepository;
     private final com.estetica.repository.AgendamentoRepository agendamentoRepository;
     private final com.estetica.repository.ProfissionalRepository profissionalRepository;
+    private final com.estetica.repository.HorarioTrabalhoRepository horarioTrabalhoRepository;
     private final com.estetica.repository.BloqueioAgendaRepository bloqueioAgendaRepository;
     private final com.estetica.repository.HistoricoAtendimentoRepository historicoAtendimentoRepository;
     private final PasswordEncoder passwordEncoder;
@@ -50,7 +51,41 @@ public class TenantService {
     private final CoolifyIntegrationService coolifyIntegrationService;
     private final ProcedimentoService procedimentoService;
 
-    private static final BigDecimal VALOR_ADESAO_PIX = new BigDecimal("149.90");
+    private static final BigDecimal VALOR_ADESAO_PIX = new BigDecimal("99.90");
+    private static final int DIAS_TRIAL_GRATIS = 7;
+
+    public static BigDecimal calcularValorPlano(String plano, String ciclo) {
+        String p = (plano != null ? plano.trim().toUpperCase() : "PRO");
+        String c = (ciclo != null ? ciclo.trim().toUpperCase() : "MENSAL");
+        return switch (p) {
+            case "STARTER", "STUDIO" -> switch (c) {
+                case "SEMESTRAL" -> new BigDecimal("485.00");
+                case "ANUAL" -> new BigDecimal("899.00");
+                default -> new BigDecimal("89.90");
+            };
+            case "VIP", "MULTISALAS" -> switch (c) {
+                case "SEMESTRAL" -> new BigDecimal("647.00");
+                case "ANUAL" -> new BigDecimal("1199.00");
+                default -> new BigDecimal("119.90");
+            };
+            default -> switch (c) { // PRO / CLÍNICA PRO
+                case "SEMESTRAL" -> new BigDecimal("539.00");
+                case "ANUAL" -> new BigDecimal("999.00");
+                default -> new BigDecimal("99.90");
+            };
+        };
+    }
+
+    public static int calcularDiasCiclo(BigDecimal valorPago) {
+        if (valorPago == null) return 30;
+        if (valorPago.compareTo(new BigDecimal("800.00")) >= 0) {
+            return 365; // Plano Anual
+        }
+        if (valorPago.compareTo(new BigDecimal("400.00")) >= 0) {
+            return 180; // Plano Semestral
+        }
+        return 30; // Plano Mensal
+    }
 
     private static final Set<String> SLUGS_RESERVADOS = Set.of(
             "admin", "api", "www", "app", "dashboard", "mail", "portal", "estetica", "teste"
@@ -104,7 +139,10 @@ public class TenantService {
             }
         }
 
-        // 1. Salva o Lojista na tabela dedicada tb_lojista (separado de usuários comuns)
+        LocalDateTime agora = LocalDateTime.now();
+        LocalDateTime vencimentoTrial = agora.plusDays(DIAS_TRIAL_GRATIS);
+
+        // 1. Salva o Lojista já ATIVO em período de TESTE GRÁTIS (Trial de 7 dias sem barreira de PIX inicial)
         com.estetica.model.Lojista lojista = com.estetica.model.Lojista.builder()
                 .nomeEmpresa(request.nomeEmpresa().trim())
                 .setor(setorAtuacao)
@@ -119,13 +157,14 @@ public class TenantService {
                 .logoUrl(request.logoUrl() != null && !request.logoUrl().isBlank() ? request.logoUrl().trim() : null)
                 .corPrimaria(corPrimaria)
                 .corSecundaria(corSecundaria)
-                .statusPagamento("PENDENTE")
+                .statusPagamento("TRIAL")
                 .valorAdesao(VALOR_ADESAO_PIX)
-                .ativo(false) // Liberado após confirmação do PIX
+                .dataVencimento(vencimentoTrial)
+                .ativo(true) // Liberado imediatamente para captação e teste sem fricção!
                 .build();
         lojista = lojistaRepository.save(lojista);
 
-        // 2. Salva o Estabelecimento / Tenant da Loja vinculada ao Lojista
+        // 2. Salva o Estabelecimento / Tenant da Loja já ativo com Trial de 7 dias
         ClinicaTenant tenant = ClinicaTenant.builder()
                 .nomeEmpresa(request.nomeEmpresa().trim())
                 .setor(setorAtuacao)
@@ -136,41 +175,30 @@ public class TenantService {
                 .corSecundaria(corSecundaria)
                 .lojista(lojista)
                 .telefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""))
-                .statusPagamento("PENDENTE")
+                .statusPagamento("TRIAL")
                 .valorAdesao(VALOR_ADESAO_PIX)
-                .ativo(false) // Só ativado após confirmação do PIX
+                .dataVencimento(vencimentoTrial)
+                .ativo(true)
                 .build();
         tenant = tenantRepository.save(tenant);
 
-        // 3. Integração com Mercado Pago para Gerar Cobrança Pix de R$ 149,90
-        String paymentId = null;
-        String qrCode = null;
-        String qrCodeBase64 = null;
-
+        // 3. Inicializa o catálogo completo do nicho (categorias e procedimentos) imediatamente
         try {
-            Map<String, Object> mpResponse = mercadoPagoService.criarPagamentoPix(tenant, lojista, VALOR_ADESAO_PIX);
-            if (mpResponse != null) {
-                paymentId = String.valueOf(mpResponse.get("id"));
-                tenant.setMercadoPagoPaymentId(paymentId);
-                lojista.setMercadoPagoPaymentId(paymentId);
-
-                Map<String, Object> poi = (Map<String, Object>) mpResponse.get("point_of_interaction");
-                if (poi != null && poi.get("transaction_data") != null) {
-                    Map<String, Object> td = (Map<String, Object>) poi.get("transaction_data");
-                    qrCode = (String) td.get("qr_code");
-                    qrCodeBase64 = (String) td.get("qr_code_base64");
-                    tenant.setPixCopiaCola(qrCode);
-                    tenant.setPixQrCodeBase64(qrCodeBase64);
-                    lojista.setPixCopiaCola(qrCode);
-                    lojista.setPixQrCodeBase64(qrCodeBase64);
-                }
-                tenant = tenantRepository.save(tenant);
-                lojista = lojistaRepository.save(lojista);
-            }
+            procedimentoService.inicializarCategoriasPadraoParaTenant(tenant, setorAtuacao);
+            inicializarProfissionalPadraoParaTenant(tenant, lojista);
         } catch (Exception ex) {
-            log.error("[TenantService] Erro ao gerar PIX de adesão no Mercado Pago: {}", ex.getMessage(), ex);
-            throw new RegraNegocioException("Erro ao gerar QR Code PIX de adesão no Mercado Pago: " + ex.getMessage());
+            log.warn("[TenantService] Nota ao inicializar catálogo/profissional padrão do trial: {}", ex.getMessage());
         }
+
+        // 4. Provisiona subdomínio no Coolify imediatamente para que o link exclusivo já funcione no Trial
+        try {
+            coolifyIntegrationService.adicionarDominioLojista(cleanSlug);
+        } catch (Exception ex) {
+            log.warn("[TenantService] Nota ao provisionar domínio Coolify no trial: {}", ex.getMessage());
+        }
+
+        // 5. Emite token JWT imediatamente para login automático (Product-Led Growth)
+        String token = jwtService.gerarToken(lojista);
 
         UsuarioDTO lojistaDTO = new UsuarioDTO(
                 lojista.getId(),
@@ -178,22 +206,61 @@ public class TenantService {
                 lojista.getEmail(),
                 lojista.getTelefoneWhatsApp(),
                 Role.ROLE_ADMIN,
-                lojista.getAtivo(),
+                true,
                 false
         );
         TenantPublicDTO tenantDTO = toPublicDTO(tenant);
 
         return new CadastroLojistaResponse(
-                paymentId,
-                qrCode,
-                qrCodeBase64,
+                null,
+                null,
+                null,
                 VALOR_ADESAO_PIX,
-                "PENDENTE",
+                "TRIAL",
                 linkPersonalizado,
                 tenantDTO,
                 lojistaDTO,
-                null // Token só é emitido após aprovação do pagamento!
+                token
         );
+    }
+
+    private void inicializarProfissionalPadraoParaTenant(ClinicaTenant tenant, com.estetica.model.Lojista lojista) {
+        if (tenant == null || !profissionalRepository.findByTenantIdOrderByNomeAsc(tenant.getId()).isEmpty()) {
+            return;
+        }
+
+        List<com.estetica.model.Procedimento> procs = procedimentoRepository.findByTenantIdOrderByTituloAsc(tenant.getId());
+        java.util.Set<com.estetica.model.Procedimento> procedimentosSet = new java.util.HashSet<>(procs);
+
+        String nomeProf = (lojista != null && lojista.getNomeResponsavel() != null && !lojista.getNomeResponsavel().isBlank())
+                ? lojista.getNomeResponsavel().trim()
+                : "Especialista Principal";
+
+        com.estetica.model.Profissional prof = com.estetica.model.Profissional.builder()
+                .tenant(tenant)
+                .nome(nomeProf)
+                .especialidade("Especialista Responsável")
+                .bio("Atendimento especializado em " + tenant.getNomeEmpresa())
+                .corIdentificacao("#e11d48")
+                .ativo(true)
+                .procedimentos(procedimentosSet)
+                .build();
+        prof = profissionalRepository.save(prof);
+
+        for (java.time.DayOfWeek dia : java.time.DayOfWeek.values()) {
+            if (dia == java.time.DayOfWeek.SUNDAY) continue;
+            com.estetica.model.HorarioTrabalho ht = com.estetica.model.HorarioTrabalho.builder()
+                    .profissional(prof)
+                    .diaSemana(dia)
+                    .horaInicio(java.time.LocalTime.of(8, 0))
+                    .horaFim(java.time.LocalTime.of(19, 0))
+                    .inicioIntervalo(java.time.LocalTime.of(12, 0))
+                    .fimIntervalo(java.time.LocalTime.of(13, 0))
+                    .ativo(true)
+                    .build();
+            horarioTrabalhoRepository.save(ht);
+        }
+        log.info("[TenantService] Profissional padrão '{}' e horários de atendimento inicializados para o tenant {}", nomeProf, tenant.getSlug());
     }
 
     /**
@@ -238,13 +305,17 @@ public class TenantService {
                         || (lojista != null && !Boolean.TRUE.equals(lojista.getAtivo()));
 
                 // REGRA DE CÁLCULO DE VENCIMENTO:
-                // Caso o usuário pague antes do vencimento, soma +30 dias a partir do vencimento futuro restante.
+                // Caso o usuário pague antes do vencimento, soma os dias do ciclo contratado (30, 180 ou 365) a partir do vencimento futuro restante.
                 LocalDateTime baseDate = agora;
                 LocalDateTime vencimentoAtual = lojista != null ? lojista.getDataVencimento() : (tenant != null ? tenant.getDataVencimento() : null);
                 if (vencimentoAtual != null && vencimentoAtual.isAfter(agora)) {
                     baseDate = vencimentoAtual;
                 }
-                LocalDateTime novaDataVencimento = baseDate.plusDays(30);
+                BigDecimal valorRef = (lojista != null && lojista.getValorAdesao() != null)
+                        ? lojista.getValorAdesao()
+                        : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX);
+                int diasAdicionar = calcularDiasCiclo(valorRef);
+                LocalDateTime novaDataVencimento = baseDate.plusDays(diasAdicionar);
 
                 if (tenant != null) {
                     log.info("[TenantService] Pagamento {} aprovado para a loja: {}. Nova data de vencimento: {}", paymentId, tenant.getNomeEmpresa(), novaDataVencimento);
@@ -685,8 +756,10 @@ public class TenantService {
 
         long diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(agora.toLocalDate(), vencimento.toLocalDate());
         boolean vencida = agora.isAfter(vencimento);
-        boolean podeRenovar = diasRestantes <= 5 || vencida;
-        String status = vencida ? "VENCIDA" : (diasRestantes <= 5 ? "VENCENDO" : "ATIVA");
+        String statusPagAtual = lojista != null ? lojista.getStatusPagamento() : (tenant != null ? tenant.getStatusPagamento() : "PENDENTE");
+        boolean emTrial = "TRIAL".equalsIgnoreCase(statusPagAtual);
+        boolean podeRenovar = emTrial || diasRestantes <= 5 || vencida;
+        String status = vencida ? "VENCIDA" : (emTrial ? "TRIAL" : (diasRestantes <= 5 ? "VENCENDO" : "ATIVA"));
 
         String paymentId = null;
         String pixCopiaCola = null;
@@ -706,12 +779,14 @@ public class TenantService {
                 pixQrCodeBase64 = lojista.getRenovacaoPixQrCodeBase64();
             } else {
                 try {
-                    BigDecimal valor = new BigDecimal("149.90");
+                    BigDecimal valor = (lojista != null && lojista.getValorAdesao() != null)
+                            ? lojista.getValorAdesao()
+                            : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX);
                     Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(
                             tenant,
                             lojista,
                             valor,
-                            "Renovação Mensal da Assinatura - " + nomeEmpresa
+                            "Assinatura Agendar. - " + nomeEmpresa
                     );
 
                     if (mp != null) {
@@ -745,6 +820,9 @@ public class TenantService {
         }
 
         LocalDateTime dataPagamento = lojista != null ? lojista.getDataPagamento() : (tenant != null ? tenant.getDataPagamento() : null);
+        BigDecimal valorAtivo = (lojista != null && lojista.getValorAdesao() != null)
+                ? lojista.getValorAdesao()
+                : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX);
 
         return new AssinaturaStatusResponse(
                 nomeEmpresa,
@@ -754,7 +832,7 @@ public class TenantService {
                 diasRestantes,
                 podeRenovar,
                 vencida,
-                new BigDecimal("149.90"),
+                valorAtivo,
                 paymentId,
                 pixCopiaCola,
                 pixQrCodeBase64
@@ -763,6 +841,11 @@ public class TenantService {
 
     @Transactional
     public AssinaturaStatusResponse forcarGerarPixRenovacao(String slugParam) {
+        return forcarGerarPixRenovacao(slugParam, null, null);
+    }
+
+    @Transactional
+    public AssinaturaStatusResponse forcarGerarPixRenovacao(String slugParam, String planoParam, String cicloParam) {
         ClinicaTenant tenant = null;
         com.estetica.model.Lojista lojista = null;
 
@@ -799,14 +882,20 @@ public class TenantService {
         String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Estabelecimento");
         LocalDateTime agora = LocalDateTime.now();
 
-        // Força a geração imediata do Pix no Mercado Pago
+        // Calcula o valor exato do plano (Starter R$ 89,90 | Clínica Pro R$ 99,90 | VIP R$ 119,90) e ciclo (Mensal | Semestral | Anual)
         try {
-            BigDecimal valor = new BigDecimal("149.90");
+            BigDecimal valor = (planoParam != null || cicloParam != null)
+                    ? calcularValorPlano(planoParam, cicloParam)
+                    : (lojista != null && lojista.getValorAdesao() != null ? lojista.getValorAdesao() : VALOR_ADESAO_PIX);
+
+            String labelPlano = (planoParam != null && !planoParam.isBlank() ? planoParam.toUpperCase() : "PRO")
+                    + " (" + (cicloParam != null && !cicloParam.isBlank() ? cicloParam.toUpperCase() : "MENSAL") + ")";
+
             Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(
                     tenant,
                     lojista,
                     valor,
-                    "Renovação Mensal da Assinatura - " + nomeEmpresa
+                    "Assinatura Agendar. Plano " + labelPlano + " - " + nomeEmpresa
             );
 
             if (mp != null) {
@@ -821,6 +910,7 @@ public class TenantService {
                 }
 
                 if (lojista != null) {
+                    lojista.setValorAdesao(valor);
                     lojista.setRenovacaoPaymentId(paymentId);
                     lojista.setRenovacaoPixCopiaCola(pixCopiaCola);
                     lojista.setRenovacaoPixQrCodeBase64(pixQrCodeBase64);
@@ -828,6 +918,7 @@ public class TenantService {
                     lojistaRepository.save(lojista);
                 }
                 if (tenant != null) {
+                    tenant.setValorAdesao(valor);
                     tenant.setRenovacaoPaymentId(paymentId);
                     tenant.setRenovacaoPixCopiaCola(pixCopiaCola);
                     tenant.setRenovacaoPixQrCodeBase64(pixQrCodeBase64);
@@ -835,13 +926,15 @@ public class TenantService {
                     tenantRepository.save(tenant);
                 }
 
-                LocalDateTime vencimento = lojista != null ? lojista.getDataVencimento() : (tenant != null ? tenant.getDataVencimento() : agora.plusDays(30));
+                LocalDateTime vencimento = lojista != null ? lojista.getDataVencimento() : (tenant != null ? tenant.getDataVencimento() : agora.plusDays(7));
                 long diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(agora.toLocalDate(), vencimento.toLocalDate());
                 boolean vencida = agora.isAfter(vencimento);
+                String stAtual = lojista != null ? lojista.getStatusPagamento() : (tenant != null ? tenant.getStatusPagamento() : "TRIAL");
+                String stResp = vencida ? "VENCIDA" : ("TRIAL".equalsIgnoreCase(stAtual) ? "TRIAL" : "VENCENDO");
 
                 return new AssinaturaStatusResponse(
                         nomeEmpresa,
-                        vencida ? "VENCIDA" : "VENCENDO",
+                        stResp,
                         vencimento,
                         lojista != null ? lojista.getDataPagamento() : null,
                         diasRestantes,

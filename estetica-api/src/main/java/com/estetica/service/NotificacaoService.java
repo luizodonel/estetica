@@ -47,8 +47,11 @@ public class NotificacaoService {
 
     public void enviarLembretePreConsulta(Agendamento a) {
         String horarioFormatado = a.getDataHoraInicio().format(FORMATTER);
-        log.info("[LEMBRETE AUTOMÁTICO WHATSAPP/EMAIL] Olá {}, lembre-se do seu procedimento {} amanhã/hoje ({}) na Clínica de Estética!",
-                a.getCliente().getNome(), a.getProcedimento().getTitulo(), horarioFormatado);
+        String nomeEstabelecimento = (a.getTenant() != null && a.getTenant().getNomeEmpresa() != null)
+                ? a.getTenant().getNomeEmpresa()
+                : "Agendar.";
+        log.info("[LEMBRETE AUTOMÁTICO WHATSAPP/EMAIL] Olá {}, lembre-se do seu agendamento de {} ({}) em {}!",
+                a.getCliente().getNome(), a.getProcedimento().getTitulo(), horarioFormatado, nomeEstabelecimento);
     }
 }
 

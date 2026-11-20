@@ -1,6 +1,6 @@
 -- ======================================================================================
 -- SCRIPT SQL: CRIAR OU ATUALIZAR ADMINISTRADOR NO BANCO DE PRODUÇÃO (PostgreSQL)
--- Clínica de Estética | Host: 93.127.212.65:3008 | Database: postgres
+-- Agendar. Plataforma Multi-Nicho | Host: 93.127.212.65:3008 | Database: postgres
 -- ======================================================================================
 
 -- OPÇÃO 1: INSERT DIRETO COM HASH BCRYPT PRÉ-COMPILADO (100% compatível com Spring Security)

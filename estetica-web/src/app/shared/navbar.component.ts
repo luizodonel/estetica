@@ -59,6 +59,13 @@ import { SetorService } from '../core/services/setor.service';
                 Meus Agendamentos
               </a>
             }
+
+            <a 
+              routerLink="/planos" 
+              routerLinkActive="bg-rose-600 text-white font-bold shadow-sm" 
+              class="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-all whitespace-nowrap font-bold">
+              Planos & Preços
+            </a>
           </div>
 
           <!-- Perfil do Usuário Autenticado -->

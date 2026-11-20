@@ -28,8 +28,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -44,20 +43,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             final Number idClaim = claims.get("id", Number.class);
             final String tipoClaim = claims.get("tipo", String.class);
 
-            if ((userSubject != null || idClaim != null) && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if ((userSubject != null || idClaim != null)
+                    && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = null;
 
                 if (idClaim != null && "LOJISTA".equals(tipoClaim)) {
-                    userDetails = lojistaRepository.findById(idClaim.longValue()).map(l -> (UserDetails) l).orElse(null);
+                    userDetails = lojistaRepository.findById(idClaim.longValue()).map(l -> (UserDetails) l)
+                            .orElse(null);
                 } else if (idClaim != null && "USUARIO".equals(tipoClaim)) {
-                    userDetails = usuarioRepository.findById(idClaim.longValue()).map(u -> (UserDetails) u).orElse(null);
+                    userDetails = usuarioRepository.findById(idClaim.longValue()).map(u -> (UserDetails) u)
+                            .orElse(null);
                 }
 
                 // Fallback seguro para tokens antigos sem claim "tipo"
                 if (userDetails == null && !"LOJISTA".equals(tipoClaim)) {
                     String slugClaim = claims.get("slug", String.class);
                     if (idClaim != null && slugClaim == null) {
-                        userDetails = usuarioRepository.findById(idClaim.longValue()).map(u -> (UserDetails) u).orElse(null);
+                        userDetails = usuarioRepository.findById(idClaim.longValue()).map(u -> (UserDetails) u)
+                                .orElse(null);
                     }
                     if (userDetails == null && userSubject != null) {
                         userDetails = usuarioRepository.findAllByEmailIgnoreCase(userSubject).stream().findFirst()
@@ -80,17 +83,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
-                            userDetails.getAuthorities()
-                    );
+                            userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
         } catch (Exception ex) {
-            // Token inválido ou expirado - deixa o fluxo seguir para o Spring Security rejeitar
+            // Token inválido ou expirado - deixa o fluxo seguir para o Spring Security
+            // rejeitar
         }
 
         filterChain.doFilter(request, response);
     }
 }
-

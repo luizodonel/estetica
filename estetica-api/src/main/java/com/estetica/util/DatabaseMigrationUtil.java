@@ -42,9 +42,9 @@ public class DatabaseMigrationUtil {
                 defaultTenantId = rs.getLong("id");
                 System.out.println("Tenant existente encontrado com ID: " + defaultTenantId);
             } else {
-                // Cria o tenant default para a clínica master
+                // Cria o tenant default para a plataforma master
                 stmt.execute("INSERT INTO tb_clinica_tenant (nome_empresa, slug, link_personalizado, cor_primaria, cor_secundaria, ativo, data_criacao) " +
-                             "VALUES ('L''Élégance Estética Master', 'estetica', 'https://estetica.logistadigital.com.br/', '#e11d48', '#f43f5e', true, NOW());");
+                             "VALUES ('Agendar. Plataforma Master', 'estetica', 'https://estetica.logistadigital.com.br/', '#e11d48', '#f43f5e', true, NOW());");
                 ResultSet rsNew = stmt.executeQuery("SELECT id FROM tb_clinica_tenant WHERE slug = 'estetica';");
                 if (rsNew.next()) {
                     defaultTenantId = rsNew.getLong("id");

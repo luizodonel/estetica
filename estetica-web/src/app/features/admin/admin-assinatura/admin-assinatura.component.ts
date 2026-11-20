@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { TenantService } from '../../../core/services/tenant.service';
 import { AssinaturaStatusResponse } from '../../../core/models';
+import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.component';
 
 @Component({
   selector: 'app-admin-assinatura',
@@ -11,86 +12,62 @@ import { AssinaturaStatusResponse } from '../../../core/models';
   imports: [CommonModule, RouterModule],
   template: `
     <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div class="max-w-4xl mx-auto space-y-6">
+      <div class="max-w-6xl mx-auto space-y-8">
 
         <!-- Top Navigation / Back -->
-        <div class="flex items-center justify-between">
-          <a routerLink="/admin/gestao" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors">
-            <span>←</span> Voltar para Cadastros & Gestão
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <a routerLink="/admin/dashboard" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+            <span>←</span> Voltar para o Dashboard
           </a>
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-            💎 Assinatura Lojista Whitelabel
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white text-slate-700 border border-slate-200 shadow-sm">
+            💎 Gestão de Plano & Assinatura Agendar.
           </span>
         </div>
 
-        <!-- Header Card -->
+        <!-- ========================================================================= -->
+        <!-- CARD DE STATUS ATUAL DA ASSINATURA -->
+        <!-- ========================================================================= -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <span class="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
-                Ciclo Mensal de 30 Dias
+              <span class="text-[11px] font-bold tracking-wider text-rose-600 uppercase">
+                Sua Conta & Licenciamento
               </span>
-              <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-                Minha Assinatura & Renovação
+              <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
+                Planos & Renovação de Assinatura
               </h1>
               <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                Acompanhe o status do plano de <strong class="text-slate-800">{{ dados()?.nomeEmpresa || tenantService.nomeEmpresa() }}</strong>
+                Estabelecimento: <strong class="text-slate-800">{{ dados()?.nomeEmpresa || tenantService.nomeEmpresa() }}</strong>
               </p>
             </div>
 
-            <!-- Botão Atualizar -->
             <button
+              type="button"
               (click)="carregarStatus()"
               [disabled]="carregando()"
-              class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50">
+              class="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50">
               <span [class.animate-spin]="carregando()">🔄</span> Atualizar Status
             </button>
           </div>
 
-          <!-- Loading State -->
-          @if (carregando() && !dados()) {
-            <div class="py-16 text-center">
-              <div class="inline-block w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
-              <p class="text-xs text-stone-400 mt-3 font-medium">Consultando status da sua assinatura...</p>
-            </div>
-          }
-
-          <!-- Empty / Error State -->
-          @if (!carregando() && !dados()) {
-            <div class="py-16 text-center space-y-4">
-              <div class="w-16 h-16 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center text-2xl mx-auto">
-                💳
-              </div>
-              <div>
-                <h3 class="font-serif text-lg font-bold text-stone-800">Não foi possível carregar os dados da assinatura</h3>
-                <p class="text-xs text-stone-500 max-w-sm mx-auto mt-1">Verifique sua conexão ou clique no botão abaixo para tentar novamente.</p>
-              </div>
-              <button
-                type="button"
-                (click)="carregarStatus()"
-                class="px-5 py-2.5 rounded-xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-sm">
-                🔄 Tentar Novamente
-              </button>
-            </div>
-          }
-
-          <!-- Data Content -->
           @if (dados(); as sub) {
-
-            <!-- Grid de Indicadores -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
 
               <!-- Indicador 1: Status -->
-              <div class="p-5 rounded-2xl bg-stone-50/80 border border-nude-200">
-                <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider block">Status do Plano</span>
-                <div class="mt-2 flex items-center gap-2">
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Status Atual</span>
+                <div class="mt-2">
                   @if (sub.status === 'ATIVA') {
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                       <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Ativa & Em Dia
                     </span>
+                  } @else if (sub.status === 'TRIAL') {
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Teste Grátis ({{ sub.diasRestantes ?? 7 }} dias)
+                    </span>
                   } @else if (sub.status === 'VENCENDO') {
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200 animate-pulse">
-                      <span class="w-2 h-2 rounded-full bg-amber-500"></span> Renovação Disponível
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                      <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Renovação Disponível
                     </span>
                   } @else {
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
@@ -98,239 +75,405 @@ import { AssinaturaStatusResponse } from '../../../core/models';
                     </span>
                   }
                 </div>
-                <p class="text-[11px] text-stone-500 mt-2">
-                  {{ sub.status === 'ATIVA' ? 'Todos os recursos operando perfeitamente.' : (sub.status === 'VENCENDO' ? 'Renove com antecedência sem perder dias.' : 'Acesso suspenso por vencimento.') }}
-                </p>
               </div>
 
-              <!-- Indicador 2: Vencimento -->
-              <div class="p-5 rounded-2xl bg-stone-50/80 border border-nude-200">
-                <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider block">Próximo Vencimento</span>
-                <div class="mt-1">
-                  <span class="font-serif text-xl font-bold text-stone-900">
-                    {{ formatarData(sub.dataVencimento) }}
-                  </span>
+              <!-- Indicador 2: Próximo Vencimento -->
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Válido Até</span>
+                <div class="mt-1 text-lg font-extrabold text-slate-900">
+                  {{ formatarData(sub.dataVencimento) }}
                 </div>
-                <p class="text-[11px] mt-1" [class.text-rose-600]="sub.vencida" [class.text-amber-600]="sub.status === 'VENCENDO'" [class.text-stone-500]="sub.status === 'ATIVA'">
+                <p class="text-[11px] text-slate-500 mt-0.5">
                   @if (sub.vencida) {
-                    Venceu há {{ (sub.diasRestantes || 0) * -1 }} dia(s)
-                  } @else if (sub.diasRestantes === 0) {
-                    Vence hoje!
+                    <span class="text-rose-600 font-semibold">Vencida há {{ (sub.diasRestantes || 0) * -1 }} dia(s)</span>
                   } @else {
-                    Faltam <strong>{{ sub.diasRestantes ?? 0 }} dia(s)</strong> para vencer
+                    Restam <strong>{{ sub.diasRestantes ?? 0 }} dia(s)</strong> (acumulativos ao renovar)
                   }
                 </p>
               </div>
 
-              <!-- Indicador 3: Mensalidade -->
-              <div class="p-5 rounded-2xl bg-stone-50/80 border border-nude-200">
-                <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider block">Valor da Mensalidade</span>
-                <div class="mt-1">
-                  <span class="font-serif text-xl font-bold text-stone-900">
-                    R$ {{ (sub.valorMensalidade || 149.9).toFixed(2).replace('.', ',') }}
-                  </span>
-                  <span class="text-[11px] text-stone-400 font-normal"> / 30 dias</span>
+              <!-- Indicador 3: Plano Selecionado -->
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Plano Selecionado</span>
+                <div class="mt-1 text-lg font-extrabold text-slate-900">
+                  {{ planoSelecionadoObj().nome }} ({{ labelCicloAtual() }})
                 </div>
-                <p class="text-[11px] text-stone-500 mt-1">
-                  Sem taxa de adesão extra ou fidelidade.
+                <p class="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                  R$ {{ formatarMoeda(valorTotalSelecionado()) }} via PIX
                 </p>
               </div>
+
             </div>
+          }
+        </div>
 
-            <!-- REGRA CLARA: NÃO-PERDA DE DIAS -->
-            <div class="mt-6 p-4 rounded-2xl bg-rose-50/50 border border-rose-100 flex items-start gap-3 text-xs text-stone-700">
-              <span class="text-rose-500 text-base leading-none">🛡️</span>
-              <div>
-                <strong class="text-rose-900">Regra de Renovação Antecipada:</strong>
-                Se você efetuar o pagamento antes dos 30 dias vencerem (por exemplo, faltando 4 dias para acabar), 
-                <strong>esses 4 dias restantes continuam válidos e serão somados integralmente</strong> aos novos 30 dias contratados!
-              </div>
+        <!-- ========================================================================= -->
+        <!-- 1. SELETOR DE CICLO DE FATURAÇÃO (MENSAL | SEMESTRAL | ANUAL) -->
+        <!-- ========================================================================= -->
+        <div class="text-center space-y-3">
+          <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">
+            Escolha o Plano e a Periodicidade Ideal
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
+            Ao ativar ou renovar antecipadamente, <strong>os seus dias atuais restantes são preservados e somados</strong> integralmente ao novo período contratado.
+          </p>
+
+          <div class="pt-2 flex flex-col items-center justify-center">
+            <div
+              role="tablist"
+              aria-label="Seletor de ciclo de faturação"
+              class="inline-grid grid-cols-3 p-1.5 rounded-2xl bg-slate-200/80 border border-slate-300/70 shadow-inner w-full max-w-md">
+
+              <button
+                type="button"
+                (click)="selecionarCiclo('MENSAL')"
+                [class.bg-white]="cicloSelecionado() === 'MENSAL'"
+                [class.text-slate-900]="cicloSelecionado() === 'MENSAL'"
+                [class.shadow-sm]="cicloSelecionado() === 'MENSAL'"
+                [class.text-slate-600]="cicloSelecionado() !== 'MENSAL'"
+                class="min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center justify-center">
+                <span>Mensal</span>
+                <span class="text-[10px] font-medium text-slate-400 hidden sm:inline">Preço base</span>
+              </button>
+
+              <button
+                type="button"
+                (click)="selecionarCiclo('SEMESTRAL')"
+                [class.bg-white]="cicloSelecionado() === 'SEMESTRAL'"
+                [class.text-slate-900]="cicloSelecionado() === 'SEMESTRAL'"
+                [class.shadow-sm]="cicloSelecionado() === 'SEMESTRAL'"
+                [class.text-slate-600]="cicloSelecionado() !== 'SEMESTRAL'"
+                class="min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center justify-center">
+                <span>Semestral</span>
+                <span class="text-[10px] font-extrabold text-emerald-600">-10% OFF</span>
+              </button>
+
+              <button
+                type="button"
+                (click)="selecionarCiclo('ANUAL')"
+                [class.bg-slate-900]="cicloSelecionado() === 'ANUAL'"
+                [class.text-white]="cicloSelecionado() === 'ANUAL'"
+                [class.shadow-md]="cicloSelecionado() === 'ANUAL'"
+                [class.text-slate-700]="cicloSelecionado() !== 'ANUAL'"
+                class="min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center justify-center">
+                <span>Anual</span>
+                <span
+                  class="text-[10px] font-extrabold"
+                  [class.text-amber-300]="cicloSelecionado() === 'ANUAL'"
+                  [class.text-rose-600]="cicloSelecionado() !== 'ANUAL'">
+                  2 Meses Grátis
+                </span>
+              </button>
+
             </div>
+          </div>
+        </div>
 
-            <!-- ========================================================================= -->
-            <!-- CASO 1: AINDA FALTAM MAIS DE 5 DIAS (NÃO PRECISA RENOVAR AGORA) -->
-            <!-- ========================================================================= -->
-            @if (!sub.podeRenovar) {
-              <div class="mt-8 p-8 rounded-3xl bg-white border border-emerald-100 shadow-sm text-center space-y-4">
-                <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
-                  ✓
-                </div>
-                <div>
-                  <h3 class="font-serif text-xl font-bold text-stone-900">
-                    Sua assinatura está em dia!
-                  </h3>
-                  <p class="text-xs sm:text-sm text-stone-500 max-w-md mx-auto mt-1">
-                    Você ainda possui <strong>{{ sub.diasRestantes ?? 0 }} dias</strong> de acesso garantido. 
-                    A geração do Pix de renovação será liberada automaticamente aqui nesta aba quando faltarem <strong>5 dias</strong> para o vencimento.
-                  </p>
-                </div>
+        <!-- ========================================================================= -->
+        <!-- 2. MATRIZ DE PLANOS (STUDIO R$ 89,90 | CLÍNICA PRO R$ 99,90 | VIP R$ 119,90) -->
+        <!-- ========================================================================= -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
 
-                <div class="pt-2">
-                  <a routerLink="/admin/dashboard" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-colors shadow">
-                    Ir para o Dashboard
-                  </a>
-                </div>
-              </div>
-            }
+          @for (plano of planos; track plano.id) {
+            <div
+              (click)="selecionarPlano(plano.id)"
+              [class.border-2]="plano.destaque || planoSelecionado() === plano.id"
+              [class.border-rose-500]="plano.destaque"
+              [class.border-slate-900]="!plano.destaque && planoSelecionado() === plano.id"
+              [class.shadow-lg]="plano.destaque || planoSelecionado() === plano.id"
+              [class.border]="!plano.destaque && planoSelecionado() !== plano.id"
+              [class.border-slate-200]="!plano.destaque && planoSelecionado() !== plano.id"
+              [class.md:col-span-2]="plano.id === 'VIP'"
+              [class.lg:col-span-1]="plano.id === 'VIP'"
+              class="bg-white rounded-2xl p-6 flex flex-col justify-between relative transition-all cursor-pointer hover:shadow-md">
 
-            <!-- ========================================================================= -->
-            <!-- CASO 2: FALTAM <= 5 DIAS OU VENCIDA -> PIX GERADO AUTOMATICAMENTE -->
-            <!-- ========================================================================= -->
-            @if (sub.podeRenovar) {
-
-              <!-- Se o pagamento acabou de ser aprovado -->
-              @if (pagamentoAprovado()) {
-                <div class="mt-8 p-8 rounded-3xl bg-emerald-50/70 border border-emerald-200 text-center space-y-4 animate-scale-up">
-                  <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-4xl mx-auto shadow-inner">
-                    🎉
-                  </div>
-                  <div>
-                    <h2 class="font-serif text-2xl font-bold text-stone-900">
-                      Pagamento Aprovado com Sucesso!
-                    </h2>
-                    <p class="text-sm text-emerald-800 max-w-lg mx-auto mt-2">
-                      Sua assinatura foi renovada por mais 30 dias. Os dias anteriores restantes foram preservados.
-                    </p>
-                    <p class="text-xs text-stone-500 mt-1">
-                      Novo Vencimento: <strong class="text-stone-900">{{ formatarData(novoVencimento()) }}</strong>
-                    </p>
-                  </div>
-
-                  <div class="pt-4 flex items-center justify-center gap-3">
-                    <a routerLink="/admin/dashboard" class="px-6 py-3 rounded-2xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shadow-md">
-                      Acessar Dashboard →
-                    </a>
-                  </div>
-                </div>
-              } @else {
-
-                <!-- Bloco de Pagamento Pix -->
-                <div class="mt-8 p-6 sm:p-8 rounded-3xl bg-white border border-rose-200 shadow-md space-y-6">
-
-                  <!-- Header do Pix -->
-                  <div class="text-center space-y-2">
-                    @if (sub.vencida) {
-                      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                        🚨 Vencida — Regularize para Reativar
-                      </div>
-                    } @else {
-                      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                        ⏳ Vence em {{ sub.diasRestantes ?? 0 }} dia(s) — Renove Sem Perder Dias
-                      </div>
-                    }
-
-                    <h2 class="font-serif text-2xl font-bold text-stone-900">
-                      Pagar Renovação Mensal via Pix
-                    </h2>
-                    <p class="text-xs text-stone-500 max-w-lg mx-auto">
-                      O Pix de <strong>R$ {{ (sub.valorMensalidade || 149.9).toFixed(2).replace('.', ',') }}</strong> foi gerado automaticamente. 
-                      Assim que o banco confirmar o pagamento, sua assinatura será renovada instantaneamente.
-                    </p>
-                  </div>
-
-                  <!-- QR Code e Copia e Cola -->
-                  <div class="flex flex-col md:flex-row items-center justify-center gap-8 py-4">
-
-                    <!-- Imagem do QR Code -->
-                    <div class="flex flex-col items-center">
-                      <div class="p-3 bg-white rounded-2xl border-2 border-nude-300 shadow-sm">
-                        @if (sub.pixQrCodeBase64) {
-                          <img
-                            [src]="'data:image/png;base64,' + sub.pixQrCodeBase64"
-                            alt="QR Code Pix Renovação"
-                            class="w-48 h-48 sm:w-56 sm:h-56 object-contain" />
-                        } @else {
-                          <div class="w-48 h-48 sm:w-56 sm:h-56 flex flex-col items-center justify-center text-stone-400 text-xs">
-                            <span class="animate-spin text-2xl">🔄</span>
-                            <span class="mt-2">Carregando QR Code...</span>
-                          </div>
-                        }
-                      </div>
-                      <span class="text-[11px] text-stone-400 mt-2">Aponte a câmera do seu banco</span>
-                    </div>
-
-                    <!-- Código Copia e Cola & Status -->
-                    <div class="w-full md:w-1/2 space-y-4">
-                      <div>
-                        <label class="block text-xs font-semibold text-stone-700 mb-1.5">
-                          Pix Copia e Cola:
-                        </label>
-                        <div class="flex items-center gap-2">
-                          <input
-                            type="text"
-                            readonly
-                            [value]="sub.pixCopiaCola || 'Gerando código Pix...'"
-                            class="w-full px-3.5 py-2.5 rounded-xl border border-nude-300 bg-stone-50 text-xs font-mono text-stone-600 truncate focus:outline-none select-all" />
-                          <button
-                            type="button"
-                            (click)="copiarPix(sub.pixCopiaCola)"
-                            [disabled]="!sub.pixCopiaCola"
-                            class="px-4 py-2.5 rounded-xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-all shrink-0 shadow-sm flex items-center gap-1.5">
-                            @if (copiado()) {
-                              <span>✓ Copiado!</span>
-                            } @else {
-                              <span>📋 Copiar</span>
-                            }
-                          </button>
-                        </div>
-                      </div>
-
-                      <!-- Status em Tempo Real -->
-                      <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center gap-3">
-                        <div class="w-3 h-3 rounded-full bg-amber-500 animate-ping"></div>
-                        <div class="text-xs text-amber-900">
-                          <span class="font-bold block">Aguardando confirmação do Pix...</span>
-                          <span class="text-[11px] text-amber-800">Nosso sistema verifica automaticamente a cada 3 segundos. Não precisa enviar comprovante.</span>
-                        </div>
-                      </div>
-
-                      <!-- Botão Recriar Pix se expirou -->
-                      <div class="pt-1 flex items-center justify-between text-xs text-stone-400">
-                        <span>O código expira em 30 minutos</span>
-                        <button
-                          type="button"
-                          (click)="gerarNovoPix()"
-                          class="text-rose-600 hover:text-rose-700 font-semibold underline">
-                          Gerar Novo Código Pix
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
-
+              @if (plano.destaque && plano.etiquetaDestaque) {
+                <div class="-mt-9 mb-3 flex justify-center">
+                  <span class="inline-flex items-center gap-1 px-3.5 py-1 rounded-full bg-gradient-to-r from-rose-600 to-rose-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow">
+                    ★ {{ plano.etiquetaDestaque }}
+                  </span>
                 </div>
               }
 
-            }
+              <div>
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <h3 class="text-lg font-extrabold text-slate-900">{{ plano.nome }}</h3>
+                    <p class="text-xs text-slate-500">{{ plano.subtitulo }}</p>
+                  </div>
+                  @if (cicloSelecionado() === 'SEMESTRAL') {
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold shrink-0">
+                      -10% OFF
+                    </span>
+                  } @else if (cicloSelecionado() === 'ANUAL') {
+                    <span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-extrabold shrink-0">
+                      2 Meses Grátis
+                    </span>
+                  }
+                </div>
 
+                <!-- Valores Calculados por Ciclo -->
+                <div class="my-4 p-3.5 rounded-xl border"
+                     [class.bg-rose-50/50]="plano.destaque"
+                     [class.border-rose-100]="plano.destaque"
+                     [class.bg-slate-50]="!plano.destaque"
+                     [class.border-slate-200/70]="!plano.destaque">
+
+                  @if (cicloSelecionado() === 'MENSAL') {
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-xs font-bold text-slate-500">R$</span>
+                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(plano.precoMensal) }}</span>
+                      <span class="text-xs font-semibold text-slate-500">/mês</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Faturação mensal via PIX</p>
+                  }
+
+                  @if (cicloSelecionado() === 'SEMESTRAL') {
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-xs font-bold text-slate-500">R$</span>
+                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(plano.precoSemestralMensalEq) }}</span>
+                      <span class="text-xs font-semibold text-slate-500">/mês*</span>
+                    </div>
+                    <p class="text-[11px] text-slate-700 font-semibold mt-0.5">
+                      R$ {{ formatarMoeda(plano.precoSemestralTotal) }}/semestre
+                      <span class="text-emerald-700 font-bold">(Poupa R$ {{ formatarMoeda(plano.poupancaSemestral) }})</span>
+                    </p>
+                  }
+
+                  @if (cicloSelecionado() === 'ANUAL') {
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-xs font-bold text-slate-500">R$</span>
+                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(plano.precoAnualMensalEq) }}</span>
+                      <span class="text-xs font-semibold text-slate-500">/mês*</span>
+                    </div>
+                    <p class="text-[11px] text-slate-700 font-semibold mt-0.5">
+                      R$ {{ formatarMoeda(plano.precoAnualTotal) }}/ano
+                      <span class="text-rose-600 font-bold">(Poupa R$ {{ formatarMoeda(plano.poupancaAnual) }})</span>
+                    </p>
+                  }
+                </div>
+
+                <!-- Lista de Benefícios -->
+                <div class="space-y-2 mb-5">
+                  @if (plano.beneficiosBaseTexto) {
+                    <span class="text-[11px] font-bold text-rose-600 uppercase tracking-wider block">
+                      {{ plano.beneficiosBaseTexto }}
+                    </span>
+                  }
+                  <ul class="space-y-2 text-xs text-slate-700">
+                    @for (item of plano.funcionalidades; track item) {
+                      <li class="flex items-start gap-2 leading-snug">
+                        <span class="text-emerald-600 font-extrabold">✓</span>
+                        <span>{{ item }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                (click)="gerarPixParaPlano(plano.id); $event.stopPropagation()"
+                [disabled]="carregando()"
+                [class.bg-rose-600]="plano.destaque"
+                [class.hover:bg-rose-700]="plano.destaque"
+                [class.text-white]="plano.destaque || planoSelecionado() === plano.id"
+                [class.bg-slate-900]="!plano.destaque && planoSelecionado() === plano.id"
+                [class.bg-slate-100]="!plano.destaque && planoSelecionado() !== plano.id"
+                [class.text-slate-800]="!plano.destaque && planoSelecionado() !== plano.id"
+                [class.hover:bg-slate-200]="!plano.destaque && planoSelecionado() !== plano.id"
+                class="w-full min-h-[44px] py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                <span>💳 Gerar PIX: R$ {{ formatarMoeda(obterTotalPlano(plano)) }}</span>
+              </button>
+
+            </div>
           }
 
         </div>
 
+        <!-- ========================================================================= -->
+        <!-- 3. BLOCO DE PAGAMENTO PIX MERCADO PAGO -->
+        <!-- ========================================================================= -->
+        @if (dados(); as sub) {
+          @if (pagamentoAprovado()) {
+            <div class="p-8 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-4 animate-scale-up">
+              <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-3xl mx-auto">
+                🎉
+              </div>
+              <h2 class="text-2xl font-extrabold text-slate-900">
+                Pagamento Aprovado com Sucesso!
+              </h2>
+              <p class="text-sm text-emerald-800 max-w-lg mx-auto">
+                Sua assinatura foi atualizada e todos os dias anteriores restantes foram somados.
+              </p>
+              <p class="text-xs text-slate-600">
+                Novo Vencimento: <strong class="text-slate-900">{{ formatarData(novoVencimento() || sub.dataVencimento) }}</strong>
+              </p>
+            </div>
+          } @else if (sub.pixQrCodeBase64 || sub.pixCopiaCola) {
+            <div id="box-pix-checkout" class="p-6 sm:p-8 rounded-2xl bg-white border-2 border-rose-200 shadow-md space-y-6">
+              <div class="text-center space-y-1.5">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                  ⚡ Checkout PIX Instantâneo • Mercado Pago
+                </span>
+                <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">
+                  {{ planoSelecionadoObj().nome }} — Ciclo {{ labelCicloAtual() }}
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500">
+                  Valor do PIX gerado: <strong class="text-slate-900">R$ {{ formatarMoeda(sub.valorMensalidade || valorTotalSelecionado()) }}</strong>. A liberação ocorre automaticamente em segundos após o pagamento.
+                </p>
+              </div>
+
+              <div class="flex flex-col md:flex-row items-center justify-center gap-8 py-2">
+                <!-- QR Code -->
+                <div class="flex flex-col items-center">
+                  <div class="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    @if (sub.pixQrCodeBase64) {
+                      <img
+                        [src]="'data:image/png;base64,' + sub.pixQrCodeBase64"
+                        alt="QR Code Pix"
+                        class="w-48 h-48 sm:w-52 sm:h-52 object-contain" />
+                    }
+                  </div>
+                  <span class="text-[11px] text-slate-400 mt-2">Escaneie no aplicativo do seu banco</span>
+                </div>
+
+                <!-- Copia e Cola -->
+                <div class="w-full md:w-1/2 space-y-4">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                      Código PIX Copia e Cola:
+                    </label>
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readonly
+                        [value]="sub.pixCopiaCola || ''"
+                        class="w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-slate-50 text-xs font-mono text-slate-700 truncate focus:outline-none select-all" />
+                      <button
+                        type="button"
+                        (click)="copiarPix(sub.pixCopiaCola)"
+                        class="min-h-[44px] px-4 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-all shrink-0 shadow-sm">
+                        {{ copiado() ? '✓ Copiado!' : '📋 Copiar' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-amber-500 animate-ping shrink-0"></div>
+                    <div class="text-xs text-amber-900">
+                      <span class="font-bold block">Aguardando confirmação automática...</span>
+                      <span class="text-[11px] text-amber-800">Verificamos o pagamento a cada 3 segundos.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        }
+
       </div>
     </div>
-  `,
-  styles: [`
-    @keyframes scaleUp {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-    .animate-scale-up {
-      animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-  `]
+  `
 })
 export class AdminAssinaturaComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   tenantService = inject(TenantService);
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
 
   carregando = signal(false);
   copiado = signal(false);
   dados = signal<AssinaturaStatusResponse | null>(null);
   pagamentoAprovado = signal(false);
   novoVencimento = signal<string | null>(null);
+
+  cicloSelecionado = signal<CicloFaturacao>('MENSAL');
+  planoSelecionado = signal<PlanoId>('PRO');
+
+  readonly planos: PlanoConfig[] = [
+    {
+      id: 'STARTER',
+      nome: 'Studio / Starter',
+      subtitulo: 'Ideal para profissionais autônomos e studios compactos',
+      destaque: false,
+      precoMensal: 89.90,
+      precoSemestralTotal: 485.00,
+      precoSemestralMensalEq: 80.83,
+      poupancaSemestral: 54.40,
+      precoAnualTotal: 899.00,
+      precoAnualMensalEq: 74.91,
+      poupancaAnual: 179.80,
+      ctaTexto: 'Escolher Studio / Starter',
+      funcionalidades: [
+        'Domínio / Subdomínio próprio',
+        'Suporte via WhatsApp',
+        'Até 2 profissionais na agenda',
+        'Link de Agendamento Online 24h (PWA)',
+        'Cálculo automático de horários livres',
+        'Prontuário e Histórico de Anamnese',
+        'Prevenção transacional de conflitos'
+      ]
+    },
+    {
+      id: 'PRO',
+      nome: 'Clínica Pro',
+      subtitulo: 'Foco de vendas • Melhor custo-benefício',
+      destaque: true,
+      etiquetaDestaque: 'Mais Popular / Melhor Relação Custo-Benefício',
+      precoMensal: 99.90,
+      precoSemestralTotal: 539.00,
+      precoSemestralMensalEq: 89.83,
+      poupancaSemestral: 60.40,
+      precoAnualTotal: 999.00,
+      precoAnualMensalEq: 83.25,
+      poupancaAnual: 199.80,
+      ctaTexto: 'Escolher Clínica Pro',
+      beneficiosBaseTexto: 'Tudo do Plano Studio +',
+      funcionalidades: [
+        'Domínio / Subdomínio próprio',
+        'Suporte via WhatsApp',
+        'Até 6 profissionais na agenda',
+        'Lembretes automáticos via WhatsApp (confirmação e alerta 24h antes)',
+        'Personalização completa com o logótipo da clínica',
+        'Dashboard executivo de métricas e taxa de No-Show'
+      ]
+    },
+    {
+      id: 'VIP',
+      nome: 'VIP / Multisalas',
+      subtitulo: 'Para clínicas maiores e operações multisalas',
+      destaque: false,
+      precoMensal: 119.90,
+      precoSemestralTotal: 647.00,
+      precoSemestralMensalEq: 107.83,
+      poupancaSemestral: 72.40,
+      precoAnualTotal: 1199.00,
+      precoAnualMensalEq: 99.91,
+      poupancaAnual: 239.80,
+      ctaTexto: 'Escolher VIP / Multisalas',
+      beneficiosBaseTexto: 'Tudo do Plano Clínica Pro +',
+      funcionalidades: [
+        'Domínio / Subdomínio próprio',
+        'Suporte prioritário via WhatsApp',
+        'Profissionais e salas ilimitadas',
+        'Campanhas de retorno no WhatsApp (reativação de clientes inativos)',
+        'Gestão avançada de múltiplos acessos e comissões'
+      ]
+    }
+  ];
+
+  planoSelecionadoObj = computed(() => {
+    return this.planos.find(p => p.id === this.planoSelecionado()) || this.planos[1];
+  });
+
+  valorTotalSelecionado = computed(() => {
+    return this.obterTotalPlano(this.planoSelecionadoObj());
+  });
+
+  labelCicloAtual = computed(() => {
+    const c = this.cicloSelecionado();
+    return c === 'SEMESTRAL' ? 'Semestral' : (c === 'ANUAL' ? 'Anual' : 'Mensal');
+  });
 
   private intervalPolling: any = null;
 
@@ -342,6 +485,28 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
     this.pararPolling();
   }
 
+  selecionarCiclo(ciclo: CicloFaturacao): void {
+    this.cicloSelecionado.set(ciclo);
+  }
+
+  selecionarPlano(plano: PlanoId): void {
+    this.planoSelecionado.set(plano);
+  }
+
+  obterTotalPlano(plano: PlanoConfig): number {
+    const c = this.cicloSelecionado();
+    if (c === 'SEMESTRAL') return plano.precoSemestralTotal;
+    if (c === 'ANUAL') return plano.precoAnualTotal;
+    return plano.precoMensal;
+  }
+
+  formatarMoeda(valor: number): string {
+    return (valor || 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
   carregarStatus(): void {
     this.carregando.set(true);
     const slug = this.route.snapshot.queryParamMap.get('slug') || this.tenantService.tenant()?.slug || undefined;
@@ -350,8 +515,6 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.dados.set(res);
         this.carregando.set(false);
-
-        // Se puder renovar e tiver paymentId, inicia o polling automático
         if (res.podeRenovar && res.paymentId && !this.pagamentoAprovado()) {
           this.iniciarPolling(res.paymentId);
         }
@@ -363,20 +526,26 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
     });
   }
 
-  gerarNovoPix(): void {
+  gerarPixParaPlano(planoId: PlanoId): void {
+    this.planoSelecionado.set(planoId);
     this.carregando.set(true);
     const slug = this.route.snapshot.queryParamMap.get('slug') || this.tenantService.tenant()?.slug || undefined;
 
-    this.api.forcarGerarPixRenovacao(slug).subscribe({
+    this.api.forcarGerarPixRenovacao(slug, planoId, this.cicloSelecionado()).subscribe({
       next: (res) => {
         this.dados.set(res);
         this.carregando.set(false);
         if (res.paymentId) {
           this.iniciarPolling(res.paymentId);
         }
+        if (typeof document !== 'undefined') {
+          setTimeout(() => {
+            document.getElementById('box-pix-checkout')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 150);
+        }
       },
       error: (err) => {
-        console.error('Erro ao gerar novo Pix:', err);
+        console.error('Erro ao gerar Pix do plano:', err);
         this.carregando.set(false);
       }
     });
@@ -409,11 +578,9 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
           if (res.pago || res.status === 'approved') {
             this.pagamentoAprovado.set(true);
             this.pararPolling();
-            // Atualiza o vencimento novo nos dados
             if (res.tenant?.dataVencimento) {
               this.novoVencimento.set(res.tenant.dataVencimento);
             }
-            // Recarrega dados completos
             setTimeout(() => this.carregarStatus(), 1500);
           }
         },
@@ -429,4 +596,3 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
     }
   }
 }
-

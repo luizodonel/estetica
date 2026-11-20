@@ -1,7 +1,7 @@
 {
-  "name": "estetica",
+  "name": "agendar-saas",
   "version": "1.0.0",
-  "description": "Sistema de Agendamento e Gestão para Clínicas de Estética",
+  "description": "Agendar. — Plataforma SaaS Multi-Nicho de Agendamento e Gestão para Empresas & Autônomos",
   "scripts": {
     "start": "npm --prefix estetica-web start",
     "web": "npm --prefix estetica-web start",

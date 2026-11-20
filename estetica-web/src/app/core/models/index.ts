@@ -261,7 +261,7 @@ export interface StatusPagamentoResponse {
 
 export interface AssinaturaStatusResponse {
   nomeEmpresa: string;
-  status: 'ATIVA' | 'VENCENDO' | 'VENCIDA' | 'PENDENTE';
+  status: 'ATIVA' | 'TRIAL' | 'VENCENDO' | 'VENCIDA' | 'PENDENTE';
   dataVencimento?: string;
   dataPagamento?: string;
   diasRestantes?: number;

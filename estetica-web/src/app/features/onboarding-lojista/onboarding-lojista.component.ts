@@ -67,14 +67,14 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
           <!-- Passo 3 -->
           <div class="flex flex-col items-center gap-1">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
-                 [class.bg-rose-600]="passoAtual() >= 3"
+                 [class.bg-emerald-600]="passoAtual() >= 3"
                  [class.text-white]="passoAtual() >= 3"
                  [class.bg-white]="passoAtual() < 3"
                  [class.border-2]="passoAtual() < 3"
                  [class.border-nude-300]="passoAtual() < 3">
               3
             </div>
-            <span class="text-[10px] font-semibold text-stone-600">Ativação PIX</span>
+            <span class="text-[10px] font-semibold text-stone-600">Pronto!</span>
           </div>
         </div>
 
@@ -329,12 +329,17 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                 </div>
 
                 <!-- Resumo dos Dados Escolhidos -->
-                <div class="p-4 rounded-2xl bg-stone-50 border border-nude-200 text-xs text-stone-600 space-y-1">
-                  <div><strong>Empresa:</strong> {{ formLojista.get('nomeEmpresa')?.value }}</div>
-                  <div><strong>Link que será ativado:</strong> <span class="text-rose-600 font-mono font-bold">https://{{ formLojista.get('slug')?.value }}.logistadigital.com.br/</span></div>
+                <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-stone-700 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <span><strong>Empresa:</strong> {{ formLojista.get('nomeEmpresa')?.value }}</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider">
+                      🎁 7 Dias Grátis • Sem Cartão
+                    </span>
+                  </div>
+                  <div><strong>Link exclusivo:</strong> <span class="text-rose-600 font-mono font-bold">https://{{ formLojista.get('slug')?.value }}.logistadigital.com.br/</span></div>
                   <div><strong>Usuário Administrador:</strong> <span class="font-semibold text-stone-800">{{ formLojista.get('usuarioLogin')?.value || 'Não definido' }}</span></div>
-                  <div class="text-[11px] text-stone-500 pt-1">
-                    💳 Taxa de ativação / mensalidade: <span class="font-bold text-rose-600">R$ 149,90 via PIX</span>.
+                  <div class="text-[11px] text-emerald-800 pt-1">
+                    ✓ Seu catálogo completo e agenda serão liberados na hora! Após os 7 dias de teste grátis, planos a partir de <strong>R$ 89,90/mês via PIX</strong> (ou com desconto no Semestral e Anual).
                   </div>
                 </div>
 
@@ -355,12 +360,12 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                   <button
                     type="submit"
                     [disabled]="formLojista.invalid || salvando()"
-                    class="px-7 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-xs shadow-lg shadow-rose-200 disabled:opacity-40 transition-all flex items-center gap-2">
+                    class="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-xs shadow-lg shadow-emerald-200 disabled:opacity-40 transition-all flex items-center gap-2">
                     @if (salvando()) {
                       <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      <span>Gerando Cobrança PIX...</span>
+                      <span>Preparando sua Plataforma...</span>
                     } @else {
-                      <span>🚀 Finalizar e Gerar PIX (R$ 149,90)</span>
+                      <span>🚀 Criar Minha Plataforma & Iniciar 7 Dias Grátis</span>
                     }
                   </button>
                 </div>
@@ -368,102 +373,34 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
             }
 
             <!-- ========================================================================= -->
-            <!-- PASSO 4: PAGAMENTO PIX & ATIVAÇÃO DA LOJA (MERCADO PAGO) -->
+            <!-- PASSO 3: PLATAFORMA ATIVADA COM TESTE GRÁTIS (ACESSO IMEDIATO AO PAINEL) -->
             <!-- ========================================================================= -->
             @if (passoAtual() === 3) {
               <div class="space-y-6 animate-scale-up text-center">
 
-                @if (!pagamentoAprovado()) {
-                  <!-- Estado 1: Aguardando Pagamento PIX -->
-                  <div>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-2">
-                      💳 Ativação via PIX • Mercado Pago
-                    </span>
-                    <h2 class="font-serif text-2xl font-bold text-stone-900">
-                      Efetue o Pagamento para Liberar seu Acesso
-                    </h2>
-                    <p class="text-xs text-stone-500 mt-1 max-w-md mx-auto">
-                      Pague o valor de <strong class="text-stone-900 text-sm">R$ {{ pixValor().toFixed(2).replace('.', ',') }}</strong> via PIX para que o seu sistema seja ativado imediatamente.
-                    </p>
-                  </div>
-
-                  <!-- QR Code PIX -->
-                  <div class="p-6 rounded-3xl bg-white border border-nude-200 shadow-sm max-w-sm mx-auto space-y-4">
-                    @if (pixQrCodeBase64()) {
-                      <div class="w-52 h-52 mx-auto p-2 bg-white rounded-2xl border border-nude-300 shadow-inner flex items-center justify-center">
-                        <img
-                          [src]="'data:image/png;base64,' + pixQrCodeBase64()"
-                          alt="QR Code PIX Mercado Pago"
-                          class="w-full h-full object-contain rounded-xl" />
-                      </div>
-                    } @else {
-                      <div class="w-52 h-52 mx-auto bg-stone-100 rounded-2xl flex items-center justify-center text-xs text-stone-400">
-                        Carregando QR Code...
-                      </div>
-                    }
-
-                    <span class="text-[11px] text-stone-500 block">
-                      Abra o app do seu banco e escaneie a imagem acima.
-                    </span>
-                  </div>
-
-                  <!-- Código PIX Copia e Cola -->
-                  @if (pixCopiaCola()) {
-                    <div class="max-w-md mx-auto space-y-2 text-left">
-                      <label class="block text-xs font-semibold text-stone-700">Ou use o Código PIX Copia e Cola:</label>
-                      <div class="flex items-center gap-2">
-                        <input
-                          type="text"
-                          readonly
-                          [value]="pixCopiaCola()"
-                          class="w-full text-xs font-mono p-3 rounded-xl border border-nude-300 bg-stone-50 select-all focus:outline-none" />
-                        <button
-                          type="button"
-                          (click)="copiarPix()"
-                          class="px-4 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs whitespace-nowrap shadow-sm transition-all">
-                          {{ pixCopiado() ? '✓ Copiado!' : 'Copiar PIX' }}
-                        </button>
-                      </div>
-                    </div>
-                  }
-
-                  <!-- Status de Verificação Automática -->
-                  <div class="flex items-center justify-center gap-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 py-3 px-4 rounded-2xl max-w-md mx-auto shadow-sm">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                    <span>Aguardando confirmação do banco... Verificação automática ativa.</span>
-                  </div>
-
-                  <div class="pt-2 flex flex-col items-center gap-2">
-                    <button
-                      type="button"
-                      (click)="checarStatusManual()"
-                      class="px-5 py-2.5 rounded-xl border border-nude-300 bg-white hover:bg-stone-50 text-stone-700 font-semibold text-xs transition-all shadow-sm flex items-center gap-2">
-                      <span>🔄 Já efetuei o pagamento • Verificar Agora</span>
-                    </button>
-                  </div>
-                } @else {
-                  <!-- Estado 2: Pagamento Aprovado com Sucesso! -->
-                  <div class="py-4 space-y-6 animate-scale-up">
+                @if (pagamentoAprovado()) {
+                  <!-- Plataforma Liberada com Trial Grátis Imediato -->
+                  <div class="py-2 space-y-6 animate-scale-up">
                     <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-4xl mx-auto shadow-lg shadow-emerald-100">
-                      ✓
+                      🎉
                     </div>
 
                     <div>
-                      <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2">
-                        Pagamento Aprovado!
+                      <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2">
+                        ✓ Plataforma Criada • 7 Dias de Teste Grátis Ativos!
                       </span>
                       <h2 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-                        Parabéns! Seu Espaço Foi Ativado!
+                        Parabéns! {{ formLojista.get('nomeEmpresa')?.value }} Está no Ar!
                       </h2>
-                      <p class="text-xs sm:text-sm text-stone-500 mt-2 max-w-md mx-auto">
-                        Identificamos seu pagamento PIX de R$ 149,90 no Mercado Pago. O acesso administrativo da sua loja está 100% liberado!
+                      <p class="text-xs sm:text-sm text-stone-500 mt-2 max-w-lg mx-auto leading-relaxed">
+                        Já pré-configuramos o catálogo completo de <strong>{{ setorSelecionadoConfig().label }}</strong> e sua agenda de atendimento para você testar agora mesmo com seus clientes!
                       </p>
                     </div>
 
-                    <!-- Box do Link Exclusivo -->
-                    <div class="p-5 rounded-3xl bg-stone-50 border-2 border-dashed border-rose-300 max-w-lg mx-auto">
-                      <span class="text-[10px] uppercase font-bold tracking-wider text-stone-400 block mb-1">
-                        Seu Link Personalizado Oficial:
+                    <!-- Box do Link Exclusivo para colocar na Bio do Instagram -->
+                    <div class="p-5 rounded-3xl bg-stone-50 border-2 border-dashed border-rose-300 max-w-lg mx-auto space-y-3">
+                      <span class="text-[10px] uppercase font-bold tracking-wider text-stone-500 block">
+                        📲 Seu Link Exclusivo de Agendamento (Para Bio do Instagram & WhatsApp):
                       </span>
                       <a
                         [href]="tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/')"
@@ -471,19 +408,31 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                         class="font-mono text-sm sm:text-base font-bold text-rose-600 hover:underline break-all block">
                         {{ tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/') }}
                       </a>
-                      <button
-                        type="button"
-                        (click)="copiarLink()"
-                        class="mt-3 px-4 py-2 rounded-xl bg-white border border-nude-300 hover:bg-stone-100 text-stone-700 font-semibold text-xs transition-all shadow-sm">
-                        {{ linkCopiado() ? '✓ Link Copiado!' : '📋 Copiar Link da Minha Loja' }}
-                      </button>
+                      <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          (click)="copiarLink()"
+                          class="px-4 py-2 rounded-xl bg-white border border-nude-300 hover:bg-stone-100 text-stone-800 font-semibold text-xs transition-all shadow-sm">
+                          {{ linkCopiado() ? '✓ Link Copiado!' : '📋 Copiar Link da Minha Agenda' }}
+                        </button>
+                        <a
+                          routerLink="/catalogo"
+                          class="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs transition-all shadow-sm">
+                          👁️ Ver Catálogo de Agendamento ↗
+                        </a>
+                      </div>
                     </div>
 
-                    <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                       <a
                         routerLink="/admin/dashboard"
-                        class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-semibold text-xs hover:from-rose-600 hover:to-rose-700 transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2">
-                        <span>Acessar Meu Painel Administrativo →</span>
+                        class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold text-xs hover:from-rose-600 hover:to-rose-700 transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2">
+                        <span>Acessar Meu Painel Administrativo Agora →</span>
+                      </a>
+                      <a
+                        routerLink="/admin/assinatura"
+                        class="w-full sm:w-auto px-6 py-3.5 rounded-2xl border border-stone-300 bg-white text-stone-700 font-semibold text-xs hover:bg-stone-50 transition-all flex items-center justify-center gap-2">
+                        <span>💳 Ver Minha Assinatura / Ativar Plano via PIX</span>
                       </a>
                     </div>
                   </div>
@@ -670,7 +619,7 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
         this.salvando.set(false);
         this.tenantCriado.set(res.tenant);
 
-        // Armazena dados do PIX
+        // Armazena dados do PIX caso existam
         this.pixPaymentId.set(res.paymentId || null);
         this.pixCopiaCola.set(res.pixCopiaCola || null);
         this.pixQrCodeBase64.set(res.pixQrCodeBase64 || null);
@@ -678,16 +627,28 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
           this.pixValor.set(res.valor);
         }
 
-        // Aplica cores do novo tenant no tema
+        // Aplica cores e dados do novo tenant no tema
         if (res.tenant) {
           this.tenantService.setTenantManual(res.tenant);
         }
 
-        // Avança para o Passo 4 (Pagamento PIX)
+        // Se o backend já liberou o token (Modo Trial Grátis Instantâneo), autentica o lojista imediatamente!
+        if (res.token) {
+          this.pagamentoAprovado.set(true);
+          this.authService.salvarSessaoDireta(
+            res.token,
+            res.usuario ? { ...res.usuario, setor: res.tenant?.setor || dados.setor } : null,
+            res.tenant?.slug || dados.slug,
+            res.tenant?.nomeEmpresa || dados.nomeEmpresa,
+            res.tenant?.logoUrl || dados.logoUrl
+          );
+        }
+
+        // Avança para o Passo 3 (Confirmação & Acesso Imediato)
         this.passoAtual.set(3);
 
-        // Inicia checagem automática a cada 3 segundos
-        if (res.paymentId) {
+        // Inicia checagem automática apenas se estiver aguardando pagamento PIX sem token
+        if (!res.token && res.paymentId) {
           this.iniciarPollingPagamento(res.paymentId);
         }
       },

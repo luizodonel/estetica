@@ -1,6 +1,8 @@
-# 🌸 Sistema de Agendamento Online - Clínica de Estética (L'Élégance)
+# 📅 Agendar. — Plataforma SaaS Multi-Nicho de Agendamento Online & Gestão
 
-Sistema completo de agendamento online e gestão operacional para clínica de estética avançada, desenvolvido com foco em alta conversão no mobile, arquitetura limpa (Clean Architecture), tratamento rigoroso de concorrência e agendamento duplo (*double-booking*), e design refinado em tons nude, rosé suave e champagne.
+Plataforma completa **SaaS Multi-Tenant e White-Label** de agendamento online, gestão operacional, prontuários e cobrança recorrente via PIX (Mercado Pago), projetada para atender **13 setores de serviços** (Clínicas de Estética, Salões de Beleza, Barbearias, Clínicas Médicas, Odontologia, Psicologia, Nutrição, Pilates & Personal, Spas, Estúdios de Tatuagem, Estúdios Fotográficos, Estética Automotiva e Restaurantes).
+
+Desenvolvida com foco em **alta conversão mobile (Product-Led Growth com 7 dias de Teste Grátis instantâneo)**, provisionamento automático de subdomínios no Coolify, catálogo pré-configurado por setor e tratamento rigoroso de concorrência (*double-booking*).
 
 ---
 

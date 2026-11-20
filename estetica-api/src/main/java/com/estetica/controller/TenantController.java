@@ -109,9 +109,12 @@ public class TenantController {
 
     @PostMapping("/assinatura/gerar-pix")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Força a geração de um novo Pix de renovação mensal")
-    public ResponseEntity<AssinaturaStatusResponse> forcarGerarPixRenovacao(@RequestParam(required = false) String slug) {
-        return ResponseEntity.ok(tenantService.forcarGerarPixRenovacao(slug));
+    @Operation(summary = "Força a geração de um novo Pix de assinatura/renovação para o plano e ciclo selecionados")
+    public ResponseEntity<AssinaturaStatusResponse> forcarGerarPixRenovacao(
+            @RequestParam(required = false) String slug,
+            @RequestParam(required = false) String plano,
+            @RequestParam(required = false) String ciclo) {
+        return ResponseEntity.ok(tenantService.forcarGerarPixRenovacao(slug, plano, ciclo));
     }
 }
 

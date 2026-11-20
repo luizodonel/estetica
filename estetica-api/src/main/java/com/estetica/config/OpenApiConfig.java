@@ -18,11 +18,11 @@ public class OpenApiConfig {
         final String securitySchemeName = "bearerAuth";
         return new OpenAPI()
                 .info(new Info()
-                        .title("API Clínica de Estética - Sistema de Agendamento Online")
+                        .title("Agendar. API — Plataforma SaaS Multi-Nicho de Agendamento Online")
                         .version("1.0.0")
-                        .description("API RESTful para agendamentos online mobile-first de procedimentos estéticos, cálculo em tempo real de horários livres, prontuário e gestão operacional.")
-                        .contact(new Contact().name("Equipe Técnica Clínica de Estética").email("contato@clinicaestetica.com"))
-                        .license(new License().name("Proprietária").url("https://clinicaestetica.com")))
+                        .description("API RESTful Multi-Tenant para agendamentos online mobile-first em 13 setores (Estética, Salões, Barbearias, Clínicas Médicas, Odontologia, Restaurantes, Estúdios e mais), cálculo em tempo real de horários livres, prontuário e cobrança PIX.")
+                        .contact(new Contact().name("Equipe Técnica Agendar.").email("contato@logistadigital.com.br"))
+                        .license(new License().name("Proprietária").url("https://logistadigital.com.br")))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,

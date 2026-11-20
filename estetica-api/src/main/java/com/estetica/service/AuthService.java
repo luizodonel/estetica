@@ -239,9 +239,12 @@ public class AuthService {
         String lojistaSlug = lojista.getSlug();
 
         // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO:
-        // O lojista só pode fazer login no seu próprio link/subdomínio!
-        // Caso tente logar no link principal ou em outro link, é estritamente barrado.
-        if (lojistaSlug == null || !slugAmbiente.equalsIgnoreCase(lojistaSlug.trim())) {
+        // Permite logar no seu próprio subdomínio OU via localhost/portal principal (redirecionando o contexto para o tenant do lojista)
+        if (lojistaSlug == null) {
+            throw new BadCredentialsException("Login ou usuário inválido.");
+        }
+        boolean isPortalGeral = "estetica".equalsIgnoreCase(slugAmbiente) || "localhost".equalsIgnoreCase(slugAmbiente);
+        if (!isPortalGeral && !slugAmbiente.equalsIgnoreCase(lojistaSlug.trim())) {
             throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
@@ -249,10 +252,13 @@ public class AuthService {
             throw new BadCredentialsException("Login ou usuário inválido.");
         }
 
-        // Validação de Pagamento PIX Inicial OU Assinatura Mensal Vencida
+        // Validação de Pagamento PIX Inicial OU Assinatura Mensal / Trial Vencido
         LocalDateTime agora = LocalDateTime.now();
-        boolean pendenteInicial = !"APROVADO".equalsIgnoreCase(lojista.getStatusPagamento()) || Boolean.FALSE.equals(lojista.getAtivo());
-        boolean assinaturaVencida = !pendenteInicial && lojista.getDataVencimento() != null && agora.isAfter(lojista.getDataVencimento());
+        boolean isTrialAtivo = "TRIAL".equalsIgnoreCase(lojista.getStatusPagamento())
+                && lojista.getDataVencimento() != null
+                && agora.isBefore(lojista.getDataVencimento());
+        boolean pendenteInicial = !isTrialAtivo && (!"APROVADO".equalsIgnoreCase(lojista.getStatusPagamento()) || Boolean.FALSE.equals(lojista.getAtivo()));
+        boolean assinaturaVencida = !isTrialAtivo && lojista.getDataVencimento() != null && agora.isAfter(lojista.getDataVencimento());
 
         if (pendenteInicial || assinaturaVencida) {
             String payIdAtual = assinaturaVencida ? lojista.getRenovacaoPaymentId() : lojista.getMercadoPagoPaymentId();

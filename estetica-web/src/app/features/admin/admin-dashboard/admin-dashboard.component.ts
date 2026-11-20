@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { SetorService } from '../../../core/services/setor.service';
+import { TenantService } from '../../../core/services/tenant.service';
 import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models';
 
 @Component({
@@ -41,24 +42,73 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
         </div>
       </div>
 
+      <!-- Card de Captação: Link Exclusivo de Agendamento da Clínica (Para Bio do Instagram & WhatsApp) -->
+      @if (resumo()?.isAdmin) {
+        <div class="mb-6 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-md border border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
+                📲 Captação de Clientes 24h
+              </span>
+              @if (assinatura()?.status === 'TRIAL') {
+                <span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold uppercase tracking-wider">
+                  🎁 Teste Grátis: {{ assinatura()?.diasRestantes ?? 7 }} dias restantes
+                </span>
+              }
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-white">
+              Coloque seu Link de Agendamento na Bio do Instagram e no WhatsApp
+            </h3>
+            <p class="text-xs text-slate-300 font-mono break-all">
+              {{ obterLinkPublico() }}
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              (click)="copiarLinkPublico()"
+              class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition-all shadow-sm flex items-center gap-1.5">
+              <span>{{ linkCopiado() ? '✓ Link Copiado!' : '📋 Copiar Meu Link' }}</span>
+            </button>
+            <a
+              routerLink="/catalogo"
+              class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all">
+              Ver Catálogo ↗
+            </a>
+          </div>
+        </div>
+      }
+
       <!-- Alerta de Vencimento / Renovação da Assinatura Mensal (para Administrador) -->
       @if (resumo()?.isAdmin && assinatura()?.podeRenovar) {
         <div class="mb-6 p-4 rounded-2xl border transition-all"
              [class.bg-rose-50]="assinatura()?.vencida"
              [class.border-rose-200]="assinatura()?.vencida"
-             [class.bg-amber-50]="!assinatura()?.vencida"
-             [class.border-amber-200]="!assinatura()?.vencida">
+             [class.bg-emerald-50]="assinatura()?.status === 'TRIAL' && !assinatura()?.vencida"
+             [class.border-emerald-200]="assinatura()?.status === 'TRIAL' && !assinatura()?.vencida"
+             [class.bg-amber-50]="assinatura()?.status !== 'TRIAL' && !assinatura()?.vencida"
+             [class.border-amber-200]="assinatura()?.status !== 'TRIAL' && !assinatura()?.vencida">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <span class="text-xl">{{ assinatura()?.vencida ? '🚨' : '⏳' }}</span>
+              <span class="text-xl">{{ assinatura()?.vencida ? '🚨' : (assinatura()?.status === 'TRIAL' ? '🎁' : '⏳') }}</span>
               <div>
-                <strong class="text-xs" [class.text-rose-900]="assinatura()?.vencida" [class.text-amber-900]="!assinatura()?.vencida">
-                  {{ assinatura()?.vencida ? 'Assinatura Mensal Vencida!' : 'Renovação da Assinatura Disponível (Vence em ' + (assinatura()?.diasRestantes ?? 0) + ' dia(s))' }}
+                <strong class="text-xs"
+                        [class.text-rose-900]="assinatura()?.vencida"
+                        [class.text-emerald-900]="assinatura()?.status === 'TRIAL' && !assinatura()?.vencida"
+                        [class.text-amber-900]="assinatura()?.status !== 'TRIAL' && !assinatura()?.vencida">
+                  {{ assinatura()?.vencida 
+                      ? 'Período de Teste / Assinatura Vencida!' 
+                      : (assinatura()?.status === 'TRIAL' 
+                          ? 'Período de Teste Grátis Ativo (' + (assinatura()?.diasRestantes ?? 7) + ' dia(s) restantes)' 
+                          : 'Renovação da Assinatura Disponível (Vence em ' + (assinatura()?.diasRestantes ?? 0) + ' dia(s))') }}
                 </strong>
-                <p class="text-[11px]" [class.text-rose-700]="assinatura()?.vencida" [class.text-amber-800]="!assinatura()?.vencida">
+                <p class="text-[11px]"
+                   [class.text-rose-700]="assinatura()?.vencida"
+                   [class.text-emerald-800]="assinatura()?.status === 'TRIAL' && !assinatura()?.vencida"
+                   [class.text-amber-800]="assinatura()?.status !== 'TRIAL' && !assinatura()?.vencida">
                   {{ assinatura()?.vencida 
                       ? 'Efetue o pagamento Pix para regularizar e restabelecer o acesso completo.' 
-                      : 'Renove antecipadamente via Pix sem perder os dias restantes. Os dias restantes serão somados aos novos 30 dias.' }}
+                      : 'Ative ou renove antecipadamente via Pix sem perder os dias restantes. Os dias atuais serão somados aos novos 30 dias!' }}
                 </p>
               </div>
             </div>
@@ -66,9 +116,11 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
                class="px-4 py-2 rounded-xl text-xs font-semibold text-white whitespace-nowrap transition-all shadow-sm shrink-0"
                [class.bg-rose-600]="assinatura()?.vencida"
                [class.hover:bg-rose-700]="assinatura()?.vencida"
-               [class.bg-amber-600]="!assinatura()?.vencida"
-               [class.hover:bg-amber-700]="!assinatura()?.vencida">
-              Renovar via Pix →
+               [class.bg-emerald-600]="assinatura()?.status === 'TRIAL' && !assinatura()?.vencida"
+               [class.hover:bg-emerald-700]="assinatura()?.status === 'TRIAL' && !assinatura()?.vencida"
+               [class.bg-amber-600]="assinatura()?.status !== 'TRIAL' && !assinatura()?.vencida"
+               [class.hover:bg-amber-700]="assinatura()?.status !== 'TRIAL' && !assinatura()?.vencida">
+              {{ assinatura()?.status === 'TRIAL' ? 'Ativar Plano via Pix →' : 'Renovar via Pix →' }}
             </a>
           </div>
         </div>
@@ -210,10 +262,32 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
 export class AdminDashboardComponent implements OnInit {
   private api = inject(ApiService);
   setorService = inject(SetorService);
+  tenantService = inject(TenantService);
 
   resumo = signal<DashboardResumo | null>(null);
   assinatura = signal<AssinaturaStatusResponse | null>(null);
   carregando = signal<boolean>(true);
+  linkCopiado = signal<boolean>(false);
+
+  obterLinkPublico(): string {
+    const link = this.tenantService.tenant()?.linkPersonalizado;
+    if (link) return link;
+    const slug = this.tenantService.obterSlugAtual();
+    if (slug && slug !== 'estetica') {
+      return `https://${slug}.logistadigital.com.br/`;
+    }
+    return typeof window !== 'undefined' ? `${window.location.origin}/catalogo` : 'https://estetica.logistadigital.com.br/';
+  }
+
+  copiarLinkPublico(): void {
+    const link = this.obterLinkPublico();
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(link).then(() => {
+        this.linkCopiado.set(true);
+        setTimeout(() => this.linkCopiado.set(false), 3000);
+      });
+    }
+  }
 
   ngOnInit(): void {
     this.carregar();
