@@ -234,6 +234,8 @@ export interface CadastroLojistaRequest {
   usuarioLogin?: string;
   email: string;
   telefoneWhatsApp: string;
+  cpfCnpj?: string;
+  deviceFingerprint?: string;
   senha: string;
 }
 

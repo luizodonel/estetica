@@ -50,6 +50,7 @@ public class TenantService {
     private final MercadoPagoService mercadoPagoService;
     private final CoolifyIntegrationService coolifyIntegrationService;
     private final ProcedimentoService procedimentoService;
+    private final jakarta.servlet.http.HttpServletRequest httpServletRequest;
 
     private static final BigDecimal VALOR_ADESAO_PIX = new BigDecimal("99.90");
     private static final int DIAS_TRIAL_GRATIS = 7;
@@ -103,16 +104,63 @@ public class TenantService {
             throw new RegraNegocioException("Este link exclusivo é reservado pelo sistema. Por favor, escolha outro.");
         }
 
-        if (tenantRepository.existsBySlugIgnoreCase(cleanSlug) || lojistaRepository.existsBySlugIgnoreCase(cleanSlug)) {
-            throw new RegraNegocioException("O link https://" + cleanSlug + ".logistadigital.com.br/ já está em uso por outro parceiro.");
+        String linkPersonalizado = "https://" + cleanSlug + ".logistadigital.com.br/";
+        String linkLogin = "https://" + cleanSlug + ".logistadigital.com.br/login";
+
+        // 1. VALIDAÇÃO ESTRITA DE LINK E SUBDOMÍNIO ÚNICO (Não pode existir 2 iguais)
+        if (tenantRepository.existsBySlugIgnoreCase(cleanSlug)
+                || lojistaRepository.existsBySlugIgnoreCase(cleanSlug)
+                || tenantRepository.existsByLinkPersonalizadoIgnoreCase(linkPersonalizado)) {
+            throw new RegraNegocioException("O link exclusivo " + linkPersonalizado + " já está em uso por outro estabelecimento. Cada empresa possui um link único.");
         }
 
+        // 2. VALIDAÇÃO DE NOME DE EMPRESA ÚNICO
+        String nomeEmpresaLimpo = request.nomeEmpresa().trim();
+        if (tenantRepository.existsByNomeEmpresaIgnoreCase(nomeEmpresaLimpo) || lojistaRepository.existsByNomeEmpresaIgnoreCase(nomeEmpresaLimpo)) {
+            throw new RegraNegocioException("A empresa '" + nomeEmpresaLimpo + "' já possui um cadastro no sistema. Caso seu período de teste tenha expirado, acesse seu link exclusivo para renovar sua assinatura.");
+        }
+
+        // 3. VALIDAÇÃO ANTI-ABUSO DE TRIAL: E-MAIL ÚNICO
         String email = request.email().toLowerCase().trim();
         if (usuarioRepository.existsByEmail(email) || lojistaRepository.existsByEmailIgnoreCase(email)) {
-            throw new RegraNegocioException("Já existe um cadastro com o e-mail: " + email);
+            throw new RegraNegocioException("Este e-mail (" + email + ") já utilizou o período de teste grátis. Faça login no link da sua empresa para renovar sua assinatura.");
         }
 
-        // Validação do Usuário / Login de Administrador (campo livre)
+        // 4. VALIDAÇÃO ANTI-ABUSO DE TRIAL: WHATSAPP ÚNICO (Normaliza com e sem 9º dígito para evitar burla)
+        String telefoneLimpo = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
+        if (telefoneLimpo.length() < 10) {
+            throw new RegraNegocioException("Informe um número de WhatsApp válido com DDD.");
+        }
+        String telefoneAlternativo = obterVariacaoNonoDigito(telefoneLimpo);
+        if (lojistaRepository.existsByTelefoneWhatsApp(telefoneLimpo)
+                || tenantRepository.existsByTelefoneWhatsApp(telefoneLimpo)
+                || (telefoneAlternativo != null && (lojistaRepository.existsByTelefoneWhatsApp(telefoneAlternativo) || tenantRepository.existsByTelefoneWhatsApp(telefoneAlternativo)))) {
+            throw new RegraNegocioException("Este número de WhatsApp já utilizou o período de 7 dias de teste grátis em outra conta. Acesse sua conta existente para ativar seu plano.");
+        }
+
+        // 5. VALIDAÇÃO ANTI-ABUSO DE TRIAL: CPF / CNPJ ÚNICO (com validação matemática de dígitos verificadores)
+        String cpfCnpjLimpo = request.cpfCnpj() != null ? request.cpfCnpj().replaceAll("[^0-9]", "") : "";
+        if (cpfCnpjLimpo.isBlank() || (!isValidCpf(cpfCnpjLimpo) && !isValidCnpj(cpfCnpjLimpo))) {
+            throw new RegraNegocioException("Informe um CPF ou CNPJ válido do responsável/empresa para liberar os 7 dias de teste grátis.");
+        }
+        if (lojistaRepository.existsByCpfCnpj(cpfCnpjLimpo)) {
+            throw new RegraNegocioException("Este CPF/CNPJ já utilizou o benefício único de 7 dias de teste grátis. Faça login no seu painel para assinar um plano.");
+        }
+
+        // 6. VALIDAÇÃO ANTI-ABUSO DE TRIAL: DISPOSITIVO (FINGERPRINT) E IP DO CLIENTE
+        String deviceFp = (request.deviceFingerprint() != null && !request.deviceFingerprint().isBlank())
+                ? request.deviceFingerprint().trim()
+                : null;
+        if (deviceFp != null && lojistaRepository.existsByDeviceFingerprint(deviceFp)) {
+            throw new RegraNegocioException("Identificamos que este dispositivo já utilizou o período de 7 dias de teste grátis anteriormente. O teste gratuito é limitado a 1 vez por empresa/pessoa. Acesse sua conta para ativar seu plano.");
+        }
+
+        String clientIp = extrairIpCliente();
+        if (clientIp != null && !isIpLocal(clientIp) && lojistaRepository.existsByIpCadastro(clientIp)) {
+            throw new RegraNegocioException("Já existe uma conta de avaliação gratuita criada a partir desta conexão/rede. O período de 7 dias grátis é permitido apenas uma única vez por lojista.");
+        }
+
+        // 7. Validação do Usuário / Login de Administrador (campo livre)
         String customLogin = (request.usuarioLogin() != null && !request.usuarioLogin().isBlank())
                 ? request.usuarioLogin().trim().toLowerCase()
                 : null;
@@ -127,8 +175,6 @@ public class TenantService {
                 ? request.corPrimaria().trim() : "#e11d48";
         String corSecundaria = (request.corSecundaria() != null && !request.corSecundaria().isBlank())
                 ? request.corSecundaria().trim() : "#f43f5e";
-        String linkPersonalizado = "https://" + cleanSlug + ".logistadigital.com.br/";
-        String linkLogin = "https://" + cleanSlug + ".logistadigital.com.br/login";
 
         com.estetica.model.SetorAtuacao setorAtuacao = com.estetica.model.SetorAtuacao.CLINICA_ESTETICA;
         if (request.setor() != null && !request.setor().isBlank()) {
@@ -142,9 +188,9 @@ public class TenantService {
         LocalDateTime agora = LocalDateTime.now();
         LocalDateTime vencimentoTrial = agora.plusDays(DIAS_TRIAL_GRATIS);
 
-        // 1. Salva o Lojista já ATIVO em período de TESTE GRÁTIS (Trial de 7 dias sem barreira de PIX inicial)
+        // 1. Salva o Lojista já ATIVO em período de TESTE GRÁTIS (Trial único de 7 dias blindado por CPF/CNPJ, WhatsApp, Email, IP e Fingerprint)
         com.estetica.model.Lojista lojista = com.estetica.model.Lojista.builder()
-                .nomeEmpresa(request.nomeEmpresa().trim())
+                .nomeEmpresa(nomeEmpresaLimpo)
                 .setor(setorAtuacao)
                 .slug(cleanSlug)
                 .linkPersonalizado(linkPersonalizado)
@@ -152,7 +198,10 @@ public class TenantService {
                 .nomeResponsavel(request.nomeResponsavel().trim())
                 .login(customLogin)
                 .email(email)
-                .telefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""))
+                .telefoneWhatsApp(telefoneLimpo)
+                .cpfCnpj(cpfCnpjLimpo)
+                .ipCadastro(clientIp)
+                .deviceFingerprint(deviceFp)
                 .senhaHash(passwordEncoder.encode(request.senha()))
                 .logoUrl(request.logoUrl() != null && !request.logoUrl().isBlank() ? request.logoUrl().trim() : null)
                 .corPrimaria(corPrimaria)
@@ -160,13 +209,13 @@ public class TenantService {
                 .statusPagamento("TRIAL")
                 .valorAdesao(VALOR_ADESAO_PIX)
                 .dataVencimento(vencimentoTrial)
-                .ativo(true) // Liberado imediatamente para captação e teste sem fricção!
+                .ativo(true)
                 .build();
         lojista = lojistaRepository.save(lojista);
 
         // 2. Salva o Estabelecimento / Tenant da Loja já ativo com Trial de 7 dias
         ClinicaTenant tenant = ClinicaTenant.builder()
-                .nomeEmpresa(request.nomeEmpresa().trim())
+                .nomeEmpresa(nomeEmpresaLimpo)
                 .setor(setorAtuacao)
                 .slug(cleanSlug)
                 .linkPersonalizado(linkPersonalizado)
@@ -174,7 +223,10 @@ public class TenantService {
                 .corPrimaria(corPrimaria)
                 .corSecundaria(corSecundaria)
                 .lojista(lojista)
-                .telefoneWhatsApp(request.telefoneWhatsApp().replaceAll("[^0-9]", ""))
+                .telefoneWhatsApp(telefoneLimpo)
+                .cpfCnpj(cpfCnpjLimpo)
+                .ipCadastro(clientIp)
+                .deviceFingerprint(deviceFp)
                 .statusPagamento("TRIAL")
                 .valorAdesao(VALOR_ADESAO_PIX)
                 .dataVencimento(vencimentoTrial)
@@ -426,7 +478,85 @@ public class TenantService {
         if (cleanSlug.length() < 3 || SLUGS_RESERVADOS.contains(cleanSlug)) {
             return false;
         }
-        return !tenantRepository.existsBySlugIgnoreCase(cleanSlug);
+        String linkCandidato = "https://" + cleanSlug + ".logistadigital.com.br/";
+        return !tenantRepository.existsBySlugIgnoreCase(cleanSlug)
+                && !lojistaRepository.existsBySlugIgnoreCase(cleanSlug)
+                && !tenantRepository.existsByLinkPersonalizadoIgnoreCase(linkCandidato);
+    }
+
+    private String obterVariacaoNonoDigito(String fone) {
+        if (fone == null) return null;
+        if (fone.length() == 11 && fone.charAt(2) == '9') {
+            return fone.substring(0, 2) + fone.substring(3);
+        }
+        if (fone.length() == 10) {
+            return fone.substring(0, 2) + "9" + fone.substring(2);
+        }
+        return null;
+    }
+
+    private String extrairIpCliente() {
+        if (httpServletRequest == null) return null;
+        String xff = httpServletRequest.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
+        }
+        String realIp = httpServletRequest.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return httpServletRequest.getRemoteAddr();
+    }
+
+    private boolean isIpLocal(String ip) {
+        if (ip == null) return true;
+        return ip.equals("127.0.0.1") || ip.equals("0:0:0:0:0:0:0:1") || ip.equals("::1") || ip.startsWith("172.") || ip.startsWith("10.") || ip.startsWith("192.168.");
+    }
+
+    public static boolean isValidCpf(String cpf) {
+        if (cpf == null || cpf.length() != 11 || cpf.chars().distinct().count() == 1) return false;
+        try {
+            int d1 = 0, d2 = 0;
+            for (int i = 0; i < 9; i++) {
+                int digito = cpf.charAt(i) - '0';
+                d1 += digito * (10 - i);
+                d2 += digito * (11 - i);
+            }
+            int resto1 = (d1 * 10) % 11;
+            if (resto1 == 10) resto1 = 0;
+            if (resto1 != (cpf.charAt(9) - '0')) return false;
+
+            d2 += resto1 * 2;
+            int resto2 = (d2 * 10) % 11;
+            if (resto2 == 10) resto2 = 0;
+            return resto2 == (cpf.charAt(10) - '0');
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean isValidCnpj(String cnpj) {
+        if (cnpj == null || cnpj.length() != 14 || cnpj.chars().distinct().count() == 1) return false;
+        try {
+            int[] peso1 = {5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+            int[] peso2 = {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+            int soma1 = 0, soma2 = 0;
+            for (int i = 0; i < 12; i++) {
+                int dig = cnpj.charAt(i) - '0';
+                soma1 += dig * peso1[i];
+                soma2 += dig * peso2[i];
+            }
+            int r1 = soma1 % 11;
+            int d1 = (r1 < 2) ? 0 : 11 - r1;
+            if (d1 != (cnpj.charAt(12) - '0')) return false;
+
+            soma2 += d1 * peso2[12];
+            int r2 = soma2 % 11;
+            int d2 = (r2 < 2) ? 0 : 11 - r2;
+            return d2 == (cnpj.charAt(13) - '0');
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private String normalizarSlug(String slug) {

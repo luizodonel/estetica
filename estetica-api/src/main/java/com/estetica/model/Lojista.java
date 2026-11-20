@@ -51,8 +51,17 @@ public class Lojista implements UserDetails {
     @Column(nullable = false, unique = true, length = 120)
     private String email;
 
-    @Column(name = "telefone_whatsapp", nullable = false, length = 30)
+    @Column(name = "telefone_whatsapp", nullable = false, unique = true, length = 30)
     private String telefoneWhatsApp;
+
+    @Column(name = "cpf_cnpj", unique = true, length = 30)
+    private String cpfCnpj;
+
+    @Column(name = "ip_cadastro", length = 80)
+    private String ipCadastro;
+
+    @Column(name = "device_fingerprint", length = 120)
+    private String deviceFingerprint;
 
     @Column(name = "senha_hash", nullable = false, length = 255)
     private String senhaHash;

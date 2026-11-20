@@ -275,13 +275,26 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                   <p class="text-xs text-stone-500">Crie sua conta de administrador para gerenciar sua agenda, equipe e clientes.</p>
                 </div>
 
-                <div>
-                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">Seu Nome Completo *</label>
-                  <input
-                    type="text"
-                    formControlName="nomeResponsavel"
-                    placeholder="Ex: Mariana Costa"
-                    class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1.5">Seu Nome Completo *</label>
+                    <input
+                      type="text"
+                      formControlName="nomeResponsavel"
+                      placeholder="Ex: Mariana Costa"
+                      class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1.5">CPF ou CNPJ (Para liberar 7 dias grátis) *</label>
+                    <input
+                      type="text"
+                      formControlName="cpfCnpj"
+                      (input)="aoDigitarCpfCnpj()"
+                      maxlength="18"
+                      placeholder="000.000.000-00 ou CNPJ"
+                      class="w-full text-xs px-4 py-3 rounded-2xl border border-nude-300 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50 font-mono" />
+                  </div>
                 </div>
 
                 <!-- Campo Livre: Usuário de Login do Administrador -->
@@ -511,6 +524,7 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
       corPrimaria: ['#e11d48', Validators.required],
       corSecundaria: ['#f43f5e', Validators.required],
       nomeResponsavel: ['', [Validators.required, Validators.minLength(3)]],
+      cpfCnpj: ['', [Validators.required, Validators.minLength(11)]],
       usuarioLogin: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       telefoneWhatsApp: ['', Validators.required],
@@ -612,16 +626,67 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
     return this.api.formatarUrlImagem(url);
   }
 
+  aoDigitarCpfCnpj(): void {
+    let v = (this.formLojista.get('cpfCnpj')?.value || '').replace(/\D/g, '').slice(0, 14);
+    if (v.length <= 11) {
+      v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+      v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      v = v.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    this.formLojista.patchValue({ cpfCnpj: v }, { emitEvent: false });
+  }
+
+  private gerarDeviceFingerprint(): string {
+    if (typeof window === 'undefined') return 'server';
+    const KEY = 'agendoou_device_fp';
+    const existente = localStorage.getItem(KEY);
+    if (existente) return existente;
+
+    const raw = [
+      navigator.userAgent || '',
+      navigator.language || '',
+      screen?.width || 0,
+      screen?.height || 0,
+      screen?.colorDepth || 0,
+      Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+    ].join('|');
+
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+      hash |= 0;
+    }
+    const fp = 'fp_' + Math.abs(hash).toString(36) + '_' + (screen?.width || 0) + 'x' + (screen?.height || 0);
+    localStorage.setItem(KEY, fp);
+    return fp;
+  }
+
   salvarLojista(): void {
     if (this.formLojista.invalid) return;
+
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('agendoou_trial_used') === 'true') {
+      this.mensagemErro.set('Identificamos que você já utilizou o período de 7 dias de teste grátis neste dispositivo. Faça login na sua conta existente para renovar ou ativar seu plano.');
+      return;
+    }
 
     this.salvando.set(true);
     this.mensagemErro.set(null);
 
-    const dados = this.formLojista.value;
+    const dados = {
+      ...this.formLojista.value,
+      deviceFingerprint: this.gerarDeviceFingerprint()
+    };
 
     this.api.cadastrarLojista(dados).subscribe({
       next: (res) => {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('agendoou_trial_used', 'true');
+        }
         this.salvando.set(false);
         this.tenantCriado.set(res.tenant);
 

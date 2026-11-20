@@ -26,10 +26,22 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         try {
-            // Garante tamanho de colunas de telefone para até 50 caracteres
+            // Garante tamanho de colunas de telefone para até 50 caracteres e novas colunas antifraude
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_lojista ALTER COLUMN telefone_whatsapp TYPE VARCHAR(50)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_lojista ADD COLUMN IF NOT EXISTS cpf_cnpj VARCHAR(30)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_lojista ADD COLUMN IF NOT EXISTS ip_cadastro VARCHAR(80)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_lojista ADD COLUMN IF NOT EXISTS device_fingerprint VARCHAR(150)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ADD COLUMN IF NOT EXISTS cpf_cnpj VARCHAR(30)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ADD COLUMN IF NOT EXISTS ip_cadastro VARCHAR(80)");
+            jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_clinica_tenant ADD COLUMN IF NOT EXISTS device_fingerprint VARCHAR(150)");
+
+            // Índices únicos case-insensitive para garantir que nenhum link/slug seja duplicado
+            jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_clinica_tenant_slug_lower ON tb_clinica_tenant (LOWER(slug))");
+            jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_lojista_slug_lower ON tb_lojista (LOWER(slug))");
+            jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_clinica_tenant_link_lower ON tb_clinica_tenant (LOWER(link_personalizado)) WHERE link_personalizado IS NOT NULL");
+            jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_lojista_link_lower ON tb_lojista (LOWER(link_personalizado)) WHERE link_personalizado IS NOT NULL");
 
             // Garante que especialistas não fiquem bloqueados em primeiro acesso
             jdbcTemplate.execute("UPDATE tb_usuario SET primeiro_acesso = false WHERE role = 'ROLE_PROFISSIONAL' AND primeiro_acesso = true");

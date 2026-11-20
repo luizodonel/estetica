@@ -33,5 +33,15 @@ public interface LojistaRepository extends JpaRepository<Lojista, Long> {
     boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByLoginIgnoreCase(String login);
+
+    boolean existsByTelefoneWhatsApp(String telefoneWhatsApp);
+
+    boolean existsByCpfCnpj(String cpfCnpj);
+
+    boolean existsByNomeEmpresaIgnoreCase(String nomeEmpresa);
+
+    boolean existsByDeviceFingerprint(String deviceFingerprint);
+
+    boolean existsByIpCadastro(String ipCadastro);
 }
 

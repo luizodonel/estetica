@@ -53,6 +53,15 @@ public class ClinicaTenant {
     @Column(name = "telefone_whatsapp", length = 50)
     private String telefoneWhatsApp;
 
+    @Column(name = "cpf_cnpj", length = 30)
+    private String cpfCnpj;
+
+    @Column(name = "ip_cadastro", length = 80)
+    private String ipCadastro;
+
+    @Column(name = "device_fingerprint", length = 120)
+    private String deviceFingerprint;
+
     @Column(name = "banner_tag", length = 100)
     private String bannerTag;
 
