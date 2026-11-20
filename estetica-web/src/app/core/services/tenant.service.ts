@@ -47,8 +47,7 @@ export class TenantService {
   linkPersonalizado = computed(() => this.tenant()?.linkPersonalizado || '');
 
   isDominioMaster = computed(() => {
-    const slug = this.obterSlugAtual();
-    return slug === 'agendoou' || slug === 'estetica';
+    return !this.isSubdominioCliente();
   });
 
   assinaturaProximaDoVencimento = computed(() => {
@@ -100,7 +99,8 @@ export class TenantService {
       }
     }
 
-    // 3. Tenta extrair do usuário logado armazenado localmente
+    // 3. Se estiver no domínio master (agendoou.logistadigital.com.br) e houver um lojista/especialista autenticado,
+    // carrega os dados do tenant do usuário autenticado para o painel administrativo funcionar perfeitamente!
     if (typeof localStorage !== 'undefined') {
       const storedUser = localStorage.getItem('estetica_user_data');
       if (storedUser) {
@@ -116,6 +116,24 @@ export class TenantService {
 
     // Padrão: carregar tenant agendoou
     this.carregarTenant('agendoou');
+  }
+
+  isSubdominioCliente(): boolean {
+    if (typeof window === 'undefined') return false;
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramSlug = urlParams.get('empresa') || urlParams.get('loja') || urlParams.get('tenant');
+    if (paramSlug && paramSlug !== 'agendoou' && paramSlug !== 'estetica') {
+      return true;
+    }
+    const hostname = window.location.hostname.toLowerCase();
+    const dominioPadrao = 'logistadigital.com.br';
+    if (hostname.endsWith(dominioPadrao)) {
+      const sub = hostname.replace(`.${dominioPadrao}`, '').trim();
+      if (sub && !['www', 'api', 'app', 'painel', 'agendoou', 'estetica'].includes(sub)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   carregarTenant(slug: string): void {

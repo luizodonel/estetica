@@ -25,9 +25,9 @@ interface DiaCarrossel {
     <div class="min-h-screen bg-[#f8fafc] text-stone-800 flex flex-col">
       
       <!-- ========================================================================= -->
-      <!-- TOP BANNER (ADMIN ONLY) -->
+      <!-- TOP BANNER (ADMIN ONLY - EXIBIDO APENAS NO DOMÍNIO MASTER) -->
       <!-- ========================================================================= -->
-      @if (authService.isAdmin()) {
+      @if (authService.isAdmin() && tenantService.isDominioMaster()) {
         <div class="bg-stone-900 text-white text-xs px-4 py-2 flex items-center justify-between z-30">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -521,8 +521,8 @@ interface DiaCarrossel {
               }
             </div>
 
-            <!-- SELEÇÃO / CADASTRO DE CLIENTE (MODO GESTÃO / ESPECIALISTA) -->
-            @if (authService.isAdminOrProfissional()) {
+            <!-- SELEÇÃO / CADASTRO DE CLIENTE (MODO GESTÃO / ESPECIALISTA NO DOMÍNIO MASTER) -->
+            @if (authService.isAdminOrProfissional() && tenantService.isDominioMaster()) {
               <div class="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2.5">
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
@@ -718,7 +718,7 @@ interface DiaCarrossel {
                 class="w-full py-3 rounded-xl bg-stone-900 text-white font-semibold text-xs hover:bg-stone-800 transition-colors shadow">
                 Novo Agendamento
               </button>
-              @if (authService.isAuthenticated()) {
+              @if (authService.isAuthenticated() && tenantService.isDominioMaster()) {
                 <a
                   routerLink="/meus-agendamentos"
                   class="w-full py-3 rounded-xl border border-slate-200 text-stone-700 font-semibold text-xs hover:bg-slate-50 transition-colors flex items-center justify-center">
@@ -1060,7 +1060,7 @@ export class CatalogoComponent implements OnInit {
     const slot = this.slotSelecionado();
     if (!proc || !slot) return;
 
-    if (!this.authService.isAdminOrProfissional()) {
+    if (!this.authService.isAdminOrProfissional() || !this.tenantService.isDominioMaster()) {
       // Cliente se identifica diretamente com Nome e WhatsApp sem precisar de login
       this.modalIdentificacaoAberta.set(true);
       return;

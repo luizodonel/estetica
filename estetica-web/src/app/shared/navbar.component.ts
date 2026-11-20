@@ -76,70 +76,72 @@ import { SetorService } from '../core/services/setor.service';
             }
           </div>
 
-          <!-- Perfil do Usuário Autenticado -->
-          @if (authService.isAuthenticated()) {
-            <div class="flex items-center gap-2.5 bg-slate-50 p-1.5 pr-3 rounded-2xl border border-slate-200 shadow-sm">
-              <!-- Avatar circular com as iniciais -->
-              <div class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-sm shrink-0">
-                {{ authService.currentUser()?.nome?.substring(0, 2)?.toUpperCase() }}
+          <!-- Perfil do Usuário Autenticado (Apenas exibido no domínio master do SaaS; no subdomínio do cliente a vitrine é 100% limpa para agendamento) -->
+          @if (tenantService.isDominioMaster()) {
+            @if (authService.isAuthenticated()) {
+              <div class="flex items-center gap-2.5 bg-slate-50 p-1.5 pr-3 rounded-2xl border border-slate-200 shadow-sm">
+                <!-- Avatar circular com as iniciais -->
+                <div class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-sm shrink-0">
+                  {{ authService.currentUser()?.nome?.substring(0, 2)?.toUpperCase() }}
+                </div>
+
+                <!-- Dados do usuário -->
+                <div class="text-left hidden md:block max-w-[120px] lg:max-w-[160px]">
+                  <span class="block text-xs font-bold text-slate-900 leading-tight truncate">
+                    {{ authService.currentUser()?.nome?.split(' ')?.[0] }}
+                  </span>
+                  <span class="inline-block text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded uppercase tracking-wider truncate">
+                    {{ authService.currentUser()?.role === 'ROLE_ADMIN' ? 'Administrador' : (authService.currentUser()?.role === 'ROLE_PROFISSIONAL' ? 'Especialista' : 'Cliente VIP') }}
+                  </span>
+                </div>
+
+                <!-- Botão Alterar Senha -->
+                <button 
+                  type="button"
+                  (click)="abrirModalSenha()"
+                  title="Alterar Minha Senha"
+                  class="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 rounded-xl transition-colors ml-0.5 text-xs font-semibold flex items-center gap-1">
+                  <span>🔑</span>
+                  <span class="hidden xl:inline text-[11px]">Senha</span>
+                </button>
+
+                <!-- Botão Sair -->
+                <button 
+                  (click)="logout()"
+                  title="Sair do Sistema"
+                  class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-xl transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                  </svg>
+                </button>
               </div>
-
-              <!-- Dados do usuário -->
-              <div class="text-left hidden md:block max-w-[120px] lg:max-w-[160px]">
-                <span class="block text-xs font-bold text-slate-900 leading-tight truncate">
-                  {{ authService.currentUser()?.nome?.split(' ')?.[0] }}
-                </span>
-                <span class="inline-block text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded uppercase tracking-wider truncate">
-                  {{ authService.currentUser()?.role === 'ROLE_ADMIN' ? 'Administrador' : (authService.currentUser()?.role === 'ROLE_PROFISSIONAL' ? 'Especialista' : 'Cliente VIP') }}
-                </span>
+            } @else {
+              <div class="flex items-center gap-2">
+                <a routerLink="/login" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm">
+                  <span>🔒</span>
+                  <span>Acesso da Equipe</span>
+                </a>
               </div>
+            }
 
-              <!-- Botão Alterar Senha -->
+            <!-- Botão Menu Mobile (aparece em telas < sm) -->
+            @if (authService.isAdminOrProfissional()) {
               <button 
-                type="button"
-                (click)="abrirModalSenha()"
-                title="Alterar Minha Senha"
-                class="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 rounded-xl transition-colors ml-0.5 text-xs font-semibold flex items-center gap-1">
-                <span>🔑</span>
-                <span class="hidden xl:inline text-[11px]">Senha</span>
-              </button>
-
-              <!-- Botão Sair -->
-              <button 
-                (click)="logout()"
-                title="Sair do Sistema"
-                class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-xl transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                (click)="menuMobileAberto.set(!menuMobileAberto())"
+                class="sm:hidden p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
               </button>
-            </div>
-          } @else {
-            <div class="flex items-center gap-2">
-              <a routerLink="/login" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm">
-                <span>🔒</span>
-                <span>Acesso da Equipe</span>
-              </a>
-            </div>
-          }
-
-          <!-- Botão Menu Mobile (aparece em telas < sm) -->
-          @if (authService.isAdminOrProfissional()) {
-            <button 
-              (click)="menuMobileAberto.set(!menuMobileAberto())"
-              class="sm:hidden p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-            </button>
+            }
           }
 
         </div>
 
       </div>
 
-      <!-- LINHA 2: Barra Dedicada de Gestão Operacional (Exclusiva para Administradores e Especialistas) -->
-      @if (authService.isAdminOrProfissional()) {
+      <!-- LINHA 2: Barra Dedicada de Gestão Operacional (Exclusiva para Administradores e Especialistas no Domínio Master) -->
+      @if (authService.isAdminOrProfissional() && tenantService.isDominioMaster()) {
         <div class="bg-slate-50/80 border-t border-slate-200 py-1.5 px-4 sm:px-6 lg:px-8">
           <div class="max-w-[1440px] mx-auto flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
             

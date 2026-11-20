@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, rootRedirectGuard, tenantCatalogoGuard } from './core/guards/auth.guard';
+import { authGuard, adminGuard, rootRedirectGuard, tenantCatalogoGuard, masterSaasGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -55,14 +55,17 @@ export const routes: Routes = [
   },
   {
     path: 'login',
+    canActivate: [masterSaasGuard],
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
   },
   {
     path: 'registrar',
+    canActivate: [masterSaasGuard],
     loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
   },
   {
     path: 'planos',
+    canActivate: [masterSaasGuard],
     loadComponent: () => import('./features/planos/planos.component').then(m => m.PlanosComponent)
   },
   {
@@ -72,6 +75,7 @@ export const routes: Routes = [
   },
   {
     path: 'parceiro/cadastro-lojista',
+    canActivate: [masterSaasGuard],
     loadComponent: () => import('./features/onboarding-lojista/onboarding-lojista.component').then(m => m.OnboardingLojistaComponent)
   },
   {
