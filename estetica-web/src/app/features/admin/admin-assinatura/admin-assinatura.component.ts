@@ -99,7 +99,7 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
                   {{ planoSelecionadoObj().nome }} ({{ labelCicloAtual() }})
                 </div>
                 <p class="text-[11px] text-emerald-700 font-semibold mt-0.5">
-                  R$ {{ formatarMoeda(valorTotalSelecionado()) }} via PIX
+                  R$ {{ formatarMoeda(valorTotalSelecionado()) }} via PIX ou Cartão de Crédito
                 </p>
               </div>
 
@@ -271,20 +271,30 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
                 </div>
               </div>
 
-              <button
-                type="button"
-                (click)="gerarPixParaPlano(plano.id); $event.stopPropagation()"
-                [disabled]="carregando()"
-                [class.bg-rose-600]="plano.destaque"
-                [class.hover:bg-rose-700]="plano.destaque"
-                [class.text-white]="plano.destaque || planoSelecionado() === plano.id"
-                [class.bg-slate-900]="!plano.destaque && planoSelecionado() === plano.id"
-                [class.bg-slate-100]="!plano.destaque && planoSelecionado() !== plano.id"
-                [class.text-slate-800]="!plano.destaque && planoSelecionado() !== plano.id"
-                [class.hover:bg-slate-200]="!plano.destaque && planoSelecionado() !== plano.id"
-                class="w-full min-h-[44px] py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
-                <span>💳 Gerar PIX: R$ {{ formatarMoeda(obterTotalPlano(plano)) }}</span>
-              </button>
+              <div class="space-y-2">
+                <button
+                  type="button"
+                  (click)="gerarPixParaPlano(plano.id); $event.stopPropagation()"
+                  [disabled]="carregando()"
+                  [class.bg-rose-600]="plano.destaque"
+                  [class.hover:bg-rose-700]="plano.destaque"
+                  [class.text-white]="plano.destaque || planoSelecionado() === plano.id"
+                  [class.bg-slate-900]="!plano.destaque && planoSelecionado() === plano.id"
+                  [class.bg-slate-100]="!plano.destaque && planoSelecionado() !== plano.id"
+                  [class.text-slate-800]="!plano.destaque && planoSelecionado() !== plano.id"
+                  [class.hover:bg-slate-200]="!plano.destaque && planoSelecionado() !== plano.id"
+                  class="w-full min-h-[42px] py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+                  <span>⚡ Pagar com PIX: R$ {{ formatarMoeda(obterTotalPlano(plano)) }}</span>
+                </button>
+
+                <button
+                  type="button"
+                  (click)="pagarComCartao(plano.id); $event.stopPropagation()"
+                  [disabled]="carregando() || gerandoCartao()"
+                  class="w-full min-h-[42px] py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm cursor-pointer disabled:opacity-50">
+                  <span>💳 Pagar com Cartão de Crédito</span>
+                </button>
+              </div>
 
             </div>
           }
@@ -366,6 +376,17 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
                       <span class="text-[11px] text-amber-800">Verificamos o pagamento a cada 3 segundos.</span>
                     </div>
                   </div>
+
+                  <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
+                    <span class="text-xs text-slate-500">Prefere parcelar ou pagar no crédito?</span>
+                    <button
+                      type="button"
+                      (click)="pagarComCartao(planoSelecionado())"
+                      [disabled]="gerandoCartao()"
+                      class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50">
+                      💳 {{ gerandoCartao() ? 'Abrindo Checkout...' : 'Pagar com Cartão de Crédito' }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -382,6 +403,7 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
 
   carregando = signal(false);
+  gerandoCartao = signal(false);
   copiado = signal(false);
   dados = signal<AssinaturaStatusResponse | null>(null);
   pagamentoAprovado = signal(false);
@@ -478,7 +500,23 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
   private intervalPolling: any = null;
 
   ngOnInit(): void {
-    this.carregarStatus();
+    const paymentIdRetorno = this.route.snapshot.queryParamMap.get('payment_id') || this.route.snapshot.queryParamMap.get('collection_id');
+    if (paymentIdRetorno) {
+      this.api.consultarStatusPagamento(paymentIdRetorno).subscribe({
+        next: (res) => {
+          if (res.pago || res.status === 'approved') {
+            this.pagamentoAprovado.set(true);
+            if (res.tenant?.dataVencimento) {
+              this.novoVencimento.set(res.tenant.dataVencimento);
+            }
+          }
+          this.carregarStatus();
+        },
+        error: () => this.carregarStatus()
+      });
+    } else {
+      this.carregarStatus();
+    }
   }
 
   ngOnDestroy(): void {
@@ -547,6 +585,25 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Erro ao gerar Pix do plano:', err);
         this.carregando.set(false);
+      }
+    });
+  }
+
+  pagarComCartao(planoId: PlanoId): void {
+    this.planoSelecionado.set(planoId);
+    this.gerandoCartao.set(true);
+    const slug = this.route.snapshot.queryParamMap.get('slug') || this.tenantService.tenant()?.slug || undefined;
+
+    this.api.gerarCheckoutCartaoAssinatura(slug, planoId, this.cicloSelecionado()).subscribe({
+      next: (res) => {
+        this.gerandoCartao.set(false);
+        if (res && res.checkoutUrl && typeof window !== 'undefined') {
+          window.location.href = res.checkoutUrl;
+        }
+      },
+      error: (err) => {
+        console.error('Erro ao iniciar checkout por Cartão de Crédito:', err);
+        this.gerandoCartao.set(false);
       }
     });
   }

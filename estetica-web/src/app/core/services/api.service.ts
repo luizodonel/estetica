@@ -373,6 +373,14 @@ export class ApiService {
     return this.http.post<AssinaturaStatusResponse>(`${this.baseUrl}/onboarding/assinatura/gerar-pix`, null, { params });
   }
 
+  gerarCheckoutCartaoAssinatura(slug?: string, plano?: string, ciclo?: string): Observable<{ preferenceId: string; checkoutUrl: string; valor: number }> {
+    let params = new HttpParams();
+    if (slug) params = params.set('slug', slug);
+    if (plano) params = params.set('plano', plano);
+    if (ciclo) params = params.set('ciclo', ciclo);
+    return this.http.post<{ preferenceId: string; checkoutUrl: string; valor: number }>(`${this.baseUrl}/onboarding/assinatura/gerar-cartao`, null, { params });
+  }
+
   // Relatórios Financeiros e Operacionais por Especialista
   getRelatorioEspecialistas(filtros?: {
     dataInicio?: string;

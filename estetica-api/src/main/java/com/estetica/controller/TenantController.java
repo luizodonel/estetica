@@ -116,5 +116,15 @@ public class TenantController {
             @RequestParam(required = false) String ciclo) {
         return ResponseEntity.ok(tenantService.forcarGerarPixRenovacao(slug, plano, ciclo));
     }
+
+    @PostMapping("/assinatura/gerar-cartao")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Gera link de pagamento por Cartão de Crédito (Checkout Pro Mercado Pago) para o plano e ciclo selecionados")
+    public ResponseEntity<Map<String, Object>> gerarCheckoutCartao(
+            @RequestParam(required = false) String slug,
+            @RequestParam(required = false) String plano,
+            @RequestParam(required = false) String ciclo) {
+        return ResponseEntity.ok(tenantService.gerarCheckoutCartaoAssinatura(slug, plano, ciclo));
+    }
 }
 

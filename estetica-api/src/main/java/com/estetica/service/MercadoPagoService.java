@@ -193,7 +193,93 @@ public class MercadoPagoService {
     }
 
     /**
-     * Consulta o status de um pagamento Pix pelo ID no Mercado Pago.
+     * Cria uma preferência do Checkout Pro do Mercado Pago (Cartão de Crédito, Débito, Parcelamento e PIX).
+     */
+    public Map<String, Object> criarPreferenciaCheckoutCartao(
+            ClinicaTenant tenant,
+            com.estetica.model.Lojista lojista,
+            BigDecimal valor,
+            String tituloItem,
+            String urlRetornoBase) {
+
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Estabelecimento");
+        String slug = lojista != null ? lojista.getSlug() : (tenant != null ? tenant.getSlug() : "clinica");
+        String externalRef = lojista != null ? "LOJISTA-" + lojista.getId() : (tenant != null ? "TENANT-" + tenant.getId() : "REF-CARD");
+
+        if (isMockMode()) {
+            log.info("[MercadoPago] Utilizando mock de Checkout Cartão de Crédito para ambiente de teste");
+            Map<String, Object> mockPref = new HashMap<>();
+            mockPref.put("id", "PREF-MOCK-" + System.currentTimeMillis());
+            mockPref.put("init_point", urlRetornoBase + "?status=approved&payment_id=999" + (System.currentTimeMillis() / 1000));
+            return mockPref;
+        }
+
+        String url = "https://api.mercadopago.com/checkout/preferences";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + accessToken);
+
+        Map<String, Object> item = new HashMap<>();
+        item.put("id", slug);
+        item.put("title", tituloItem != null ? tituloItem : ("Assinatura Agendoou - " + nomeEmpresa));
+        item.put("description", "Licença de uso plataforma Agendoou - " + nomeEmpresa);
+        item.put("quantity", 1);
+        item.put("currency_id", "BRL");
+        item.put("unit_price", valor);
+
+        String emailPagador = (lojista != null && lojista.getEmail() != null && lojista.getEmail().contains("@"))
+                ? lojista.getEmail()
+                : "admin." + slug + "@logistadigital.com.br";
+
+        Map<String, Object> payer = new HashMap<>();
+        payer.put("email", emailPagador);
+        if (lojista != null && lojista.getNomeResponsavel() != null) {
+            payer.put("name", lojista.getNomeResponsavel());
+        }
+
+        String returnUrl = (urlRetornoBase != null && !urlRetornoBase.isBlank())
+                ? urlRetornoBase
+                : "https://" + slug + ".logistadigital.com.br/admin/assinatura";
+
+        Map<String, Object> backUrls = new HashMap<>();
+        backUrls.put("success", returnUrl);
+        backUrls.put("pending", returnUrl);
+        backUrls.put("failure", returnUrl);
+
+        Map<String, Object> paymentMethods = new HashMap<>();
+        paymentMethods.put("installments", 12);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("items", java.util.List.of(item));
+        requestBody.put("payer", payer);
+        requestBody.put("external_reference", externalRef);
+        requestBody.put("back_urls", backUrls);
+        requestBody.put("auto_return", "approved");
+        requestBody.put("payment_methods", paymentMethods);
+        requestBody.put("statement_descriptor", "AGENDOOU");
+        requestBody.put("notification_url", "https://agendoou.logistadigital.com.br/api/v1/onboarding/webhook-mercadopago");
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            log.info("[MercadoPago] Criando Checkout Cartão de R$ {} para a loja: {} ({})", valor, nomeEmpresa, tituloItem);
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Map<String, Object> body = (Map<String, Object>) response.getBody();
+                log.info("[MercadoPago] Checkout Cartão gerado com sucesso! InitPoint: {}", body.get("init_point"));
+                return body;
+            }
+        } catch (Exception ex) {
+            log.error("[MercadoPago] Erro ao criar Checkout Cartão: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Erro ao gerar link de Cartão de Crédito no Mercado Pago: " + ex.getMessage(), ex);
+        }
+
+        throw new RuntimeException("Resposta vazia ao criar Checkout Cartão no Mercado Pago.");
+    }
+
+    /**
+     * Consulta o status de um pagamento Pix ou Cartão pelo ID no Mercado Pago.
      */
     public Map<String, Object> consultarStatusPagamento(String mercadoPagoId) {
         if (isMockMode() && mercadoPagoId != null && mercadoPagoId.startsWith("999")) {

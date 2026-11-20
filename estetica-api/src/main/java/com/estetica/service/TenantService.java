@@ -332,8 +332,26 @@ public class TenantService {
         com.estetica.model.Lojista lojista = lojistaRepository.findByQualquerPaymentId(paymentId).orElse(null);
         ClinicaTenant tenant = tenantRepository.findByQualquerPaymentId(paymentId).orElse(null);
 
+        // Fallback via external_reference (ex: pagamentos via Cartão de Crédito no Checkout Pro do Mercado Pago)
+        if (lojista == null && tenant == null && mpResponse != null && mpResponse.get("external_reference") != null) {
+            String extRef = String.valueOf(mpResponse.get("external_reference"));
+            try {
+                if (extRef.startsWith("LOJISTA-")) {
+                    Long lid = Long.parseLong(extRef.replace("LOJISTA-", "").trim());
+                    lojista = lojistaRepository.findById(lid).orElse(null);
+                } else if (extRef.startsWith("TENANT-")) {
+                    Long tid = Long.parseLong(extRef.replace("TENANT-", "").trim());
+                    tenant = tenantRepository.findById(tid).orElse(null);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
         if (tenant == null && lojista != null) {
             tenant = tenantRepository.findBySlugIgnoreCase(lojista.getSlug()).orElse(null);
+        }
+        if (lojista == null && tenant != null && tenant.getSlug() != null) {
+            lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
         }
 
         if (tenant == null && lojista == null) {
@@ -363,9 +381,18 @@ public class TenantService {
                 if (vencimentoAtual != null && vencimentoAtual.isAfter(agora)) {
                     baseDate = vencimentoAtual;
                 }
-                BigDecimal valorRef = (lojista != null && lojista.getValorAdesao() != null)
-                        ? lojista.getValorAdesao()
-                        : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX);
+                BigDecimal valorPagoMp = null;
+                if (mpResponse != null && mpResponse.get("transaction_amount") != null) {
+                    try {
+                        valorPagoMp = new BigDecimal(String.valueOf(mpResponse.get("transaction_amount")));
+                    } catch (Exception ignored) {
+                    }
+                }
+                BigDecimal valorRef = (valorPagoMp != null && valorPagoMp.compareTo(BigDecimal.ZERO) > 0)
+                        ? valorPagoMp
+                        : ((lojista != null && lojista.getValorAdesao() != null)
+                                ? lojista.getValorAdesao()
+                                : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX));
                 int diasAdicionar = calcularDiasCiclo(valorRef);
                 LocalDateTime novaDataVencimento = baseDate.plusDays(diasAdicionar);
 
@@ -1093,5 +1120,62 @@ public class TenantService {
         }
 
         return obterStatusAssinatura(slugParam);
+    }
+
+    @Transactional
+    public Map<String, Object> gerarCheckoutCartaoAssinatura(String slugParam, String planoParam, String cicloParam) {
+        ClinicaTenant tenant = null;
+        com.estetica.model.Lojista lojista = null;
+
+        if (slugParam != null && !slugParam.isBlank()) {
+            lojista = lojistaRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+            tenant = tenantRepository.findBySlugIgnoreCase(slugParam.trim()).orElse(null);
+        }
+
+        if (lojista == null) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof com.estetica.model.Lojista l) {
+                lojista = lojistaRepository.findById(l.getId()).orElse(null);
+            }
+            if (lojista == null && auth != null && auth.getPrincipal() instanceof Usuario u && u.getTenant() != null) {
+                tenant = u.getTenant();
+                lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+            }
+        }
+
+        if (lojista == null && tenant == null) {
+            tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
+            if (tenant != null) {
+                lojista = lojistaRepository.findBySlugIgnoreCase(tenant.getSlug()).orElse(null);
+            }
+        }
+
+        if (lojista == null && tenant == null) {
+            throw new RegraNegocioException("Estabelecimento não encontrado para gerar pagamento por cartão.");
+        }
+
+        BigDecimal valor = calcularValorPlano(planoParam, cicloParam);
+        if (lojista != null) {
+            lojista.setValorAdesao(valor);
+            lojistaRepository.save(lojista);
+        }
+        if (tenant != null) {
+            tenant.setValorAdesao(valor);
+            tenantRepository.save(tenant);
+        }
+
+        String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : tenant.getNomeEmpresa();
+        String slug = lojista != null ? lojista.getSlug() : tenant.getSlug();
+        String labelPlano = (planoParam != null && !planoParam.isBlank() ? planoParam.toUpperCase() : "PRO")
+                + " (" + (cicloParam != null && !cicloParam.isBlank() ? cicloParam.toUpperCase() : "MENSAL") + ")";
+        String titulo = "Assinatura Agendoou Plano " + labelPlano + " - " + nomeEmpresa;
+        String urlRetorno = "https://" + slug + ".logistadigital.com.br/admin/assinatura";
+
+        Map<String, Object> pref = mercadoPagoService.criarPreferenciaCheckoutCartao(tenant, lojista, valor, titulo, urlRetorno);
+        return Map.of(
+                "preferenceId", pref.get("id") != null ? String.valueOf(pref.get("id")) : "",
+                "checkoutUrl", pref.get("init_point") != null ? String.valueOf(pref.get("init_point")) : "",
+                "valor", valor
+        );
     }
 }
