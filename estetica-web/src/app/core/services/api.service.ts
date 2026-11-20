@@ -25,7 +25,10 @@ import {
   RelatorioGeralResponse,
   PrimeiroAcessoRequest,
   VerificarPrimeiroAcessoResponse,
-  AuthResponse
+  AuthResponse,
+  PlanoAssinatura,
+  SuporteChamado,
+  CriarChamadoSuporteRequest
 } from '../models';
 
 @Injectable({
@@ -404,5 +407,29 @@ export class ApiService {
     if (filtros?.profissionalId) params = params.set('profissionalId', filtros.profissionalId.toString());
     if (filtros?.status) params = params.set('status', filtros.status);
     return this.http.get<RelatorioGeralResponse>(`${this.baseUrl}/relatorios/especialistas`, { params });
+  }
+
+  // Planos Dinâmicos & Promoções
+  getPlanosPublicos(): Observable<PlanoAssinatura[]> {
+    return this.http.get<PlanoAssinatura[]>(`${this.baseUrl}/onboarding/planos`);
+  }
+
+  // Central de Suporte & Dúvidas Pública
+  criarChamadoSuporte(payload: CriarChamadoSuporteRequest): Observable<SuporteChamado> {
+    return this.http.post<SuporteChamado>(`${this.baseUrl}/suporte/chamados`, payload);
+  }
+
+  consultarChamadosSuporte(filtros: { protocolo?: string; whatsapp?: string }): Observable<SuporteChamado[]> {
+    let params = new HttpParams();
+    if (filtros.protocolo) params = params.set('protocolo', filtros.protocolo);
+    if (filtros.whatsapp) params = params.set('whatsapp', filtros.whatsapp);
+    return this.http.get<SuporteChamado[]>(`${this.baseUrl}/suporte/chamados`, { params });
+  }
+
+  enviarMensagemSuporteCliente(
+    protocolo: string,
+    payload: { whatsapp: string; mensagem: string }
+  ): Observable<SuporteChamado> {
+    return this.http.post<SuporteChamado>(`${this.baseUrl}/suporte/chamados/${protocolo}/mensagens`, payload);
   }
 }

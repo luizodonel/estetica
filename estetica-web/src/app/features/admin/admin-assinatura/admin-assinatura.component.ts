@@ -3,8 +3,116 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { TenantService } from '../../../core/services/tenant.service';
-import { AssinaturaStatusResponse } from '../../../core/models';
-import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.component';
+import { AssinaturaStatusResponse, PlanoAssinatura } from '../../../core/models';
+import { CicloFaturacao, PlanoId } from '../../planos/planos.component';
+
+const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
+  {
+    codigo: 'STARTER',
+    nome: 'Studio / Starter',
+    subtitulo: 'Ideal para profissionais autônomos e studios compactos',
+    destaque: false,
+    ctaTexto: 'Escolher Studio / Starter',
+    funcionalidades: [
+      'Domínio / Subdomínio próprio',
+      'Suporte via WhatsApp',
+      'Até 2 profissionais na agenda',
+      'Link de Agendamento Online 24h (PWA)',
+      'Cálculo automático de horários livres',
+      'Prontuário e Histórico de Anamnese',
+      'Prevenção transacional de conflitos'
+    ],
+    precoMensalOriginal: 89.90,
+    precoMensalFinal: 89.90,
+    descontoMensalValor: 0,
+    descontoMensalPercentual: 0,
+    precoSemestralOriginal: 485.00,
+    precoSemestralFinal: 485.00,
+    precoSemestralMensalEq: 80.83,
+    poupancaSemestral: 54.40,
+    descontoSemestralValor: 0,
+    descontoSemestralPercentual: 0,
+    precoAnualOriginal: 899.00,
+    precoAnualFinal: 899.00,
+    precoAnualMensalEq: 74.91,
+    poupancaAnual: 179.80,
+    descontoAnualValor: 0,
+    descontoAnualPercentual: 0,
+    promocional: false,
+    percentualDesconto: 0,
+    mensagemPromocao: null
+  },
+  {
+    codigo: 'PRO',
+    nome: 'Clínica Pro',
+    subtitulo: 'Foco de vendas • Melhor custo-benefício',
+    destaque: true,
+    etiquetaDestaque: 'Mais Popular / Melhor Relação Custo-Benefício',
+    beneficiosBaseTexto: 'Tudo do Plano Studio +',
+    ctaTexto: 'Escolher Clínica Pro',
+    funcionalidades: [
+      'Domínio / Subdomínio próprio',
+      'Suporte via WhatsApp',
+      'Até 6 profissionais na agenda',
+      'Lembretes automáticos via WhatsApp (confirmação e alerta 24h antes)',
+      'Personalização completa com o logótipo da clínica',
+      'Dashboard executivo de métricas e taxa de No-Show'
+    ],
+    precoMensalOriginal: 99.90,
+    precoMensalFinal: 99.90,
+    descontoMensalValor: 0,
+    descontoMensalPercentual: 0,
+    precoSemestralOriginal: 539.00,
+    precoSemestralFinal: 539.00,
+    precoSemestralMensalEq: 89.83,
+    poupancaSemestral: 60.40,
+    descontoSemestralValor: 0,
+    descontoSemestralPercentual: 0,
+    precoAnualOriginal: 999.00,
+    precoAnualFinal: 999.00,
+    precoAnualMensalEq: 83.25,
+    poupancaAnual: 199.80,
+    descontoAnualValor: 0,
+    descontoAnualPercentual: 0,
+    promocional: false,
+    percentualDesconto: 0,
+    mensagemPromocao: null
+  },
+  {
+    codigo: 'VIP',
+    nome: 'VIP / Multisalas',
+    subtitulo: 'Para clínicas maiores e operações multisalas',
+    destaque: false,
+    beneficiosBaseTexto: 'Tudo do Plano Clínica Pro +',
+    ctaTexto: 'Escolher VIP / Multisalas',
+    funcionalidades: [
+      'Domínio / Subdomínio próprio',
+      'Suporte prioritário via WhatsApp',
+      'Profissionais e salas ilimitadas',
+      'Campanhas de retorno no WhatsApp (reativação de clientes inativos)',
+      'Gestão avançada de múltiplos acessos e comissões'
+    ],
+    precoMensalOriginal: 119.90,
+    precoMensalFinal: 119.90,
+    descontoMensalValor: 0,
+    descontoMensalPercentual: 0,
+    precoSemestralOriginal: 647.00,
+    precoSemestralFinal: 647.00,
+    precoSemestralMensalEq: 107.83,
+    poupancaSemestral: 72.40,
+    descontoSemestralValor: 0,
+    descontoSemestralPercentual: 0,
+    precoAnualOriginal: 1199.00,
+    precoAnualFinal: 1199.00,
+    precoAnualMensalEq: 99.91,
+    poupancaAnual: 239.80,
+    descontoAnualValor: 0,
+    descontoAnualPercentual: 0,
+    promocional: false,
+    percentualDesconto: 0,
+    mensagemPromocao: null
+  }
+];
 
 @Component({
   selector: 'app-admin-assinatura',
@@ -19,9 +127,17 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
           <a routerLink="/admin/dashboard" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors">
             <span>←</span> Voltar para o Dashboard
           </a>
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white text-slate-700 border border-slate-200 shadow-sm">
-            💎 Gestão de Plano & Assinatura Agendoou
-          </span>
+          <div class="flex items-center gap-2">
+            <a
+              routerLink="/planos"
+              [queryParams]="{ suporte: '1' }"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors">
+              💬 Suporte & Dúvidas
+            </a>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white text-slate-700 border border-slate-200 shadow-sm">
+              💎 Gestão de Plano & Assinatura Agendoou
+            </span>
+          </div>
         </div>
 
         <!-- ========================================================================= -->
@@ -100,12 +216,39 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
                 </div>
                 <p class="text-[11px] text-emerald-700 font-semibold mt-0.5">
                   R$ {{ formatarMoeda(valorTotalSelecionado()) }} via PIX ou Cartão de Crédito
+                  @if (temPromocaoNoCiclo(planoSelecionadoObj())) {
+                    <span class="block text-rose-600 font-bold mt-0.5">
+                      🔥 Promoção de {{ formatarPct(obterDescontoPctCiclo(planoSelecionadoObj())) }} • Desconto de R$ {{ formatarMoeda(obterDescontoValorCiclo(planoSelecionadoObj())) }}
+                    </span>
+                  }
                 </p>
               </div>
 
             </div>
           }
         </div>
+
+        <!-- ========================================================================= -->
+        <!-- BANNER GLOBAL DE PROMOÇÃO ATIVA -->
+        <!-- ========================================================================= -->
+        @if (bannerPromocao(); as promo) {
+          <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3 text-center sm:text-left">
+              <span class="text-2xl shrink-0">🔥</span>
+              <div>
+                <p class="text-xs sm:text-sm font-extrabold uppercase tracking-wide">
+                  Promoção Ativa para Assinatura: até {{ formatarPct(promo.maiorPct) }} OFF!
+                </p>
+                @if (promo.mensagem) {
+                  <p class="text-xs text-rose-50 font-medium mt-0.5">{{ promo.mensagem }}</p>
+                }
+              </div>
+            </div>
+            <span class="px-3.5 py-1.5 rounded-full bg-white/20 text-xs font-extrabold whitespace-nowrap">
+              Desconto de até R$ {{ formatarMoeda(promo.maiorDescontoValor) }}
+            </span>
+          </div>
+        }
 
         <!-- ========================================================================= -->
         <!-- 1. SELETOR DE CICLO DE FATURAÇÃO (MENSAL | SEMESTRAL | ANUAL) -->
@@ -170,21 +313,21 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
         </div>
 
         <!-- ========================================================================= -->
-        <!-- 2. MATRIZ DE PLANOS (STUDIO R$ 89,90 | CLÍNICA PRO R$ 99,90 | VIP R$ 119,90) -->
+        <!-- 2. MATRIZ DE PLANOS DINÂMICA -->
         <!-- ========================================================================= -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
 
-          @for (plano of planos; track plano.id) {
+          @for (plano of planos(); track plano.codigo) {
             <div
-              (click)="selecionarPlano(plano.id)"
-              [class.border-2]="plano.destaque || planoSelecionado() === plano.id"
-              [class.border-rose-500]="plano.destaque"
-              [class.border-slate-900]="!plano.destaque && planoSelecionado() === plano.id"
-              [class.shadow-lg]="plano.destaque || planoSelecionado() === plano.id"
-              [class.border]="!plano.destaque && planoSelecionado() !== plano.id"
-              [class.border-slate-200]="!plano.destaque && planoSelecionado() !== plano.id"
-              [class.md:col-span-2]="plano.id === 'VIP'"
-              [class.lg:col-span-1]="plano.id === 'VIP'"
+              (click)="selecionarPlano(plano.codigo)"
+              [class.border-2]="plano.destaque || planoSelecionado() === plano.codigo || temPromocaoNoCiclo(plano)"
+              [class.border-rose-500]="plano.destaque || temPromocaoNoCiclo(plano)"
+              [class.border-slate-900]="!plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() === plano.codigo"
+              [class.shadow-lg]="plano.destaque || planoSelecionado() === plano.codigo"
+              [class.border]="!plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() !== plano.codigo"
+              [class.border-slate-200]="!plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() !== plano.codigo"
+              [class.md:col-span-2]="plano.codigo === 'VIP'"
+              [class.lg:col-span-1]="plano.codigo === 'VIP'"
               class="bg-white rounded-2xl p-6 flex flex-col justify-between relative transition-all cursor-pointer hover:shadow-md">
 
               @if (plano.destaque && plano.etiquetaDestaque) {
@@ -201,7 +344,11 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
                     <h3 class="text-lg font-extrabold text-slate-900">{{ plano.nome }}</h3>
                     <p class="text-xs text-slate-500">{{ plano.subtitulo }}</p>
                   </div>
-                  @if (cicloSelecionado() === 'SEMESTRAL') {
+                  @if (temPromocaoNoCiclo(plano)) {
+                    <span class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold shrink-0 animate-pulse">
+                      🔥 Promoção {{ formatarPct(obterDescontoPctCiclo(plano)) }} OFF
+                    </span>
+                  } @else if (cicloSelecionado() === 'SEMESTRAL') {
                     <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold shrink-0">
                       -10% OFF
                     </span>
@@ -214,18 +361,24 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
 
                 <!-- Valores Calculados por Ciclo -->
                 <div class="my-4 p-3.5 rounded-xl border"
-                     [class.bg-rose-50/50]="plano.destaque"
-                     [class.border-rose-100]="plano.destaque"
-                     [class.bg-slate-50]="!plano.destaque"
-                     [class.border-slate-200/70]="!plano.destaque">
+                     [class.bg-rose-50/50]="plano.destaque || temPromocaoNoCiclo(plano)"
+                     [class.border-rose-200]="plano.destaque || temPromocaoNoCiclo(plano)"
+                     [class.bg-slate-50]="!plano.destaque && !temPromocaoNoCiclo(plano)"
+                     [class.border-slate-200/70]="!plano.destaque && !temPromocaoNoCiclo(plano)">
+
+                  @if (temPromocaoNoCiclo(plano)) {
+                    <p class="text-[11px] text-slate-500 mb-0.5">
+                      De <span class="line-through font-semibold">R$ {{ formatarMoeda(obterOriginalCiclo(plano)) }}</span>
+                    </p>
+                  }
 
                   @if (cicloSelecionado() === 'MENSAL') {
                     <div class="flex items-baseline gap-1">
                       <span class="text-xs font-bold text-slate-500">R$</span>
-                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(plano.precoMensal) }}</span>
+                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(plano.precoMensalFinal) }}</span>
                       <span class="text-xs font-semibold text-slate-500">/mês</span>
                     </div>
-                    <p class="text-[11px] text-slate-500 mt-0.5">Faturação mensal via PIX</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Faturação mensal via PIX ou Cartão</p>
                   }
 
                   @if (cicloSelecionado() === 'SEMESTRAL') {
@@ -235,8 +388,10 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
                       <span class="text-xs font-semibold text-slate-500">/mês*</span>
                     </div>
                     <p class="text-[11px] text-slate-700 font-semibold mt-0.5">
-                      R$ {{ formatarMoeda(plano.precoSemestralTotal) }}/semestre
-                      <span class="text-emerald-700 font-bold">(Poupa R$ {{ formatarMoeda(plano.poupancaSemestral) }})</span>
+                      R$ {{ formatarMoeda(plano.precoSemestralFinal) }}/semestre
+                      @if (plano.poupancaSemestral > 0) {
+                        <span class="text-emerald-700 font-bold">(Poupa R$ {{ formatarMoeda(plano.poupancaSemestral) }})</span>
+                      }
                     </p>
                   }
 
@@ -247,9 +402,24 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
                       <span class="text-xs font-semibold text-slate-500">/mês*</span>
                     </div>
                     <p class="text-[11px] text-slate-700 font-semibold mt-0.5">
-                      R$ {{ formatarMoeda(plano.precoAnualTotal) }}/ano
-                      <span class="text-rose-600 font-bold">(Poupa R$ {{ formatarMoeda(plano.poupancaAnual) }})</span>
+                      R$ {{ formatarMoeda(plano.precoAnualFinal) }}/ano
+                      @if (plano.poupancaAnual > 0) {
+                        <span class="text-rose-600 font-bold">(Poupa R$ {{ formatarMoeda(plano.poupancaAnual) }})</span>
+                      }
                     </p>
+                  }
+
+                  @if (temPromocaoNoCiclo(plano)) {
+                    <div class="mt-2.5 p-2 rounded-lg bg-rose-600 text-white text-[11px] font-extrabold shadow-sm">
+                      <span>
+                        🔥 Promoção de {{ formatarPct(obterDescontoPctCiclo(plano)) }} • Desconto de R$ {{ formatarMoeda(obterDescontoValorCiclo(plano)) }}
+                      </span>
+                      @if (plano.mensagemPromocao) {
+                        <span class="block text-[10px] font-medium text-rose-100 mt-0.5">
+                          {{ plano.mensagemPromocao }}
+                        </span>
+                      }
+                    </div>
                   }
                 </div>
 
@@ -274,22 +444,22 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
               <div class="space-y-2">
                 <button
                   type="button"
-                  (click)="gerarPixParaPlano(plano.id); $event.stopPropagation()"
+                  (click)="gerarPixParaPlano(plano.codigo); $event.stopPropagation()"
                   [disabled]="carregando()"
                   [class.bg-rose-600]="plano.destaque"
                   [class.hover:bg-rose-700]="plano.destaque"
-                  [class.text-white]="plano.destaque || planoSelecionado() === plano.id"
-                  [class.bg-slate-900]="!plano.destaque && planoSelecionado() === plano.id"
-                  [class.bg-slate-100]="!plano.destaque && planoSelecionado() !== plano.id"
-                  [class.text-slate-800]="!plano.destaque && planoSelecionado() !== plano.id"
-                  [class.hover:bg-slate-200]="!plano.destaque && planoSelecionado() !== plano.id"
+                  [class.text-white]="plano.destaque || planoSelecionado() === plano.codigo"
+                  [class.bg-slate-900]="!plano.destaque && planoSelecionado() === plano.codigo"
+                  [class.bg-slate-100]="!plano.destaque && planoSelecionado() !== plano.codigo"
+                  [class.text-slate-800]="!plano.destaque && planoSelecionado() !== plano.codigo"
+                  [class.hover:bg-slate-200]="!plano.destaque && planoSelecionado() !== plano.codigo"
                   class="w-full min-h-[42px] py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
                   <span>⚡ Pagar com PIX: R$ {{ formatarMoeda(obterTotalPlano(plano)) }}</span>
                 </button>
 
                 <button
                   type="button"
-                  (click)="pagarComCartao(plano.id); $event.stopPropagation()"
+                  (click)="pagarComCartao(plano.codigo); $event.stopPropagation()"
                   [disabled]="carregando() || gerandoCartao()"
                   class="w-full min-h-[42px] py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm cursor-pointer disabled:opacity-50">
                   <span>💳 Pagar com Cartão de Crédito</span>
@@ -410,82 +580,28 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
   novoVencimento = signal<string | null>(null);
 
   cicloSelecionado = signal<CicloFaturacao>('MENSAL');
-  planoSelecionado = signal<PlanoId>('PRO');
+  planoSelecionado = signal<PlanoId | string>('PRO');
+  planos = signal<PlanoAssinatura[]>(PLANOS_PADRAO_ADMIN);
 
-  readonly planos: PlanoConfig[] = [
-    {
-      id: 'STARTER',
-      nome: 'Studio / Starter',
-      subtitulo: 'Ideal para profissionais autônomos e studios compactos',
-      destaque: false,
-      precoMensal: 89.90,
-      precoSemestralTotal: 485.00,
-      precoSemestralMensalEq: 80.83,
-      poupancaSemestral: 54.40,
-      precoAnualTotal: 899.00,
-      precoAnualMensalEq: 74.91,
-      poupancaAnual: 179.80,
-      ctaTexto: 'Escolher Studio / Starter',
-      funcionalidades: [
-        'Domínio / Subdomínio próprio',
-        'Suporte via WhatsApp',
-        'Até 2 profissionais na agenda',
-        'Link de Agendamento Online 24h (PWA)',
-        'Cálculo automático de horários livres',
-        'Prontuário e Histórico de Anamnese',
-        'Prevenção transacional de conflitos'
-      ]
-    },
-    {
-      id: 'PRO',
-      nome: 'Clínica Pro',
-      subtitulo: 'Foco de vendas • Melhor custo-benefício',
-      destaque: true,
-      etiquetaDestaque: 'Mais Popular / Melhor Relação Custo-Benefício',
-      precoMensal: 99.90,
-      precoSemestralTotal: 539.00,
-      precoSemestralMensalEq: 89.83,
-      poupancaSemestral: 60.40,
-      precoAnualTotal: 999.00,
-      precoAnualMensalEq: 83.25,
-      poupancaAnual: 199.80,
-      ctaTexto: 'Escolher Clínica Pro',
-      beneficiosBaseTexto: 'Tudo do Plano Studio +',
-      funcionalidades: [
-        'Domínio / Subdomínio próprio',
-        'Suporte via WhatsApp',
-        'Até 6 profissionais na agenda',
-        'Lembretes automáticos via WhatsApp (confirmação e alerta 24h antes)',
-        'Personalização completa com o logótipo da clínica',
-        'Dashboard executivo de métricas e taxa de No-Show'
-      ]
-    },
-    {
-      id: 'VIP',
-      nome: 'VIP / Multisalas',
-      subtitulo: 'Para clínicas maiores e operações multisalas',
-      destaque: false,
-      precoMensal: 119.90,
-      precoSemestralTotal: 647.00,
-      precoSemestralMensalEq: 107.83,
-      poupancaSemestral: 72.40,
-      precoAnualTotal: 1199.00,
-      precoAnualMensalEq: 99.91,
-      poupancaAnual: 239.80,
-      ctaTexto: 'Escolher VIP / Multisalas',
-      beneficiosBaseTexto: 'Tudo do Plano Clínica Pro +',
-      funcionalidades: [
-        'Domínio / Subdomínio próprio',
-        'Suporte prioritário via WhatsApp',
-        'Profissionais e salas ilimitadas',
-        'Campanhas de retorno no WhatsApp (reativação de clientes inativos)',
-        'Gestão avançada de múltiplos acessos e comissões'
-      ]
+  bannerPromocao = computed(() => {
+    let maiorPct = 0;
+    let maiorDescontoValor = 0;
+    let mensagem: string | null = null;
+    for (const p of this.planos()) {
+      if (this.temPromocaoNoCiclo(p)) {
+        const pct = this.obterDescontoPctCiclo(p);
+        const val = this.obterDescontoValorCiclo(p);
+        if (pct > maiorPct) maiorPct = pct;
+        if (val > maiorDescontoValor) maiorDescontoValor = val;
+        if (!mensagem && p.mensagemPromocao) mensagem = p.mensagemPromocao;
+      }
     }
-  ];
+    return maiorPct > 0 ? { maiorPct, maiorDescontoValor, mensagem } : null;
+  });
 
   planoSelecionadoObj = computed(() => {
-    return this.planos.find(p => p.id === this.planoSelecionado()) || this.planos[1];
+    const lista = this.planos();
+    return lista.find(p => p.codigo === this.planoSelecionado()) || lista[1] || lista[0];
   });
 
   valorTotalSelecionado = computed(() => {
@@ -500,6 +616,8 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
   private intervalPolling: any = null;
 
   ngOnInit(): void {
+    this.carregarPlanos();
+
     const paymentIdRetorno = this.route.snapshot.queryParamMap.get('payment_id') || this.route.snapshot.queryParamMap.get('collection_id');
     if (paymentIdRetorno) {
       this.api.consultarStatusPagamento(paymentIdRetorno).subscribe({
@@ -523,26 +641,67 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
     this.pararPolling();
   }
 
+  carregarPlanos(): void {
+    this.api.getPlanosPublicos().subscribe({
+      next: (lista) => {
+        if (Array.isArray(lista) && lista.length > 0) {
+          this.planos.set(lista);
+        }
+      },
+      error: () => {}
+    });
+  }
+
   selecionarCiclo(ciclo: CicloFaturacao): void {
     this.cicloSelecionado.set(ciclo);
   }
 
-  selecionarPlano(plano: PlanoId): void {
+  selecionarPlano(plano: string): void {
     this.planoSelecionado.set(plano);
   }
 
-  obterTotalPlano(plano: PlanoConfig): number {
+  obterTotalPlano(plano: PlanoAssinatura): number {
     const c = this.cicloSelecionado();
-    if (c === 'SEMESTRAL') return plano.precoSemestralTotal;
-    if (c === 'ANUAL') return plano.precoAnualTotal;
-    return plano.precoMensal;
+    if (c === 'SEMESTRAL') return Number(plano.precoSemestralFinal || 0);
+    if (c === 'ANUAL') return Number(plano.precoAnualFinal || 0);
+    return Number(plano.precoMensalFinal || 0);
+  }
+
+  temPromocaoNoCiclo(plano: PlanoAssinatura): boolean {
+    return plano.promocional && this.obterDescontoValorCiclo(plano) > 0;
+  }
+
+  obterOriginalCiclo(plano: PlanoAssinatura): number {
+    const c = this.cicloSelecionado();
+    if (c === 'SEMESTRAL') return Number(plano.precoSemestralOriginal || 0);
+    if (c === 'ANUAL') return Number(plano.precoAnualOriginal || 0);
+    return Number(plano.precoMensalOriginal || 0);
+  }
+
+  obterDescontoValorCiclo(plano: PlanoAssinatura): number {
+    const c = this.cicloSelecionado();
+    if (c === 'SEMESTRAL') return Number(plano.descontoSemestralValor || 0);
+    if (c === 'ANUAL') return Number(plano.descontoAnualValor || 0);
+    return Number(plano.descontoMensalValor || 0);
+  }
+
+  obterDescontoPctCiclo(plano: PlanoAssinatura): number {
+    const c = this.cicloSelecionado();
+    if (c === 'SEMESTRAL') return Number(plano.descontoSemestralPercentual || 0);
+    if (c === 'ANUAL') return Number(plano.descontoAnualPercentual || 0);
+    return Number(plano.descontoMensalPercentual || 0);
   }
 
   formatarMoeda(valor: number): string {
-    return (valor || 0).toLocaleString('pt-BR', {
+    return Number(valor || 0).toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+  }
+
+  formatarPct(pct: number): string {
+    const n = Math.round((Number(pct || 0) + Number.EPSILON) * 10) / 10;
+    return `${Number.isInteger(n) ? n : n.toFixed(1).replace('.', ',')}%`;
   }
 
   carregarStatus(): void {
@@ -564,7 +723,7 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
     });
   }
 
-  gerarPixParaPlano(planoId: PlanoId): void {
+  gerarPixParaPlano(planoId: string): void {
     this.planoSelecionado.set(planoId);
     this.carregando.set(true);
     const slug = this.route.snapshot.queryParamMap.get('slug') || this.tenantService.tenant()?.slug || undefined;
@@ -589,7 +748,7 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
     });
   }
 
-  pagarComCartao(planoId: PlanoId): void {
+  pagarComCartao(planoId: string): void {
     this.planoSelecionado.set(planoId);
     this.gerandoCartao.set(true);
     const slug = this.route.snapshot.queryParamMap.get('slug') || this.tenantService.tenant()?.slug || undefined;

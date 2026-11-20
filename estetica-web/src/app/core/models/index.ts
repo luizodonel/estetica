@@ -333,4 +333,72 @@ export interface RelatorioGeralResponse {
   especialistas: RelatorioEspecialista[];
 }
 
+export interface PlanoAssinatura {
+  codigo: 'STARTER' | 'PRO' | 'VIP' | string;
+  nome: string;
+  subtitulo: string;
+  destaque: boolean;
+  etiquetaDestaque?: string | null;
+  beneficiosBaseTexto?: string | null;
+  ctaTexto?: string | null;
+  funcionalidades: string[];
+  ordemExibicao?: number;
+  precoMensalOriginal: number;
+  precoMensalFinal: number;
+  descontoMensalValor: number;
+  descontoMensalPercentual: number;
+  precoSemestralOriginal: number;
+  precoSemestralFinal: number;
+  precoSemestralMensalEq: number;
+  poupancaSemestral: number;
+  descontoSemestralValor: number;
+  descontoSemestralPercentual: number;
+  precoAnualOriginal: number;
+  precoAnualFinal: number;
+  precoAnualMensalEq: number;
+  poupancaAnual: number;
+  descontoAnualValor: number;
+  descontoAnualPercentual: number;
+  promocional: boolean;
+  percentualDesconto: number;
+  mensagemPromocao?: string | null;
+}
+
+export interface SuporteMensagem {
+  id: number;
+  chamadoId: number;
+  remetente: 'CLIENTE' | 'SUPORTE' | string;
+  autorNome?: string | null;
+  mensagem: string;
+  criadoEm: string;
+}
+
+export interface SuporteChamado {
+  id: number;
+  protocolo: string;
+  nome: string;
+  whatsapp: string;
+  email?: string | null;
+  nomeEmpresa?: string | null;
+  assunto: string;
+  categoria: string;
+  status: 'ABERTO' | 'RESPONDIDO' | 'ENCERRADO' | string;
+  origem: string;
+  criadoEm: string;
+  atualizadoEm: string;
+  respondidoEm?: string | null;
+  mensagens: SuporteMensagem[];
+}
+
+export interface CriarChamadoSuporteRequest {
+  nome: string;
+  whatsapp: string;
+  email?: string;
+  nomeEmpresa?: string;
+  assunto: string;
+  categoria: string;
+  mensagem: string;
+  origem?: string;
+}
+
 

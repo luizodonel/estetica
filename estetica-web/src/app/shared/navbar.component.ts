@@ -75,6 +75,12 @@ import { SetorService } from '../core/services/setor.service';
                 Planos & Preços
               </a>
               <a 
+                routerLink="/planos"
+                [queryParams]="{ suporte: '1' }"
+                class="px-3.5 py-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-all whitespace-nowrap font-bold">
+                💬 Suporte & Dúvidas
+              </a>
+              <a 
                 routerLink="/parceiro/cadastro-lojista" 
                 routerLinkActive="bg-rose-600 text-white font-bold shadow-sm" 
                 class="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-all whitespace-nowrap font-bold">

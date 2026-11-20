@@ -122,4 +122,35 @@ public class TenantDTOs {
         String pixCopiaCola,
         String pixQrCodeBase64
     ) {}
+
+    public record PlanoAssinaturaDTO(
+        String codigo,
+        String nome,
+        String subtitulo,
+        boolean destaque,
+        String etiquetaDestaque,
+        String beneficiosBaseTexto,
+        String ctaTexto,
+        java.util.List<String> funcionalidades,
+        Integer ordemExibicao,
+        BigDecimal precoMensalOriginal,
+        BigDecimal precoMensalFinal,
+        BigDecimal descontoMensalValor,
+        BigDecimal descontoMensalPercentual,
+        BigDecimal precoSemestralOriginal,
+        BigDecimal precoSemestralFinal,
+        BigDecimal precoSemestralMensalEq,
+        BigDecimal poupancaSemestral,
+        BigDecimal descontoSemestralValor,
+        BigDecimal descontoSemestralPercentual,
+        BigDecimal precoAnualOriginal,
+        BigDecimal precoAnualFinal,
+        BigDecimal precoAnualMensalEq,
+        BigDecimal poupancaAnual,
+        BigDecimal descontoAnualValor,
+        BigDecimal descontoAnualPercentual,
+        boolean promocional,
+        BigDecimal percentualDesconto,
+        String mensagemPromocao
+    ) {}
 }

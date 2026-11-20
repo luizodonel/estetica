@@ -50,10 +50,43 @@ public class TenantService {
     private final MercadoPagoService mercadoPagoService;
     private final CoolifyIntegrationService coolifyIntegrationService;
     private final ProcedimentoService procedimentoService;
+    private final PlanoAssinaturaService planoAssinaturaService;
     private final jakarta.servlet.http.HttpServletRequest httpServletRequest;
 
     private static final BigDecimal VALOR_ADESAO_PIX = new BigDecimal("99.90");
     private static final int DIAS_TRIAL_GRATIS = 7;
+
+    private BigDecimal obterValorInicialPadrao() {
+        try {
+            BigDecimal v = planoAssinaturaService.resolverValorEfetivo("PRO", "MENSAL");
+            if (v != null && v.compareTo(BigDecimal.ZERO) > 0) return v;
+        } catch (Exception ignored) {
+        }
+        return VALOR_ADESAO_PIX;
+    }
+
+    private int resolverDiasCicloPagamento(Map<String, Object> mpResponse, BigDecimal valorRef) {
+        StringBuilder descBuilder = new StringBuilder();
+        if (mpResponse != null) {
+            if (mpResponse.get("description") != null) {
+                descBuilder.append(mpResponse.get("description")).append(" ");
+            }
+            if (mpResponse.get("additional_info") instanceof Map<?, ?> addInfo) {
+                Object itemsObj = addInfo.get("items");
+                if (itemsObj instanceof java.util.List<?> items && !items.isEmpty()) {
+                    Object first = items.get(0);
+                    if (first instanceof Map<?, ?> itemMap && itemMap.get("title") != null) {
+                        descBuilder.append(itemMap.get("title"));
+                    }
+                }
+            }
+        }
+        String texto = descBuilder.toString().toUpperCase();
+        if (texto.contains("(ANUAL)")) return 365;
+        if (texto.contains("(SEMESTRAL)")) return 180;
+        if (texto.contains("(MENSAL)")) return 30;
+        return calcularDiasCiclo(valorRef);
+    }
 
     public static BigDecimal calcularValorPlano(String plano, String ciclo) {
         String p = (plano != null ? plano.trim().toUpperCase() : "PRO");
@@ -188,6 +221,8 @@ public class TenantService {
         LocalDateTime agora = LocalDateTime.now();
         LocalDateTime vencimentoTrial = agora.plusDays(DIAS_TRIAL_GRATIS);
 
+        BigDecimal valorInicial = obterValorInicialPadrao();
+
         // 1. Salva o Lojista já ATIVO em período de TESTE GRÁTIS (Trial único de 7 dias blindado por CPF/CNPJ, WhatsApp, Email, IP e Fingerprint)
         com.estetica.model.Lojista lojista = com.estetica.model.Lojista.builder()
                 .nomeEmpresa(nomeEmpresaLimpo)
@@ -207,7 +242,7 @@ public class TenantService {
                 .corPrimaria(corPrimaria)
                 .corSecundaria(corSecundaria)
                 .statusPagamento("TRIAL")
-                .valorAdesao(VALOR_ADESAO_PIX)
+                .valorAdesao(valorInicial)
                 .dataVencimento(vencimentoTrial)
                 .ativo(true)
                 .build();
@@ -228,7 +263,7 @@ public class TenantService {
                 .ipCadastro(clientIp)
                 .deviceFingerprint(deviceFp)
                 .statusPagamento("TRIAL")
-                .valorAdesao(VALOR_ADESAO_PIX)
+                .valorAdesao(valorInicial)
                 .dataVencimento(vencimentoTrial)
                 .ativo(true)
                 .build();
@@ -393,7 +428,7 @@ public class TenantService {
                         : ((lojista != null && lojista.getValorAdesao() != null)
                                 ? lojista.getValorAdesao()
                                 : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX));
-                int diasAdicionar = calcularDiasCiclo(valorRef);
+                int diasAdicionar = resolverDiasCicloPagamento(mpResponse, valorRef);
                 LocalDateTime novaDataVencimento = baseDate.plusDays(diasAdicionar);
 
                 if (tenant != null) {
@@ -1051,11 +1086,11 @@ public class TenantService {
         String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Estabelecimento");
         LocalDateTime agora = LocalDateTime.now();
 
-        // Calcula o valor exato do plano (Starter R$ 89,90 | Clínica Pro R$ 99,90 | VIP R$ 119,90) e ciclo (Mensal | Semestral | Anual)
+        // Calcula o valor vigente do plano (considerando edições e promoções ativas)
         try {
             BigDecimal valor = (planoParam != null || cicloParam != null)
-                    ? calcularValorPlano(planoParam, cicloParam)
-                    : (lojista != null && lojista.getValorAdesao() != null ? lojista.getValorAdesao() : VALOR_ADESAO_PIX);
+                    ? planoAssinaturaService.resolverValorEfetivo(planoParam, cicloParam)
+                    : (lojista != null && lojista.getValorAdesao() != null ? lojista.getValorAdesao() : obterValorInicialPadrao());
 
             String labelPlano = (planoParam != null && !planoParam.isBlank() ? planoParam.toUpperCase() : "PRO")
                     + " (" + (cicloParam != null && !cicloParam.isBlank() ? cicloParam.toUpperCase() : "MENSAL") + ")";
@@ -1154,7 +1189,7 @@ public class TenantService {
             throw new RegraNegocioException("Estabelecimento não encontrado para gerar pagamento por cartão.");
         }
 
-        BigDecimal valor = calcularValorPlano(planoParam, cicloParam);
+        BigDecimal valor = planoAssinaturaService.resolverValorEfetivo(planoParam, cicloParam);
         if (lojista != null) {
             lojista.setValorAdesao(valor);
             lojistaRepository.save(lojista);

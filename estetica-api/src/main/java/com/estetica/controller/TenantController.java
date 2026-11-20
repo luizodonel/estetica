@@ -3,6 +3,7 @@ package com.estetica.controller;
 import com.estetica.dto.TenantDTOs.*;
 import com.estetica.model.ClinicaTenant;
 import com.estetica.repository.ClinicaTenantRepository;
+import com.estetica.service.PlanoAssinaturaService;
 import com.estetica.service.TenantResolverService;
 import com.estetica.service.TenantService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -25,6 +27,13 @@ public class TenantController {
     private final TenantService tenantService;
     private final TenantResolverService tenantResolverService;
     private final ClinicaTenantRepository tenantRepository;
+    private final PlanoAssinaturaService planoAssinaturaService;
+
+    @GetMapping("/planos")
+    @Operation(summary = "Lista os planos e valores vigentes (incluindo promoções ativas)")
+    public ResponseEntity<List<PlanoAssinaturaDTO>> listarPlanos() {
+        return ResponseEntity.ok(planoAssinaturaService.listarPlanosPublicos());
+    }
 
     @PostMapping("/lojista")
     @Operation(summary = "Cadastro exclusivo de novo lojista / clínica parceira com link personalizado e whitelabel")
