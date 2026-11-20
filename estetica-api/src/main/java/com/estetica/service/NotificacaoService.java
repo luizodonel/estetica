@@ -70,10 +70,14 @@ public class NotificacaoService {
     }
 
     private String montarBlocoBotoesAcao(Agendamento a) {
-        return "\n\nPodemos confirmar sua presença?\n" +
-               "Responda aqui no WhatsApp:\n" +
-               "*1* - Confirmar presença\n" +
-               "*2* - Reagendar horário";
+        String baseUrl = obterBaseUrlEstabelecimento(a);
+        if (a.getId() != null && a.getTokenConfirmacao() != null && !a.getTokenConfirmacao().isBlank()) {
+            String linkConfirmar = baseUrl + "/confirmar/" + a.getId() + "?t=" + a.getTokenConfirmacao() + "&acao=confirmar";
+            String linkReagendar = baseUrl + "/confirmar/" + a.getId() + "?t=" + a.getTokenConfirmacao() + "&acao=reagendar";
+            return "\n\n*Confirmar Presença (1 clique):*\n" + linkConfirmar +
+                   "\n\n*Reagendar Horário:*\n" + linkReagendar;
+        }
+        return "\n\n*Reagendar Horário:*\n" + baseUrl + "/catalogo";
     }
 
     @Async
@@ -86,15 +90,18 @@ public class NotificacaoService {
         String nomeEmpresa = obterNomeEstabelecimento(a);
         String primeiroNomeCliente = extrairPrimeiroNome(a.getCliente().getNome());
 
-        // 1. Mensagem para o Cliente (Discreta, sem links longos e sem emojis quebrados)
+        // 1. Mensagem para o Cliente (com Spintax + Links de Confirmar/Reagendar + Opt-in "Responda OK" Anti-Ban)
         String saudacao = sortear(SAUDACOES);
+        String optIn = sortear(FECHAMENTOS_OPT_IN);
         String botoesAcao = montarBlocoBotoesAcao(a);
         String msgCliente = String.format(
                 "*%s — Agendamento Confirmado*\n\n" +
-                "%s *%s*! Seu horário foi reservado:\n\n" +
+                "%s *%s*!\n" +
+                "Seu horário foi reservado com sucesso:\n\n" +
                 "• *Serviço:* %s\n" +
                 "• *Profissional:* %s\n" +
                 "• *Data:* %s às *%s*" +
+                "%s\n\n" +
                 "%s",
                 nomeEmpresa,
                 saudacao,
@@ -103,7 +110,8 @@ public class NotificacaoService {
                 a.getProfissional().getNome(),
                 dataFormatada,
                 horaFormatada,
-                botoesAcao
+                botoesAcao,
+                optIn
         );
 
         log.info("[WHATSAPP AUTO] Disparando confirmação de agendamento #{} para cliente {} ({})",

@@ -221,13 +221,17 @@ export class AdminAgendaComponent implements OnInit {
     const empresa = this.tenantService.nomeEmpresa();
     const primeiroNome = (a.clienteNome || 'Cliente').split(' ')[0];
 
-    const texto =
-      `Olá *${primeiroNome}*, tudo bem? Passando para confirmar seu agendamento de *${a.procedimentoTitulo}* em *${empresa}* no dia *${dataBR}* às *${horaBR}* com *${a.profissionalNome}*.\n\n` +
-      `Podemos confirmar sua presença?\n` +
-      `Responda com o número da opção:\n` +
-      `*1* - Confirmar presença\n` +
-      `*2* - Reagendar horário`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : `https://${this.tenantService.obterSlugAtual()}.logistadigital.com.br`;
+    let blocoLinks = '';
+    if (a.id && a.tokenConfirmacao) {
+      const urlConfirmar = `${origin}/confirmar/${a.id}?t=${a.tokenConfirmacao}&acao=confirmar`;
+      const urlReagendar = `${origin}/confirmar/${a.id}?t=${a.tokenConfirmacao}&acao=reagendar`;
+      blocoLinks = `\n\n*Confirmar Presença (1 clique):*\n${urlConfirmar}\n\n*Reagendar Horário:*\n${urlReagendar}`;
+    } else {
+      blocoLinks = `\n\n*Reagendar Horário:*\n${origin}/catalogo`;
+    }
 
+    const texto = `Olá *${primeiroNome}*, tudo bem? Passando para confirmar seu agendamento de *${a.procedimentoTitulo}* em *${empresa}* no dia *${dataBR}* às *${horaBR}* com *${a.profissionalNome}*.${blocoLinks}`;
     return `https://api.whatsapp.com/send?phone=${fone}&text=${encodeURIComponent(texto)}`;
   }
 
