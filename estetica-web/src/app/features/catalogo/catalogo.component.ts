@@ -679,7 +679,7 @@ interface DiaCarrossel {
             </div>
             
             <h3 class="font-serif font-bold text-2xl text-stone-900">
-              Agendamento Confirmado!
+              Horário Agendado!
             </h3>
             
             <p class="text-xs text-stone-600 leading-relaxed max-w-sm mx-auto">
@@ -937,9 +937,25 @@ export class CatalogoComponent implements OnInit {
 
     this.api.getProfissionais().subscribe({
       next: (profs) => {
-        this.profissionais.set(profs || []);
-        if (profs && profs.length > 0 && !this.profissionalSelecionado()) {
-          this.profissionalSelecionado.set(profs[0]);
+        const lista = profs || [];
+        // Se for especialista logado, exibe apenas ele mesmo para agendar seus próprios clientes
+        if (this.authService.isProfissional()) {
+          const cur = this.authService.currentUser();
+          const meuProf = lista.find(p =>
+            (cur?.id && p.usuarioId === cur.id) ||
+            (cur?.email && p.email && p.email.toLowerCase() === cur.email.toLowerCase()) ||
+            (cur?.telefoneWhatsApp && p.telefoneWhatsApp && p.telefoneWhatsApp.replace(/\D/g, '') === cur.telefoneWhatsApp.replace(/\D/g, '')) ||
+            (cur?.nome && p.nome && p.nome.trim().toLowerCase() === cur.nome.trim().toLowerCase())
+          );
+          if (meuProf) {
+            this.profissionais.set([meuProf]);
+            this.profissionalSelecionado.set(meuProf);
+            return;
+          }
+        }
+        this.profissionais.set(lista);
+        if (lista.length > 0 && !this.profissionalSelecionado()) {
+          this.profissionalSelecionado.set(lista[0]);
         }
       },
       error: () => {}
@@ -1107,6 +1123,7 @@ export class CatalogoComponent implements OnInit {
         this.salvando.set(false);
         this.modalIdentificacaoAberta.set(false);
         this.gavetaMobileAberta.set(false);
+        this.carregarSlots();
         this.agendamentoConcluido.set(true);
       },
       error: (err) => {
@@ -1173,6 +1190,7 @@ export class CatalogoComponent implements OnInit {
       next: () => {
         this.salvando.set(false);
         this.gavetaMobileAberta.set(false);
+        this.carregarSlots();
         this.agendamentoConcluido.set(true);
         if (this.authService.isAdminOrProfissional()) {
           this.api.getClientes().subscribe(clis => this.clientes.set(clis || []));

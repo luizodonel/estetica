@@ -257,7 +257,7 @@ public class AgendamentoService {
                 .tenant(tenant)
                 .dataHoraInicio(inicio)
                 .dataHoraFim(fim)
-                .status(StatusAgendamento.CONFIRMADO)
+                .status(StatusAgendamento.PENDENTE)
                 .valorCobrado(valorTotalCobrado)
                 .observacoesCliente(request.observacoesCliente())
                 .tokenConfirmacao(java.util.UUID.randomUUID().toString().replace("-", ""))
@@ -306,15 +306,32 @@ public class AgendamentoService {
                 : agendamentoRepository.findAgendamentosCalendario(inicio, fim);
 
         if (principal instanceof Usuario usuario && usuario.getRole() == Role.ROLE_PROFISSIONAL) {
+            Profissional profLogado = resolverProfissionalDoUsuario(usuario, tenant);
             return agendamentos.stream()
-                    .filter(a -> a.getProfissional() != null && a.getProfissional().getUsuario() != null
-                            && a.getProfissional().getUsuario().getId().equals(usuario.getId()))
+                    .filter(a -> {
+                        if (a.getProfissional() == null) return false;
+                        if (profLogado != null && a.getProfissional().getId().equals(profLogado.getId())) return true;
+                        if (a.getProfissional().getUsuario() != null && a.getProfissional().getUsuario().getId().equals(usuario.getId())) return true;
+                        return usuario.getNome() != null && a.getProfissional().getNome() != null
+                                && a.getProfissional().getNome().trim().equalsIgnoreCase(usuario.getNome().trim());
+                    })
                     .map(this::toDTO)
                     .toList();
         }
         return agendamentos.stream()
                 .map(this::toDTO)
                 .toList();
+    }
+
+    public Profissional resolverProfissionalDoUsuario(Usuario usuario, ClinicaTenant tenant) {
+        if (usuario == null) return null;
+        Profissional prof = profissionalRepository.findByUsuarioId(usuario.getId()).orElse(null);
+        if (prof == null && usuario.getNome() != null) {
+            prof = (tenant != null)
+                    ? profissionalRepository.findFirstByTenantIdAndNomeIgnoreCase(tenant.getId(), usuario.getNome().trim()).orElse(null)
+                    : profissionalRepository.findFirstByNomeIgnoreCase(usuario.getNome().trim()).orElse(null);
+        }
+        return prof;
     }
 
     private Usuario buscarClientePorTelefoneNoTenant(Long tenantId, String telefone) {

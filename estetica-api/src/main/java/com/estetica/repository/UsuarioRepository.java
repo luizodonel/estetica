@@ -42,5 +42,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM Usuario u WHERE u.role = :role AND (:tenantId IS NULL OR u.tenant.id = :tenantId)")
     long countClientesPorTenantOuSemTenant(@org.springframework.data.repository.query.Param("tenantId") Long tenantId, @org.springframework.data.repository.query.Param("role") Role role);
+
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT a.cliente FROM Agendamento a WHERE a.profissional.id = :profissionalId AND a.status != com.estetica.model.StatusAgendamento.CANCELADO ORDER BY a.cliente.nome ASC")
+    List<Usuario> findClientesPorProfissional(@org.springframework.data.repository.query.Param("profissionalId") Long profissionalId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT a.cliente.id) FROM Agendamento a WHERE a.profissional.id = :profissionalId AND a.status != com.estetica.model.StatusAgendamento.CANCELADO")
+    long countClientesPorProfissional(@org.springframework.data.repository.query.Param("profissionalId") Long profissionalId);
 }
 

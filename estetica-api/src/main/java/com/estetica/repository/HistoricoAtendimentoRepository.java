@@ -12,6 +12,7 @@ import java.util.List;
 @Repository
 public interface HistoricoAtendimentoRepository extends JpaRepository<HistoricoAtendimento, Long> {
     List<HistoricoAtendimento> findByClienteIdOrderByDataAtendimentoDesc(Long clienteId);
+    List<HistoricoAtendimento> findByClienteIdAndProfissionalIdOrderByDataAtendimentoDesc(Long clienteId, Long profissionalId);
 
     @Modifying
     @Query("DELETE FROM HistoricoAtendimento h WHERE h.tenant.id = :tenantId OR (h.agendamento IS NOT NULL AND h.agendamento.tenant.id = :tenantId)")

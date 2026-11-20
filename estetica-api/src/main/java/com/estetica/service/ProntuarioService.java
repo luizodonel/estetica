@@ -32,6 +32,18 @@ public class ProntuarioService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado"));
         tenantResolverService.validarPertenceAoTenantAtual(cliente.getTenant(),
                 "Acesso negado: Este prontuário pertence a outro estabelecimento.");
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Usuario u && u.getRole() == Role.ROLE_PROFISSIONAL) {
+            Profissional prof = profissionalRepository.findByUsuarioId(u.getId()).orElse(null);
+            if (prof != null) {
+                return historicoAtendimentoRepository.findByClienteIdAndProfissionalIdOrderByDataAtendimentoDesc(clienteId, prof.getId())
+                        .stream()
+                        .map(this::toDTO)
+                        .toList();
+            }
+        }
+
         return historicoAtendimentoRepository.findByClienteIdOrderByDataAtendimentoDesc(clienteId)
                 .stream()
                 .map(this::toDTO)

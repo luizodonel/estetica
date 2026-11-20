@@ -121,7 +121,7 @@ import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
                 <div>
                   <div class="flex items-center gap-2 mb-1">
                     <span [class]="obterBadgeClass(a.status)" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                      {{ a.status }}
+                      {{ obterLabelStatus(a.status) }}
                     </span>
                     <span class="text-xs font-semibold text-slate-600">
                       {{ a.profissionalNome }}
@@ -235,7 +235,15 @@ export class AdminAgendaComponent implements OnInit {
     return `https://api.whatsapp.com/send?phone=${fone}&text=${encodeURIComponent(texto)}`;
   }
 
-  dataFiltro = signal<string>(new Date().toISOString().split('T')[0]);
+  private obterDataLocal(): string {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  dataFiltro = signal<string>(this.obterDataLocal());
   profissionais = signal<Profissional[]>([]);
   filtroProfissional = signal<number | null>(null);
 
@@ -257,10 +265,15 @@ export class AdminAgendaComponent implements OnInit {
       next: (dados) => {
         this.profissionais.set(dados);
 
-        // Se for especialista autenticado, auto-seleciona a agenda dele
+        // Se for especialista autenticado, identifica seu perfil por usuarioId, telefone, email ou nome
         if (this.auth.isProfissional()) {
-          const userEmail = this.auth.currentUser()?.email;
-          const meuProf = dados.find(p => p.email === userEmail);
+          const cur = this.auth.currentUser();
+          const meuProf = dados.find(p =>
+            (cur?.id && p.usuarioId === cur.id) ||
+            (cur?.email && p.email && p.email.toLowerCase() === cur.email.toLowerCase()) ||
+            (cur?.telefoneWhatsApp && p.telefoneWhatsApp && p.telefoneWhatsApp.replace(/\D/g, '') === cur.telefoneWhatsApp.replace(/\D/g, '')) ||
+            (cur?.nome && p.nome && p.nome.trim().toLowerCase() === cur.nome.trim().toLowerCase())
+          );
           if (meuProf) {
             this.filtroProfissional.set(meuProf.id);
           }
@@ -288,6 +301,15 @@ export class AdminAgendaComponent implements OnInit {
   }
 
   agendamentosFiltrados(): Agendamento[] {
+    if (this.auth.isProfissional()) {
+      // O backend já filtra apenas os agendamentos do especialista autenticado
+      const profId = this.filtroProfissional();
+      if (profId) {
+        const filtrados = this.agendamentos().filter(a => a.profissionalId === profId);
+        if (filtrados.length > 0) return filtrados;
+      }
+      return this.agendamentos();
+    }
     const profId = this.filtroProfissional();
     if (!profId) return this.agendamentos();
     return this.agendamentos().filter(a => a.profissionalId === profId);
@@ -299,7 +321,7 @@ export class AdminAgendaComponent implements OnInit {
   }
 
   irParaHoje(): void {
-    this.dataFiltro.set(new Date().toISOString().split('T')[0]);
+    this.dataFiltro.set(this.obterDataLocal());
     this.carregarAgendamentos();
   }
 
@@ -308,6 +330,11 @@ export class AdminAgendaComponent implements OnInit {
       next: () => this.carregarAgendamentos(),
       error: (err) => console.error(err)
     });
+  }
+
+  obterLabelStatus(status: StatusAgendamento): string {
+    if (status === 'PENDENTE') return 'AGENDADO';
+    return status;
   }
 
   obterBadgeClass(status: StatusAgendamento): string {

@@ -382,10 +382,15 @@ export class ModalTravaAgendaComponent implements OnInit, OnChanges {
       next: (profs) => {
         this.profissionais.set(profs);
 
-        // Se o usuário logado for um especialista, seleciona o especialista dele
+        // Se o usuário logado for um especialista, seleciona o especialista dele por usuarioId, email, telefone ou nome
         if (this.auth.isProfissional()) {
-          const userEmail = this.auth.currentUser()?.email;
-          const meuProf = profs.find(p => p.email === userEmail);
+          const cur = this.auth.currentUser();
+          const meuProf = profs.find(p =>
+            (cur?.id && p.usuarioId === cur.id) ||
+            (cur?.email && p.email && p.email.toLowerCase() === cur.email.toLowerCase()) ||
+            (cur?.telefoneWhatsApp && p.telefoneWhatsApp && p.telefoneWhatsApp.replace(/\D/g, '') === cur.telefoneWhatsApp.replace(/\D/g, '')) ||
+            (cur?.nome && p.nome && p.nome.trim().toLowerCase() === cur.nome.trim().toLowerCase())
+          );
           if (meuProf) {
             this.profissionalSelecionadoId.set(meuProf.id);
           }

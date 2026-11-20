@@ -95,9 +95,9 @@ public class NotificacaoService {
         String optIn = sortear(FECHAMENTOS_OPT_IN);
         String botoesAcao = montarBlocoBotoesAcao(a);
         String msgCliente = String.format(
-                "*%s — Agendamento Confirmado*\n\n" +
+                "*%s — Horário Agendado*\n\n" +
                 "%s *%s*!\n" +
-                "Seu horário foi reservado com sucesso:\n\n" +
+                "Seu horário foi agendado com sucesso:\n\n" +
                 "• *Serviço:* %s\n" +
                 "• *Profissional:* %s\n" +
                 "• *Data:* %s às *%s*" +

@@ -28,7 +28,7 @@ public class AgendamentoScheduler {
         LocalDateTime daqui24Horas = agora.plusHours(24);
 
         List<Agendamento> agendamentosParaLembrar = agendamentoRepository.findAgendamentosParaLembrete(
-                StatusAgendamento.CONFIRMADO,
+                List.of(StatusAgendamento.PENDENTE, StatusAgendamento.CONFIRMADO),
                 agora,
                 daqui24Horas
         );

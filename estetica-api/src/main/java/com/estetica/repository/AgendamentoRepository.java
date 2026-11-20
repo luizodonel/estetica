@@ -33,8 +33,8 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
            "JOIN FETCH a.cliente " +
            "WHERE a.profissional.id = :profissionalId " +
            "AND a.status IN :statuses " +
-           "AND a.dataHoraInicio >= :inicio " +
-           "AND a.dataHoraFim <= :fim " +
+           "AND a.dataHoraInicio < :fim " +
+           "AND a.dataHoraFim > :inicio " +
            "ORDER BY a.dataHoraInicio ASC")
     List<Agendamento> findByProfissionalAndIntervalo(@Param("profissionalId") Long profissionalId,
                                                     @Param("inicio") LocalDateTime inicio,
@@ -52,18 +52,20 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     // Agendamentos para o calendário geral (painel administrativo)
     @Query("SELECT a FROM Agendamento a " +
            "JOIN FETCH a.procedimento " +
-           "JOIN FETCH a.profissional " +
+           "JOIN FETCH a.profissional p " +
+           "LEFT JOIN FETCH p.usuario " +
            "JOIN FETCH a.cliente " +
-           "WHERE a.dataHoraInicio >= :inicio AND a.dataHoraFim <= :fim " +
+           "WHERE a.dataHoraInicio >= :inicio AND a.dataHoraInicio <= :fim " +
            "ORDER BY a.dataHoraInicio ASC")
     List<Agendamento> findAgendamentosCalendario(@Param("inicio") LocalDateTime inicio,
                                                 @Param("fim") LocalDateTime fim);
 
     @Query("SELECT a FROM Agendamento a " +
            "JOIN FETCH a.procedimento " +
-           "JOIN FETCH a.profissional " +
+           "JOIN FETCH a.profissional p " +
+           "LEFT JOIN FETCH p.usuario " +
            "JOIN FETCH a.cliente " +
-           "WHERE a.tenant.id = :tenantId AND a.dataHoraInicio >= :inicio AND a.dataHoraFim <= :fim " +
+           "WHERE a.tenant.id = :tenantId AND a.dataHoraInicio >= :inicio AND a.dataHoraInicio <= :fim " +
            "ORDER BY a.dataHoraInicio ASC")
     List<Agendamento> findAgendamentosCalendarioTenant(@Param("tenantId") Long tenantId,
                                                       @Param("inicio") LocalDateTime inicio,
@@ -75,10 +77,10 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
            "JOIN FETCH a.procedimento " +
            "JOIN FETCH a.profissional " +
            "LEFT JOIN FETCH a.tenant " +
-           "WHERE a.status = :status " +
+           "WHERE a.status IN :statuses " +
            "AND a.lembreteEnviado = false " +
            "AND a.dataHoraInicio BETWEEN :de AND :ate")
-    List<Agendamento> findAgendamentosParaLembrete(@Param("status") StatusAgendamento status,
+    List<Agendamento> findAgendamentosParaLembrete(@Param("statuses") List<StatusAgendamento> statuses,
                                                   @Param("de") LocalDateTime de,
                                                   @Param("ate") LocalDateTime ate);
 

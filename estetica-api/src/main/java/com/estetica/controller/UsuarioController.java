@@ -27,15 +27,31 @@ import java.util.List;
 public class UsuarioController {
 
     private final UsuarioRepository usuarioRepository;
+    private final com.estetica.repository.ProfissionalRepository profissionalRepository;
     private final PasswordEncoder passwordEncoder;
     private final com.estetica.service.TenantResolverService tenantResolverService;
 
     @GetMapping("/clientes")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFISSIONAL')")
-    @Operation(summary = "Lista todos os pacientes/clientes cadastrados na clínica")
-    public ResponseEntity<List<UsuarioDTO>> listarClientes() {
+    @Operation(summary = "Lista todos os pacientes/clientes cadastrados na clínica (ou apenas os clientes agendados com o especialista logado)")
+    public ResponseEntity<List<UsuarioDTO>> listarClientes(org.springframework.security.core.Authentication authentication) {
         com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         Long tenantId = tenant != null ? tenant.getId() : null;
+
+        if (authentication != null && authentication.getPrincipal() instanceof Usuario u && u.getRole() == Role.ROLE_PROFISSIONAL) {
+            com.estetica.model.Profissional prof = profissionalRepository.findByUsuarioId(u.getId()).orElse(null);
+            if (prof == null && u.getNome() != null) {
+                prof = (tenantId != null)
+                        ? profissionalRepository.findFirstByTenantIdAndNomeIgnoreCase(tenantId, u.getNome().trim()).orElse(null)
+                        : profissionalRepository.findFirstByNomeIgnoreCase(u.getNome().trim()).orElse(null);
+            }
+            if (prof != null) {
+                List<Usuario> clientesProf = usuarioRepository.findClientesPorProfissional(prof.getId());
+                return ResponseEntity.ok(clientesProf.stream().map(this::toDTO).toList());
+            }
+            return ResponseEntity.ok(List.of());
+        }
+
         List<Usuario> list = usuarioRepository.findClientesPorTenantOuSemTenant(tenantId, Role.ROLE_CLIENTE);
 
         List<UsuarioDTO> clientes = list.stream()

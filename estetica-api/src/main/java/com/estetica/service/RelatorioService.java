@@ -50,6 +50,11 @@ public class RelatorioService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof Usuario u && u.getRole() == Role.ROLE_PROFISSIONAL) {
             Profissional profLogado = profissionalRepository.findByUsuarioId(u.getId()).orElse(null);
+            if (profLogado == null && u.getNome() != null) {
+                profLogado = (tenantId != null)
+                        ? profissionalRepository.findFirstByTenantIdAndNomeIgnoreCase(tenantId, u.getNome().trim()).orElse(null)
+                        : profissionalRepository.findFirstByNomeIgnoreCase(u.getNome().trim()).orElse(null);
+            }
             if (profLogado != null) {
                 profissionalId = profLogado.getId();
             }

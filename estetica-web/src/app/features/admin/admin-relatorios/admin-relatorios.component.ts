@@ -69,19 +69,28 @@ import {
           <!-- Barra de Filtros -->
           <div class="mt-6 pt-6 border-t border-nude-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             
-            <!-- Filtro: Especialista -->
-            <div>
-              <label class="block text-xs font-semibold text-stone-700 mb-1.5">Especialista:</label>
-              <select
-                [(ngModel)]="filtroProfissionalId"
-                (change)="carregarRelatorio()"
-                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 bg-stone-50 font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
-                <option [ngValue]="null">Todos os Especialistas (Geral)</option>
-                @for (prof of profissionais(); track prof.id) {
-                  <option [ngValue]="prof.id">{{ prof.nome }} ({{ prof.especialidade }})</option>
-                }
-              </select>
-            </div>
+            <!-- Filtro: Especialista (Apenas Administrador pode trocar; especialista vê apenas o próprio) -->
+            @if (authService.isAdmin()) {
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1.5">Especialista:</label>
+                <select
+                  [(ngModel)]="filtroProfissionalId"
+                  (change)="carregarRelatorio()"
+                  class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 bg-stone-50 font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+                  <option [ngValue]="null">Todos os Especialistas (Geral)</option>
+                  @for (prof of profissionais(); track prof.id) {
+                    <option [ngValue]="prof.id">{{ prof.nome }} ({{ prof.especialidade }})</option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1.5">Especialista:</label>
+                <div class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-200 bg-stone-100 font-bold text-stone-800">
+                  {{ authService.currentUser()?.nome }} (Seus Atendimentos)
+                </div>
+              </div>
+            }
 
             <!-- Filtro: Data Início -->
             <div>

@@ -48,7 +48,7 @@ public class DashboardService {
         Profissional profLogado = null;
 
         if (usuarioLogado != null && usuarioLogado.getRole() == Role.ROLE_PROFISSIONAL) {
-            profLogado = profissionalRepository.findByUsuarioId(usuarioLogado.getId()).orElse(null);
+            profLogado = agendamentoService.resolverProfissionalDoUsuario(usuarioLogado, tenantResolverService.getTenantDoUsuarioAutenticado());
         }
 
         ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
@@ -83,9 +83,14 @@ public class DashboardService {
                 .map(Agendamento::getValorCobrado)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        long clientesAtivos = (tenantId != null)
-                ? usuarioRepository.countClientesPorTenantOuSemTenant(tenantId, Role.ROLE_CLIENTE)
-                : (long) usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE).size();
+        long clientesAtivos;
+        if (!isAdmin && profLogado != null) {
+            clientesAtivos = usuarioRepository.countClientesPorProfissional(profLogado.getId());
+        } else {
+            clientesAtivos = (tenantId != null)
+                    ? usuarioRepository.countClientesPorTenantOuSemTenant(tenantId, Role.ROLE_CLIENTE)
+                    : (long) usuarioRepository.findByRoleOrderByNomeAsc(Role.ROLE_CLIENTE).size();
+        }
 
         // Próximos atendimentos a partir de agora (não apenas restritos a hoje, trazendo próximos dias)
         List<Agendamento> proximosBrutos = agendamentoRepository.findProximosAgendamentos(

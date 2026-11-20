@@ -16,6 +16,8 @@ public interface ProfissionalRepository extends JpaRepository<Profissional, Long
     List<Profissional> findByTenantIdOrderByNomeAsc(Long tenantId);
 
     Optional<Profissional> findByUsuarioId(Long usuarioId);
+    Optional<Profissional> findFirstByTenantIdAndNomeIgnoreCase(Long tenantId, String nome);
+    Optional<Profissional> findFirstByNomeIgnoreCase(String nome);
 
     @Query("SELECT p FROM Profissional p JOIN p.procedimentos proc WHERE p.ativo = true AND proc.id = :procedimentoId")
     List<Profissional> findHabilitadosParaProcedimento(@Param("procedimentoId") Long procedimentoId);
