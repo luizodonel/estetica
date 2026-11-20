@@ -1,18 +1,21 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard } from './core/guards/auth.guard';
+import { authGuard, adminGuard, rootRedirectGuard, tenantCatalogoGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'catalogo',
+    canActivate: [rootRedirectGuard],
+    loadComponent: () => import('./features/planos/planos.component').then(m => m.PlanosComponent),
     pathMatch: 'full'
   },
   {
     path: 'catalogo',
+    canActivate: [tenantCatalogoGuard],
     loadComponent: () => import('./features/catalogo/catalogo.component').then(m => m.CatalogoComponent)
   },
   {
     path: 'agendar',
+    canActivate: [tenantCatalogoGuard],
     loadComponent: () => import('./features/agendamento-wizard/agendamento-wizard.component').then(m => m.AgendamentoWizardComponent)
   },
   {
@@ -78,6 +81,7 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'catalogo'
+    canActivate: [rootRedirectGuard],
+    loadComponent: () => import('./features/planos/planos.component').then(m => m.PlanosComponent)
   }
 ];

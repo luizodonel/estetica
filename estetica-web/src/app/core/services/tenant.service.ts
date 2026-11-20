@@ -46,6 +46,11 @@ export class TenantService {
   corSecundaria = computed(() => '#f43f5e');
   linkPersonalizado = computed(() => this.tenant()?.linkPersonalizado || '');
 
+  isDominioMaster = computed(() => {
+    const slug = this.obterSlugAtual();
+    return slug === 'agendoou' || slug === 'estetica';
+  });
+
   assinaturaProximaDoVencimento = computed(() => {
     const t = this.tenant();
     return !!(t && typeof t.diasRestantes === 'number' && t.diasRestantes <= 5);

@@ -71,9 +71,10 @@ import { DashboardResumo, AssinaturaStatusResponse } from '../../../core/models'
               <span>{{ linkCopiado() ? '✓ Link Copiado!' : '📋 Copiar Meu Link' }}</span>
             </button>
             <a
-              routerLink="/catalogo"
+              [href]="obterLinkPublico()"
+              target="_blank"
               class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all">
-              Ver Catálogo ↗
+              Abrir Minha Loja ↗
             </a>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
+import { TenantService } from '../core/services/tenant.service';
 
 @Component({
   selector: 'app-bottom-nav',
@@ -11,16 +12,33 @@ import { AuthService } from '../core/services/auth.service';
     <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-200 px-4 py-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.04)] font-sans">
       <div class="flex items-center justify-around">
         
-        <!-- Catálogo -->
-        <a routerLink="/catalogo" routerLinkActive="text-slate-900 font-bold" [routerLinkActiveOptions]="{exact: false}" class="flex flex-col items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-          </svg>
-          <span>Serviços</span>
-        </a>
+        @if (tenantService.isDominioMaster()) {
+          <!-- No domínio principal (agendoou.logistadigital.com.br): mostra Planos e Criar Conta -->
+          <a routerLink="/planos" routerLinkActive="text-rose-600 font-bold" class="flex flex-col items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Planos</span>
+          </a>
+
+          <a routerLink="/parceiro/cadastro-lojista" routerLinkActive="text-rose-600 font-bold" class="flex flex-col items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            <span>Testar Grátis</span>
+          </a>
+        } @else {
+          <!-- Nos subdomínios das empresas clientes: mostra Serviços / Catálogo -->
+          <a routerLink="/catalogo" routerLinkActive="text-slate-900 font-bold" [routerLinkActiveOptions]="{exact: false}" class="flex flex-col items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+            </svg>
+            <span>Serviços</span>
+          </a>
+        }
 
         <!-- Botão Principal Central de Agendar / Catálogo -->
-        @if (authService.isAdminOrProfissional()) {
+        @if (authService.isAdminOrProfissional() && !tenantService.isDominioMaster()) {
           <a routerLink="/agendar" class="flex flex-col items-center -mt-5 group">
             <div class="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-300 group-hover:scale-105 transition-transform">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,12 +51,14 @@ import { AuthService } from '../core/services/auth.service';
 
         <!-- Meus Agendamentos -->
         @if (authService.isAuthenticated()) {
-          <a routerLink="/meus-agendamentos" routerLinkActive="text-slate-900 font-bold" class="flex flex-col items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>
-            <span>Minha Agenda</span>
-          </a>
+          @if (!tenantService.isDominioMaster()) {
+            <a routerLink="/meus-agendamentos" routerLinkActive="text-slate-900 font-bold" class="flex flex-col items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <span>Minha Agenda</span>
+            </a>
+          }
 
           @if (authService.isAdminOrProfissional()) {
             <a routerLink="/admin/agenda" routerLinkActive="text-slate-900 font-bold" class="flex flex-col items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900 transition-colors">
@@ -63,5 +83,6 @@ import { AuthService } from '../core/services/auth.service';
 })
 export class BottomNavComponent {
   authService = inject(AuthService);
+  tenantService = inject(TenantService);
 }
 

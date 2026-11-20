@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { SetorService } from '../../core/services/setor.service';
+import { TenantService } from '../../core/services/tenant.service';
 
 interface PixPendenteInfo {
   paymentId?: string;
@@ -152,13 +153,23 @@ interface PixPendenteInfo {
         </form>
 
         <div class="mt-8 pt-6 border-t border-slate-100 text-center space-y-2">
-          <p class="text-xs text-slate-500">
-            É cliente e deseja agendar um horário?
-          </p>
-          <a routerLink="/catalogo" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline">
-            <span>📅</span>
-            <span>Agendar diretamente sem login →</span>
-          </a>
+          @if (tenantService.isDominioMaster()) {
+            <p class="text-xs text-slate-500">
+              Ainda não tem uma conta para sua empresa?
+            </p>
+            <a routerLink="/parceiro/cadastro-lojista" class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline">
+              <span>🚀</span>
+              <span>Criar minha plataforma com 7 dias grátis →</span>
+            </a>
+          } @else {
+            <p class="text-xs text-slate-500">
+              É cliente e deseja agendar um horário?
+            </p>
+            <a routerLink="/catalogo" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline">
+              <span>📅</span>
+              <span>Agendar diretamente sem login →</span>
+            </a>
+          }
         </div>
 
       </div>
@@ -167,6 +178,7 @@ interface PixPendenteInfo {
 })
 export class LoginComponent implements OnDestroy {
   public setorService = inject(SetorService);
+  public tenantService = inject(TenantService);
   private auth = inject(AuthService);
   private api = inject(ApiService);
   private router = inject(Router);

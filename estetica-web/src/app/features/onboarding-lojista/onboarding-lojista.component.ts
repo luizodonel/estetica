@@ -416,9 +416,10 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                           {{ linkCopiado() ? '✓ Link Copiado!' : '📋 Copiar Link da Minha Agenda' }}
                         </button>
                         <a
-                          routerLink="/catalogo"
+                          [href]="tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/')"
+                          target="_blank"
                           class="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs transition-all shadow-sm">
-                          👁️ Ver Catálogo de Agendamento ↗
+                          👁️ Abrir Minha Loja de Agendamento ↗
                         </a>
                       </div>
                     </div>
