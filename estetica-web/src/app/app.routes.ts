@@ -55,7 +55,6 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    canActivate: [masterSaasGuard],
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
   },
   {

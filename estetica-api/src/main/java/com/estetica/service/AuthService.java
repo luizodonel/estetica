@@ -213,8 +213,9 @@ public class AuthService {
     private Usuario selecionarUsuarioDoAmbiente(List<Usuario> candidatos, String slugAmbiente) {
         if (candidatos == null || candidatos.isEmpty()) return null;
 
-        // 1. Prioriza correspondência exata do slug do tenant com o slug do ambiente
-        Usuario match = candidatos.stream()
+        // REGRA ESTRITA DE ISOLAMENTO MULTI-TENANT POR SUBDOMÍNIO:
+        // Cada usuário (Admin ou Especialista) só é localizado se pertencer exatamente ao subdomínio (slugAmbiente) acessado!
+        return candidatos.stream()
                 .filter(u -> {
                     boolean isMaster = "admin@logistadigital.com.br".equalsIgnoreCase(u.getEmail())
                             || (u.getTenant() == null && u.getRole() == Role.ROLE_ADMIN);
@@ -223,41 +224,22 @@ public class AuthService {
                     }
                     if (u.getTenant() != null && u.getTenant().getSlug() != null) {
                         String tSlug = u.getTenant().getSlug().trim();
-                        if (isSlugPortalPrincipal(tSlug) && isSlugPortalPrincipal(slugAmbiente)) {
-                            return true;
-                        }
                         return slugAmbiente.equalsIgnoreCase(tSlug);
                     }
                     return false;
                 })
                 .findFirst()
                 .orElse(null);
-
-        if (match != null) return match;
-
-        // 2. Se estiver acessando pelo portal geral ("agendoou", "estetica", "localhost") ou se for o único especialista encontrado:
-        // Permite que o especialista ou admin faça login diretamente!
-        if (isSlugPortalPrincipal(slugAmbiente) || candidatos.size() == 1) {
-            return candidatos.stream()
-                    .filter(u -> u.getRole() == Role.ROLE_ADMIN || u.getRole() == Role.ROLE_PROFISSIONAL)
-                    .findFirst()
-                    .orElse(null);
-        }
-
-        return null;
     }
 
     private AuthResponse autenticarLojista(Lojista lojista, LoginRequest request, String slugAmbiente) {
         String lojistaSlug = lojista.getSlug();
 
-        // REGRA DE ISOLAMENTO DE LINK / DOMÍNIO:
-        // Permite logar no seu próprio subdomínio OU via localhost/portal principal (redirecionando o contexto para o tenant do lojista)
-        if (lojistaSlug == null) {
-            throw new BadCredentialsException("Login ou usuário inválido.");
-        }
-        boolean isPortalGeral = isSlugPortalPrincipal(slugAmbiente);
-        if (!isPortalGeral && !slugAmbiente.equalsIgnoreCase(lojistaSlug.trim())) {
-            throw new BadCredentialsException("Login ou usuário inválido.");
+        // REGRA ESTRITA DE ISOLAMENTO DE LINK / DOMÍNIO:
+        // O lojista SÓ pode fazer login no seu próprio link/subdomínio (ex: https://luizodonelcoefur.logistadigital.com.br/login)!
+        // Caso tente logar no portal principal (agendoou) ou no link de outro lojista, é estritamente barrado!
+        if (lojistaSlug == null || !slugAmbiente.equalsIgnoreCase(lojistaSlug.trim())) {
+            throw new BadCredentialsException("Acesso negado: Utilize o link exclusivo da sua empresa (https://" + (lojistaSlug != null ? lojistaSlug : "sua-empresa") + ".logistadigital.com.br/login) para entrar.");
         }
 
         if (!passwordEncoder.matches(request.senha(), lojista.getSenhaHash())) {
@@ -355,18 +337,17 @@ public class AuthService {
         ClinicaTenant tenant = usuario.getTenant();
         String userSlug = tenant != null ? tenant.getSlug() : null;
 
-        // REGRA DE ACESSO DE LINK / DOMÍNIO:
+        // REGRA ESTRITA DE ACESSO DE LINK / DOMÍNIO:
         if (isMasterAdmin) {
-            // Administrador Master: acessa pelo link principal (agendoou / estetica) ou localhost
+            // Administrador Master: acessa apenas pelo portal principal (agendoou) ou localhost
             if (!isSlugPortalPrincipal(slugAmbiente)) {
                 throw new BadCredentialsException("Login ou usuário inválido.");
             }
         } else {
-            // Especialista: pode acessar tanto pelo link da própria clínica quanto pelo portal principal "agendoou", "estetica" ou localhost!
-            boolean ambienteValido = isSlugPortalPrincipal(slugAmbiente)
-                    || (userSlug != null && slugAmbiente.equalsIgnoreCase(userSlug.trim()));
+            // Especialista ou Admin da Loja: SÓ pode acessar pelo subdomínio exclusivo da própria empresa!
+            boolean ambienteValido = userSlug != null && slugAmbiente.equalsIgnoreCase(userSlug.trim());
             if (!ambienteValido) {
-                throw new BadCredentialsException("Login ou usuário inválido.");
+                throw new BadCredentialsException("Acesso negado: Utilize o link exclusivo do seu estabelecimento para entrar.");
             }
         }
 

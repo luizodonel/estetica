@@ -128,7 +128,7 @@ public class TenantService {
         String corSecundaria = (request.corSecundaria() != null && !request.corSecundaria().isBlank())
                 ? request.corSecundaria().trim() : "#f43f5e";
         String linkPersonalizado = "https://" + cleanSlug + ".logistadigital.com.br/";
-        String linkLogin = "https://agendoou.logistadigital.com.br/login";
+        String linkLogin = "https://" + cleanSlug + ".logistadigital.com.br/login";
 
         com.estetica.model.SetorAtuacao setorAtuacao = com.estetica.model.SetorAtuacao.CLINICA_ESTETICA;
         if (request.setor() != null && !request.setor().isBlank()) {

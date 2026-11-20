@@ -18,12 +18,15 @@ export const adminGuard: CanActivateFn = () => {
   const tenantService = inject(TenantService);
   const router = inject(Router);
 
-  // Nos subdomínios públicos dos clientes (ex: clinica.logistadigital.com.br), só existe o catálogo de agendamento!
-  if (tenantService.isSubdominioCliente()) {
-    return router.createUrlTree(['/catalogo']);
-  }
-
   if (authService.isAuthenticated() && authService.isAdminOrProfissional()) {
+    const userSlug = authService.currentUser()?.tenantSlug?.toLowerCase().trim();
+    const currentSlug = tenantService.obterSlugAtual().toLowerCase().trim();
+
+    // Validação estrita de isolamento: o lojista/especialista só pode acessar o painel no seu próprio subdomínio!
+    if (userSlug && currentSlug !== userSlug) {
+      authService.logout();
+      return router.createUrlTree(['/login']);
+    }
     return true;
   }
   return router.createUrlTree(['/login']);
@@ -54,8 +57,7 @@ export const masterSaasGuard: CanActivateFn = () => {
   const tenantService = inject(TenantService);
   const router = inject(Router);
 
-  // Nos subdomínios dos lojistas/clientes (ex: clinica.logistadigital.com.br), o cliente final só vê o agendamento!
-  // Bloqueia acesso a /planos, /login e /parceiro/cadastro-lojista nos subdomínios dos clientes.
+  // Nos subdomínios dos lojistas/clientes, bloqueia acesso a /planos e /parceiro/cadastro-lojista
   if (tenantService.isSubdominioCliente()) {
     return router.createUrlTree(['/catalogo']);
   }

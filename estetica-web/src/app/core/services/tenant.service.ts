@@ -99,9 +99,8 @@ export class TenantService {
       }
     }
 
-    // 3. Se estiver no domínio master (agendoou.logistadigital.com.br) e houver um lojista/especialista autenticado,
-    // carrega os dados do tenant do usuário autenticado para o painel administrativo funcionar perfeitamente!
-    if (typeof localStorage !== 'undefined') {
+    // 3. Apenas se estivermos em localhost (desenvolvimento local sem subdomínio), tenta extrair do usuário logado
+    if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof localStorage !== 'undefined') {
       const storedUser = localStorage.getItem('estetica_user_data');
       if (storedUser) {
         try {
@@ -114,7 +113,7 @@ export class TenantService {
       }
     }
 
-    // Padrão: carregar tenant agendoou
+    // Padrão no domínio master (agendoou.logistadigital.com.br): carregar tenant agendoou
     this.carregarTenant('agendoou');
   }
 

@@ -397,43 +397,47 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                       </p>
                     </div>
 
-                    <!-- Box do Link Exclusivo para colocar na Bio do Instagram -->
-                    <div class="p-5 rounded-3xl bg-stone-50 border-2 border-dashed border-rose-300 max-w-lg mx-auto space-y-3">
-                      <span class="text-[10px] uppercase font-bold tracking-wider text-stone-500 block">
-                        📲 Seu Link Exclusivo de Agendamento (Para Bio do Instagram & WhatsApp):
-                      </span>
-                      <a
-                        [href]="tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/')"
-                        target="_blank"
-                        class="font-mono text-sm sm:text-base font-bold text-rose-600 hover:underline break-all block">
-                        {{ tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/') }}
-                      </a>
-                      <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <!-- Box dos Links Exclusivos (Público vs. Login da Equipe) -->
+                    <div class="p-5 rounded-3xl bg-stone-50 border-2 border-dashed border-rose-300 max-w-lg mx-auto space-y-4 text-left">
+                      <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-stone-500 block">
+                          📲 1. Link de Agendamento para seus Clientes (Bio do Instagram & WhatsApp):
+                        </span>
+                        <a
+                          [href]="tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/')"
+                          target="_blank"
+                          class="font-mono text-sm font-bold text-rose-600 hover:underline break-all block mt-0.5">
+                          {{ tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/') }}
+                        </a>
+                      </div>
+
+                      <div class="pt-3 border-t border-rose-200/60">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-stone-500 block">
+                          🔒 2. Link Exclusivo de Login (Administrador & Especialistas):
+                        </span>
+                        <a
+                          [href]="'https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/login'"
+                          target="_blank"
+                          class="font-mono text-sm font-bold text-stone-900 hover:underline break-all block mt-0.5">
+                          https://{{ formLojista.get('slug')?.value }}.logistadigital.com.br/login
+                        </a>
+                      </div>
+
+                      <div class="flex flex-wrap items-center justify-center gap-2 pt-2">
                         <button
                           type="button"
                           (click)="copiarLink()"
                           class="px-4 py-2 rounded-xl bg-white border border-nude-300 hover:bg-stone-100 text-stone-800 font-semibold text-xs transition-all shadow-sm">
                           {{ linkCopiado() ? '✓ Link Copiado!' : '📋 Copiar Link da Minha Agenda' }}
                         </button>
-                        <a
-                          [href]="tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/')"
-                          target="_blank"
-                          class="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs transition-all shadow-sm">
-                          👁️ Abrir Minha Loja de Agendamento ↗
-                        </a>
                       </div>
                     </div>
 
                     <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                       <a
-                        routerLink="/admin/dashboard"
+                        [href]="'https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/login'"
                         class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold text-xs hover:from-rose-600 hover:to-rose-700 transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2">
-                        <span>Acessar Meu Painel Administrativo Agora →</span>
-                      </a>
-                      <a
-                        routerLink="/admin/assinatura"
-                        class="w-full sm:w-auto px-6 py-3.5 rounded-2xl border border-stone-300 bg-white text-stone-700 font-semibold text-xs hover:bg-stone-50 transition-all flex items-center justify-center gap-2">
-                        <span>💳 Ver Minha Assinatura / Ativar Plano via PIX</span>
+                        <span>Acessar Meu Painel Exclusivo ({{ formLojista.get('slug')?.value }}) →</span>
                       </a>
                     </div>
                   </div>
@@ -633,16 +637,19 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
           this.tenantService.setTenantManual(res.tenant);
         }
 
-        // Se o backend já liberou o token (Modo Trial Grátis Instantâneo), autentica o lojista imediatamente!
+        // Se estiver em localhost, salva a sessão localmente; em produção (agendoou.logistadigital.com.br),
+        // o lojista recebe seu link exclusivo (https://slug.logistadigital.com.br/login) e loga exclusivamente no próprio subdomínio!
         if (res.token) {
           this.pagamentoAprovado.set(true);
-          this.authService.salvarSessaoDireta(
-            res.token,
-            res.usuario ? { ...res.usuario, setor: res.tenant?.setor || dados.setor } : null,
-            res.tenant?.slug || dados.slug,
-            res.tenant?.nomeEmpresa || dados.nomeEmpresa,
-            res.tenant?.logoUrl || dados.logoUrl
-          );
+          if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            this.authService.salvarSessaoDireta(
+              res.token,
+              res.usuario ? { ...res.usuario, setor: res.tenant?.setor || dados.setor } : null,
+              res.tenant?.slug || dados.slug,
+              res.tenant?.nomeEmpresa || dados.nomeEmpresa,
+              res.tenant?.logoUrl || dados.logoUrl
+            );
+          }
         }
 
         // Avança para o Passo 3 (Confirmação & Acesso Imediato)

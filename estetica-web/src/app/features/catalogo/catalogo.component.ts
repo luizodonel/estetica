@@ -25,9 +25,9 @@ interface DiaCarrossel {
     <div class="min-h-screen bg-[#f8fafc] text-stone-800 flex flex-col">
       
       <!-- ========================================================================= -->
-      <!-- TOP BANNER (ADMIN ONLY - EXIBIDO APENAS NO DOMÍNIO MASTER) -->
+      <!-- TOP BANNER (ADMIN ONLY) -->
       <!-- ========================================================================= -->
-      @if (authService.isAdmin() && tenantService.isDominioMaster()) {
+      @if (authService.isAdmin()) {
         <div class="bg-stone-900 text-white text-xs px-4 py-2 flex items-center justify-between z-30">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -521,8 +521,8 @@ interface DiaCarrossel {
               }
             </div>
 
-            <!-- SELEÇÃO / CADASTRO DE CLIENTE (MODO GESTÃO / ESPECIALISTA NO DOMÍNIO MASTER) -->
-            @if (authService.isAdminOrProfissional() && tenantService.isDominioMaster()) {
+            <!-- SELEÇÃO / CADASTRO DE CLIENTE (MODO GESTÃO / ESPECIALISTA) -->
+            @if (authService.isAdminOrProfissional()) {
               <div class="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2.5">
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
@@ -1060,7 +1060,7 @@ export class CatalogoComponent implements OnInit {
     const slot = this.slotSelecionado();
     if (!proc || !slot) return;
 
-    if (!this.authService.isAdminOrProfissional() || !this.tenantService.isDominioMaster()) {
+    if (!this.authService.isAdminOrProfissional()) {
       // Cliente se identifica diretamente com Nome e WhatsApp sem precisar de login
       this.modalIdentificacaoAberta.set(true);
       return;
