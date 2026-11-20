@@ -1,9 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { SetorService } from '../../../core/services/setor.service';
-import { HistoricoAtendimento, Usuario } from '../../../core/models';
+import { ClienteHistoricoDetalhe, HistoricoAtendimento, Usuario } from '../../../core/models';
 import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
 
 @Component({
@@ -67,6 +68,113 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
           </div>
         }
       </div>
+
+      <!-- Resumo Financeiro & Histórico de Agendamentos / Pagamentos -->
+      @if (clienteId) {
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">Consumo & Frequência</span>
+              <h3 class="font-serif text-lg font-bold text-stone-900">Histórico de Agendamentos & Pagamentos</h3>
+            </div>
+            @if (historicoFinanceiro(); as det) {
+              <div class="flex flex-wrap items-center gap-1.5">
+                @for (opt of ['TODOS', 'PENDENTE', 'CONFIRMADO', 'CONCLUIDO', 'CANCELADO']; track opt) {
+                  <button
+                    type="button"
+                    (click)="filtroStatusAgendamento.set(opt)"
+                    [class.bg-slate-900]="filtroStatusAgendamento() === opt"
+                    [class.text-white]="filtroStatusAgendamento() === opt"
+                    [class.bg-slate-100]="filtroStatusAgendamento() !== opt"
+                    [class.text-slate-700]="filtroStatusAgendamento() !== opt"
+                    class="px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors">
+                    {{ opt === 'TODOS' ? 'Todos (' + det.agendamentos.length + ')' : traduzirStatus(opt) }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          @if (carregandoFinanceiro()) {
+            <div class="py-8 text-center text-xs text-stone-400">Carregando histórico de agendamentos e pagamentos...</div>
+          } @else if (historicoFinanceiro(); as det) {
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+              <div class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Atendimentos</span>
+                <span class="text-xl font-extrabold text-slate-900 mt-0.5 block">{{ det.totalAgendamentos }}</span>
+              </div>
+              <div class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Último Horário</span>
+                <span class="text-xs font-bold text-slate-800 mt-1.5 block">{{ formatarDataHora(det.ultimoAgendamento) }}</span>
+              </div>
+              <div class="p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/70">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Total Consumido</span>
+                <span class="text-xl font-extrabold text-emerald-800 mt-0.5 block">{{ formatarMoeda(det.totalConsumido) }}</span>
+              </div>
+              <div class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Ticket Médio</span>
+                <span class="text-xl font-extrabold text-slate-900 mt-0.5 block">{{ formatarMoeda(det.ticketMedio) }}</span>
+              </div>
+            </div>
+
+            @if (agendamentosFiltrados().length === 0) {
+              <div class="py-6 text-center text-xs text-stone-400 border border-dashed border-slate-200 rounded-2xl">
+                Nenhum agendamento encontrado para este cliente.
+              </div>
+            } @else {
+              <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-bold sticky top-0">
+                      <tr>
+                        <th class="py-2.5 px-4">Data / Horário</th>
+                        <th class="py-2.5 px-4">Serviço</th>
+                        <th class="py-2.5 px-4">Especialista</th>
+                        <th class="py-2.5 px-4">Status</th>
+                        <th class="py-2.5 px-4 text-right">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      @for (ag of agendamentosFiltrados(); track ag.id) {
+                        <tr class="hover:bg-slate-50/80">
+                          <td class="py-2.5 px-4 whitespace-nowrap font-medium text-slate-800">
+                            {{ formatarDataHora(ag.dataHoraInicio) }}
+                          </td>
+                          <td class="py-2.5 px-4 font-semibold text-slate-900">
+                            {{ ag.procedimentoTitulo }}
+                          </td>
+                          <td class="py-2.5 px-4 text-slate-600 whitespace-nowrap">
+                            {{ ag.profissionalNome }}
+                          </td>
+                          <td class="py-2.5 px-4 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                  [class.bg-amber-100]="ag.status === 'PENDENTE'"
+                                  [class.text-amber-800]="ag.status === 'PENDENTE'"
+                                  [class.bg-sky-100]="ag.status === 'CONFIRMADO'"
+                                  [class.text-sky-800]="ag.status === 'CONFIRMADO'"
+                                  [class.bg-emerald-100]="ag.status === 'CONCLUIDO'"
+                                  [class.text-emerald-800]="ag.status === 'CONCLUIDO'"
+                                  [class.bg-rose-100]="ag.status === 'CANCELADO' || ag.status === 'NO_SHOW'"
+                                  [class.text-rose-700]="ag.status === 'CANCELADO' || ag.status === 'NO_SHOW'">
+                              {{ traduzirStatus(ag.status) }}
+                            </span>
+                          </td>
+                          <td class="py-2.5 px-4 text-right whitespace-nowrap font-bold"
+                              [class.text-emerald-700]="ag.status !== 'CANCELADO' && ag.status !== 'NO_SHOW'"
+                              [class.text-slate-400]="ag.status === 'CANCELADO' || ag.status === 'NO_SHOW'"
+                              [class.line-through]="ag.status === 'CANCELADO' || ag.status === 'NO_SHOW'">
+                            {{ formatarMoeda(ag.valorCobrado) }}
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
 
       <!-- Formulário de Nova Anamnese / Registro de Atendimento -->
       @if (clienteId) {
@@ -186,23 +294,45 @@ import { formatarTelefoneBR } from '../../../shared/pipes/telefone.pipe';
 })
 export class AdminProntuarioComponent implements OnInit {
   private api = inject(ApiService);
+  private route = inject(ActivatedRoute);
   setorService = inject(SetorService);
 
   clientes = signal<Usuario[]>([]);
   clienteId: number | null = null;
+  private queryClienteId: number | null = null;
   pacienteSelecionado = signal<Usuario | null>(null);
 
   historico = signal<HistoricoAtendimento[]>([]);
+  historicoFinanceiro = signal<ClienteHistoricoDetalhe | null>(null);
   carregando = signal<boolean>(false);
+  carregandoFinanceiro = signal<boolean>(false);
+  filtroStatusAgendamento = signal<string>('TODOS');
   salvando = signal<boolean>(false);
   mensagemSucesso = signal<string | null>(null);
   mensagemErro = signal<string | null>(null);
+
+  agendamentosFiltrados = computed(() => {
+    const det = this.historicoFinanceiro();
+    if (!det || !det.agendamentos) return [];
+    const st = this.filtroStatusAgendamento();
+    if (st === 'TODOS') return det.agendamentos;
+    return det.agendamentos.filter(a => a.status === st);
+  });
 
   notasAnamnese = '';
   orientacoesPos = '';
   reacoesAdversas = '';
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      const cid = Number(params['clienteId']);
+      if (cid && !isNaN(cid)) {
+        this.queryClienteId = cid;
+        if (this.clientes().length > 0) {
+          this.onClienteChange(cid);
+        }
+      }
+    });
     this.carregarClientes();
   }
 
@@ -210,7 +340,9 @@ export class AdminProntuarioComponent implements OnInit {
     this.api.getClientes().subscribe({
       next: (dados) => {
         this.clientes.set(dados);
-        if (dados.length > 0 && !this.clienteId) {
+        if (this.queryClienteId && dados.some(d => d.id === this.queryClienteId)) {
+          this.onClienteChange(this.queryClienteId);
+        } else if (dados.length > 0 && !this.clienteId) {
           this.onClienteChange(dados[0].id);
         }
       },
@@ -220,6 +352,7 @@ export class AdminProntuarioComponent implements OnInit {
 
   onClienteChange(novoId: number | null): void {
     this.clienteId = novoId;
+    this.filtroStatusAgendamento.set('TODOS');
     this.mensagemSucesso.set(null);
     this.mensagemErro.set(null);
     if (novoId) {
@@ -229,12 +362,15 @@ export class AdminProntuarioComponent implements OnInit {
     } else {
       this.pacienteSelecionado.set(null);
       this.historico.set([]);
+      this.historicoFinanceiro.set(null);
     }
   }
 
   buscarHistorico(): void {
     if (!this.clienteId) return;
     this.carregando.set(true);
+    this.carregandoFinanceiro.set(true);
+
     this.api.getProntuarioPorCliente(this.clienteId).subscribe({
       next: (dados) => {
         this.historico.set(dados);
@@ -245,6 +381,46 @@ export class AdminProntuarioComponent implements OnInit {
         this.carregando.set(false);
       }
     });
+
+    this.api.getClienteHistorico(this.clienteId).subscribe({
+      next: (det) => {
+        this.historicoFinanceiro.set(det);
+        this.carregandoFinanceiro.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.historicoFinanceiro.set(null);
+        this.carregandoFinanceiro.set(false);
+      }
+    });
+  }
+
+  formatarMoeda(valor?: number | null): string {
+    return 'R$ ' + Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  formatarDataHora(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  traduzirStatus(status?: string | null): string {
+    switch (status) {
+      case 'PENDENTE': return 'Agendado';
+      case 'CONFIRMADO': return 'Confirmado';
+      case 'CONCLUIDO': return 'Concluído';
+      case 'CANCELADO': return 'Cancelado';
+      case 'NO_SHOW': return 'Faltou';
+      default: return status || '—';
+    }
   }
 
   formatarTelefone(tel: string | null | undefined): string {

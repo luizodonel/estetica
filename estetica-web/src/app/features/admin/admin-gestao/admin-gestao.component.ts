@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
-import { Procedimento, Profissional, Usuario, Categoria } from '../../../core/models';
+import { Procedimento, Profissional, Usuario, Categoria, ClienteResumo, ClienteHistoricoDetalhe } from '../../../core/models';
 import { PhoneMaskDirective } from '../../../shared/directives/phone-mask.directive';
 import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
 import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trava-agenda.component';
@@ -609,9 +609,26 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
             </button>
           </div>
 
+          @if (!carregando() && clientesResumoFiltrados().length > 0) {
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="bg-white rounded-2xl border border-nude-200 p-4 shadow-sm">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Clientes Listados</span>
+                <span class="text-2xl font-extrabold text-stone-900 mt-1 block">{{ clientesResumoFiltrados().length }}</span>
+              </div>
+              <div class="bg-white rounded-2xl border border-nude-200 p-4 shadow-sm">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Total de Atendimentos</span>
+                <span class="text-2xl font-extrabold text-stone-900 mt-1 block">{{ totalAtendimentosClientes() }}</span>
+              </div>
+              <div class="bg-white rounded-2xl border border-nude-200 p-4 shadow-sm">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Total Consumido na Base</span>
+                <span class="text-2xl font-extrabold text-emerald-700 mt-1 block">{{ formatarMoeda(totalConsumidoClientes()) }}</span>
+              </div>
+            </div>
+          }
+
           @if (carregando()) {
             <div class="py-16 text-center text-xs text-stone-400">Carregando lista de clientes...</div>
-          } @else if (clientesFiltrados().length === 0) {
+          } @else if (clientesResumoFiltrados().length === 0) {
             <div class="py-16 text-center text-xs text-stone-400">Nenhum cliente cadastrado.</div>
           } @else {
             <div class="bg-white rounded-3xl border border-nude-200 overflow-hidden shadow-sm">
@@ -621,27 +638,53 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                     <tr>
                       <th class="py-3.5 px-5">Cliente</th>
                       <th class="py-3.5 px-5">WhatsApp</th>
-                      <th class="py-3.5 px-5">E-mail</th>
+                      <th class="py-3.5 px-5 text-center">Atendimentos</th>
+                      <th class="py-3.5 px-5">Último Horário</th>
+                      <th class="py-3.5 px-5 text-right">Total Consumido</th>
                       <th class="py-3.5 px-5">Status</th>
                       <th class="py-3.5 px-5 text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-nude-100 text-stone-700">
-                    @for (cli of clientesFiltrados(); track cli.id) {
+                    @for (cli of clientesResumoFiltrados(); track cli.id) {
                       <tr class="hover:bg-rose-50/40 transition-colors">
-                        <td class="py-3.5 px-5 font-semibold text-stone-900 flex items-center gap-3">
-                          <div class="w-8 h-8 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs uppercase">
-                            {{ cli.nome.substring(0, 2) }}
+                        <td class="py-3.5 px-5 font-semibold text-stone-900">
+                          <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                              {{ cli.nome.substring(0, 2) }}
+                            </div>
+                            <div>
+                              <span class="block text-stone-900 font-semibold">{{ cli.nome }}</span>
+                              @if (cli.email && !cli.email.endsWith('@cliente.local')) {
+                                <span class="block text-[11px] font-normal text-stone-400">{{ cli.email }}</span>
+                              }
+                            </div>
                           </div>
-                          <span>{{ cli.nome }}</span>
                         </td>
-                        <td class="py-3.5 px-5 font-mono">
+                        <td class="py-3.5 px-5 font-mono whitespace-nowrap">
                           <a [href]="'https://wa.me/55' + cli.telefoneWhatsApp" target="_blank" class="text-emerald-700 hover:underline flex items-center gap-1">
                             <span>💬</span>
                             <span>{{ cli.telefoneWhatsApp | telefone }}</span>
                           </a>
                         </td>
-                        <td class="py-3.5 px-5 text-stone-500">{{ (cli.email && !cli.email.endsWith('@cliente.local')) ? cli.email : '—' }}</td>
+                        <td class="py-3.5 px-5 text-center">
+                          <button
+                            type="button"
+                            (click)="abrirModalHistoricoCliente(cli)"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors"
+                            title="Ver histórico detalhado de agendamentos e pagamentos">
+                            <span>{{ cli.totalAgendamentos }}</span>
+                            @if (cli.totalConcluidos > 0) {
+                              <span class="text-[10px] font-medium text-emerald-700">({{ cli.totalConcluidos }} concl.)</span>
+                            }
+                          </button>
+                        </td>
+                        <td class="py-3.5 px-5 text-stone-500 whitespace-nowrap">
+                          {{ formatarDataHora(cli.ultimoAgendamento) }}
+                        </td>
+                        <td class="py-3.5 px-5 text-right font-bold text-emerald-700 whitespace-nowrap">
+                          {{ formatarMoeda(cli.totalConsumido) }}
+                        </td>
                         <td class="py-3.5 px-5">
                           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
                                 [class.bg-emerald-100]="cli.ativo !== false"
@@ -651,8 +694,15 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                             {{ cli.ativo !== false ? 'Ativo' : 'Inativo' }}
                           </span>
                         </td>
-                        <td class="py-3.5 px-5 text-right space-x-2">
-                          <a [routerLink]="['/admin/prontuarios']" class="text-stone-500 hover:text-stone-900 font-semibold" title="Abrir Prontuário">
+                        <td class="py-3.5 px-5 text-right space-x-2 whitespace-nowrap">
+                          <button
+                            type="button"
+                            (click)="abrirModalHistoricoCliente(cli)"
+                            class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[11px] transition-colors"
+                            title="Consultar histórico completo de agendamentos e pagamentos">
+                            📊 Histórico
+                          </button>
+                          <a [routerLink]="['/admin/prontuarios']" [queryParams]="{ clienteId: cli.id }" class="text-stone-500 hover:text-stone-900 font-semibold" title="Abrir Prontuário">
                             Prontuário
                           </a>
                           <button (click)="abrirModalCliente(cli)" class="text-rose-600 hover:text-rose-800 font-semibold">
@@ -1294,6 +1344,157 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
         </div>
       }
 
+      <!-- ========================================================================================= -->
+      <!-- MODAL: HISTÓRICO DE AGENDAMENTOS E PAGAMENTOS DO CLIENTE -->
+      <!-- ========================================================================================= -->
+      @if (modalHistoricoClienteAberto()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50 shrink-0">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">Consulta do Cliente</span>
+                <h3 class="text-lg font-extrabold text-slate-900">
+                  {{ clienteHistoricoDetalhe()?.nome || 'Carregando histórico...' }}
+                </h3>
+                @if (clienteHistoricoDetalhe(); as det) {
+                  <div class="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-500">
+                    <a [href]="'https://wa.me/55' + det.telefoneWhatsApp" target="_blank" class="text-emerald-700 font-semibold hover:underline">
+                      💬 {{ det.telefoneWhatsApp | telefone }}
+                    </a>
+                    @if (det.email && !det.email.endsWith('@cliente.local')) {
+                      <span>• {{ det.email }}</span>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="flex items-center gap-2">
+                @if (clienteHistoricoDetalhe(); as det) {
+                  <a
+                    [routerLink]="['/admin/prontuarios']"
+                    [queryParams]="{ clienteId: det.id }"
+                    (click)="fecharModalHistoricoCliente()"
+                    class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors">
+                    Abrir Prontuário →
+                  </a>
+                }
+                <button
+                  type="button"
+                  (click)="fecharModalHistoricoCliente()"
+                  class="w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center font-bold">
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-5">
+              @if (carregandoHistoricoCliente()) {
+                <div class="py-16 text-center text-xs text-slate-400">Carregando agendamentos e pagamentos do cliente...</div>
+              } @else if (clienteHistoricoDetalhe(); as det) {
+                <!-- KPIs Financeiros & Frequência -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Atendimentos</span>
+                    <span class="text-xl font-extrabold text-slate-900 mt-1 block">{{ det.totalAgendamentos }}</span>
+                    <span class="text-[10px] text-slate-500">{{ det.totalCancelados }} cancelado(s)</span>
+                  </div>
+                  <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Concluídos</span>
+                    <span class="text-xl font-extrabold text-indigo-700 mt-1 block">{{ det.totalConcluidos }}</span>
+                    <span class="text-[10px] text-slate-500">Último: {{ formatarDataHora(det.ultimoAgendamento) }}</span>
+                  </div>
+                  <div class="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Total Consumido</span>
+                    <span class="text-xl font-extrabold text-emerald-800 mt-1 block">{{ formatarMoeda(det.totalConsumido) }}</span>
+                    <span class="text-[10px] text-emerald-700/80">Agendamentos válidos</span>
+                  </div>
+                  <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Ticket Médio</span>
+                    <span class="text-xl font-extrabold text-slate-900 mt-1 block">{{ formatarMoeda(det.ticketMedio) }}</span>
+                    <span class="text-[10px] text-slate-500">Média por atendimento</span>
+                  </div>
+                </div>
+
+                <!-- Filtros de Status -->
+                <div class="flex flex-wrap items-center gap-2">
+                  @for (opt of ['TODOS', 'PENDENTE', 'CONFIRMADO', 'CONCLUIDO', 'CANCELADO']; track opt) {
+                    <button
+                      type="button"
+                      (click)="filtroStatusHistorico.set(opt)"
+                      [class.bg-slate-900]="filtroStatusHistorico() === opt"
+                      [class.text-white]="filtroStatusHistorico() === opt"
+                      [class.bg-slate-100]="filtroStatusHistorico() !== opt"
+                      [class.text-slate-700]="filtroStatusHistorico() !== opt"
+                      class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors">
+                      {{ opt === 'TODOS' ? 'Todos (' + det.agendamentos.length + ')' : traduzirStatusAgendamento(opt) }}
+                    </button>
+                  }
+                </div>
+
+                <!-- Tabela de Agendamentos & Pagamentos -->
+                @if (agendamentosHistoricoFiltrados().length === 0) {
+                  <div class="py-10 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
+                    Nenhum agendamento encontrado para este filtro.
+                  </div>
+                } @else {
+                  <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                          <tr>
+                            <th class="py-3 px-4">Data / Horário</th>
+                            <th class="py-3 px-4">Serviço / Procedimento</th>
+                            <th class="py-3 px-4">Especialista</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4 text-right">Valor</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                          @for (ag of agendamentosHistoricoFiltrados(); track ag.id) {
+                            <tr class="hover:bg-slate-50/80">
+                              <td class="py-3 px-4 whitespace-nowrap font-medium text-slate-800">
+                                <span>{{ formatarDataHora(ag.dataHoraInicio) }}</span>
+                                <span class="block text-[10px] text-slate-400">{{ ag.procedimentoDuracao }} min</span>
+                              </td>
+                              <td class="py-3 px-4">
+                                <span class="font-semibold text-slate-900 block">{{ ag.procedimentoTitulo }}</span>
+                                @if (ag.observacoesCliente) {
+                                  <span class="text-[11px] text-slate-500 block mt-0.5">Obs: {{ ag.observacoesCliente }}</span>
+                                }
+                              </td>
+                              <td class="py-3 px-4 text-slate-700 whitespace-nowrap">{{ ag.profissionalNome }}</td>
+                              <td class="py-3 px-4 whitespace-nowrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                      [class.bg-amber-100]="ag.status === 'PENDENTE'"
+                                      [class.text-amber-800]="ag.status === 'PENDENTE'"
+                                      [class.bg-sky-100]="ag.status === 'CONFIRMADO'"
+                                      [class.text-sky-800]="ag.status === 'CONFIRMADO'"
+                                      [class.bg-emerald-100]="ag.status === 'CONCLUIDO'"
+                                      [class.text-emerald-800]="ag.status === 'CONCLUIDO'"
+                                      [class.bg-rose-100]="ag.status === 'CANCELADO' || ag.status === 'NO_SHOW'"
+                                      [class.text-rose-700]="ag.status === 'CANCELADO' || ag.status === 'NO_SHOW'">
+                                  {{ traduzirStatusAgendamento(ag.status) }}
+                                </span>
+                              </td>
+                              <td class="py-3 px-4 text-right whitespace-nowrap font-bold"
+                                  [class.text-emerald-700]="ag.status !== 'CANCELADO' && ag.status !== 'NO_SHOW'"
+                                  [class.text-slate-400]="ag.status === 'CANCELADO' || ag.status === 'NO_SHOW'"
+                                  [class.line-through]="ag.status === 'CANCELADO' || ag.status === 'NO_SHOW'">
+                                {{ formatarMoeda(ag.valorCobrado) }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
+
     </div>
   `
 })
@@ -1318,6 +1519,12 @@ export class AdminGestaoComponent implements OnInit {
   procedimentos = signal<Procedimento[]>([]);
   profissionais = signal<Profissional[]>([]);
   clientes = signal<Usuario[]>([]);
+  clientesResumo = signal<ClienteResumo[]>([]);
+
+  modalHistoricoClienteAberto = signal<boolean>(false);
+  carregandoHistoricoCliente = signal<boolean>(false);
+  clienteHistoricoDetalhe = signal<ClienteHistoricoDetalhe | null>(null);
+  filtroStatusHistorico = signal<string>('TODOS');
 
   // Filtros de busca
   buscaProcedimento = signal<string>('');
@@ -1399,6 +1606,33 @@ export class AdminGestaoComponent implements OnInit {
       (c.email && c.email.toLowerCase().includes(termo)) ||
       (c.telefoneWhatsApp && c.telefoneWhatsApp.includes(termo))
     );
+  });
+
+  clientesResumoFiltrados = computed(() => {
+    const termo = this.buscaCliente().toLowerCase().trim();
+    const lista = this.clientesResumo();
+    if (!termo) return lista;
+    return lista.filter(c =>
+      c.nome.toLowerCase().includes(termo) ||
+      (c.email && c.email.toLowerCase().includes(termo)) ||
+      (c.telefoneWhatsApp && c.telefoneWhatsApp.includes(termo))
+    );
+  });
+
+  totalAtendimentosClientes = computed(() =>
+    this.clientesResumoFiltrados().reduce((acc, c) => acc + (c.totalAgendamentos || 0), 0)
+  );
+
+  totalConsumidoClientes = computed(() =>
+    this.clientesResumoFiltrados().reduce((acc, c) => acc + Number(c.totalConsumido || 0), 0)
+  );
+
+  agendamentosHistoricoFiltrados = computed(() => {
+    const det = this.clienteHistoricoDetalhe();
+    if (!det || !det.agendamentos) return [];
+    const st = this.filtroStatusHistorico();
+    if (st === 'TODOS') return det.agendamentos;
+    return det.agendamentos.filter(a => a.status === st);
   });
 
   ngOnInit(): void {
@@ -1522,8 +1756,13 @@ export class AdminGestaoComponent implements OnInit {
     });
 
     this.api.getClientes().subscribe({
-      next: (clis) => {
-        this.clientes.set(clis);
+      next: (clis) => this.clientes.set(clis),
+      error: () => {}
+    });
+
+    this.api.getClientesResumo().subscribe({
+      next: (resumos) => {
+        this.clientesResumo.set(resumos);
         this.carregando.set(false);
       },
       error: () => this.carregando.set(false)
@@ -1830,9 +2069,9 @@ export class AdminGestaoComponent implements OnInit {
   }
 
   // ===================== CLIENTES =====================
-  abrirModalCliente(cli?: Usuario): void {
+  abrirModalCliente(cli?: Usuario | ClienteResumo): void {
     if (cli) {
-      this.clienteEmEdicao.set(cli);
+      this.clienteEmEdicao.set(cli as Usuario);
       this.formCliente.patchValue({
         nome: cli.nome,
         email: cli.email,
@@ -1882,7 +2121,7 @@ export class AdminGestaoComponent implements OnInit {
     });
   }
 
-  alternarStatusCliente(cli: Usuario): void {
+  alternarStatusCliente(cli: Usuario | ClienteResumo): void {
     this.api.alternarStatusCliente(cli.id).subscribe({
       next: () => {
         this.mensagemSucesso.set('Status do cliente alterado com sucesso!');
@@ -1890,6 +2129,57 @@ export class AdminGestaoComponent implements OnInit {
       },
       error: () => this.mensagemErro.set('Erro ao alternar status do cliente.')
     });
+  }
+
+  abrirModalHistoricoCliente(cli: ClienteResumo | Usuario): void {
+    this.filtroStatusHistorico.set('TODOS');
+    this.clienteHistoricoDetalhe.set(null);
+    this.carregandoHistoricoCliente.set(true);
+    this.modalHistoricoClienteAberto.set(true);
+
+    this.api.getClienteHistorico(cli.id).subscribe({
+      next: (det) => {
+        this.clienteHistoricoDetalhe.set(det);
+        this.carregandoHistoricoCliente.set(false);
+      },
+      error: () => {
+        this.carregandoHistoricoCliente.set(false);
+        this.mensagemErro.set('Erro ao carregar histórico de agendamentos e pagamentos do cliente.');
+      }
+    });
+  }
+
+  fecharModalHistoricoCliente(): void {
+    this.modalHistoricoClienteAberto.set(false);
+    this.clienteHistoricoDetalhe.set(null);
+  }
+
+  formatarMoeda(valor?: number | null): string {
+    return 'R$ ' + Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  formatarDataHora(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  traduzirStatusAgendamento(status?: string | null): string {
+    switch (status) {
+      case 'PENDENTE': return 'Agendado';
+      case 'CONFIRMADO': return 'Confirmado';
+      case 'CONCLUIDO': return 'Concluído';
+      case 'CANCELADO': return 'Cancelado';
+      case 'NO_SHOW': return 'Faltou';
+      default: return status || '—';
+    }
   }
 
   // ===================== UPLOAD DE FOTOS E IMAGENS =====================

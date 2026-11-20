@@ -128,6 +128,31 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
                                                    @Param("inicio") LocalDateTime inicio,
                                                    @Param("fim") LocalDateTime fim,
                                                    @Param("status") StatusAgendamento status);
+    // Resumo agregado e histórico completo por cliente (isolado por tenant e opcionalmente por profissional)
+    @Query("SELECT a FROM Agendamento a " +
+           "JOIN FETCH a.cliente c " +
+           "JOIN FETCH a.procedimento " +
+           "JOIN FETCH a.profissional " +
+           "LEFT JOIN FETCH a.tenant " +
+           "WHERE (:tenantId IS NULL OR a.tenant.id = :tenantId) " +
+           "AND (:profissionalId IS NULL OR a.profissional.id = :profissionalId) " +
+           "ORDER BY a.dataHoraInicio DESC")
+    List<Agendamento> findAllParaResumoClientes(@Param("tenantId") Long tenantId,
+                                                @Param("profissionalId") Long profissionalId);
+
+    @Query("SELECT a FROM Agendamento a " +
+           "JOIN FETCH a.cliente c " +
+           "JOIN FETCH a.procedimento " +
+           "JOIN FETCH a.profissional " +
+           "LEFT JOIN FETCH a.tenant " +
+           "WHERE c.id = :clienteId " +
+           "AND (:tenantId IS NULL OR a.tenant.id = :tenantId) " +
+           "AND (:profissionalId IS NULL OR a.profissional.id = :profissionalId) " +
+           "ORDER BY a.dataHoraInicio DESC")
+    List<Agendamento> findHistoricoPorCliente(@Param("clienteId") Long clienteId,
+                                              @Param("tenantId") Long tenantId,
+                                              @Param("profissionalId") Long profissionalId);
+
     @org.springframework.data.jpa.repository.Modifying
     @Query("DELETE FROM Agendamento a WHERE a.tenant.id = :tenantId")
     void deleteByTenantId(@Param("tenantId") Long tenantId);

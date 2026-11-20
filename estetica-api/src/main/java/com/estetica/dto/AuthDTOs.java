@@ -100,5 +100,33 @@ public class AuthDTOs {
         Boolean ativo,
         Boolean primeiroAcesso
     ) {}
+
+    public record ClienteResumoDTO(
+        Long id,
+        String nome,
+        String email,
+        String telefoneWhatsApp,
+        Boolean ativo,
+        long totalAgendamentos,
+        long totalConcluidos,
+        long totalCancelados,
+        java.time.LocalDateTime ultimoAgendamento,
+        java.math.BigDecimal totalConsumido
+    ) {}
+
+    public record ClienteHistoricoDetalheDTO(
+        Long id,
+        String nome,
+        String email,
+        String telefoneWhatsApp,
+        Boolean ativo,
+        long totalAgendamentos,
+        long totalConcluidos,
+        long totalCancelados,
+        java.time.LocalDateTime ultimoAgendamento,
+        java.math.BigDecimal totalConsumido,
+        java.math.BigDecimal ticketMedio,
+        java.util.List<com.estetica.dto.AgendamentoDTOs.AgendamentoDTO> agendamentos
+    ) {}
 }
 

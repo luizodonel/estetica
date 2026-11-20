@@ -31,6 +31,24 @@ export interface Usuario {
   setor?: SetorAtuacao;
 }
 
+export interface ClienteResumo {
+  id: number;
+  nome: string;
+  email?: string;
+  telefoneWhatsApp: string;
+  ativo?: boolean;
+  totalAgendamentos: number;
+  totalConcluidos: number;
+  totalCancelados: number;
+  ultimoAgendamento?: string;
+  totalConsumido: number;
+}
+
+export interface ClienteHistoricoDetalhe extends ClienteResumo {
+  ticketMedio: number;
+  agendamentos: Agendamento[];
+}
+
 export interface AuthResponse {
   token: string;
   id: number;

@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import {
   Agendamento,
   Categoria,
+  ClienteHistoricoDetalhe,
+  ClienteResumo,
   DashboardResumo,
   DisponibilidadeResponse,
   HistoricoAtendimento,
@@ -171,6 +173,14 @@ export class ApiService {
   // Clientes / Pacientes
   getClientes(): Observable<Usuario[]> {
     return this.http.get<Usuario[]>(`${this.baseUrl}/usuarios/clientes`);
+  }
+
+  getClientesResumo(): Observable<ClienteResumo[]> {
+    return this.http.get<ClienteResumo[]>(`${this.baseUrl}/usuarios/clientes/resumo`);
+  }
+
+  getClienteHistorico(id: number): Observable<ClienteHistoricoDetalhe> {
+    return this.http.get<ClienteHistoricoDetalhe>(`${this.baseUrl}/usuarios/clientes/${id}/historico`);
   }
 
   criarCliente(payload: {
