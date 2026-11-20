@@ -155,8 +155,8 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
 
             <form [formGroup]="formIdentidade" (ngSubmit)="salvarIdentidadeVisual()" class="space-y-6">
               
-              <!-- Nome e WhatsApp do Estabelecimento -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Nome, WhatsApp e Horário de Funcionamento do Estabelecimento -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label class="block text-xs font-semibold text-stone-700 mb-1.5">Nome do Estabelecimento / Espaço *</label>
                   <input
@@ -167,11 +167,31 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-stone-700 mb-1.5">WhatsApp Principal de Contato</label>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="text"
+                      appPhoneMask
+                      formControlName="telefoneWhatsApp"
+                      placeholder="(61) 98226-1155"
+                      class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
+                    @if (formIdentidade.get('telefoneWhatsApp')?.value) {
+                      <a
+                        [href]="gerarLinkWhatsAppLoja(formIdentidade.get('telefoneWhatsApp')?.value)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Abrir WhatsApp da Loja"
+                        class="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center shrink-0">
+                        💬
+                      </a>
+                    }
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1.5">Horário de Funcionamento</label>
                   <input
                     type="text"
-                    appPhoneMask
-                    formControlName="telefoneWhatsApp"
-                    placeholder="(61) 98226-1155"
+                    formControlName="horarioFuncionamento"
+                    placeholder="Ex: 09:00 às 19:00 ou Seg a Sáb: 08:00 às 19:00"
                     class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-nude-300 focus:ring-2 focus:ring-rose-400 bg-stone-50" />
                 </div>
               </div>
@@ -1452,7 +1472,8 @@ export class AdminGestaoComponent implements OnInit {
       logoUrl: [''],
       corPrimaria: ['#e11d48', Validators.required],
       corSecundaria: ['#f43f5e', Validators.required],
-      telefoneWhatsApp: ['']
+      telefoneWhatsApp: [''],
+      horarioFuncionamento: ['09:00 às 19:00']
     });
 
     this.formIdentidade.get('setor')?.valueChanges.subscribe((novoS: string) => {
@@ -1474,7 +1495,8 @@ export class AdminGestaoComponent implements OnInit {
             logoUrl: t.logoUrl || '',
             corPrimaria: t.corPrimaria || '#e11d48',
             corSecundaria: t.corSecundaria || '#f43f5e',
-            telefoneWhatsApp: t.telefoneWhatsApp || ''
+            telefoneWhatsApp: t.telefoneWhatsApp || '',
+            horarioFuncionamento: t.horarioFuncionamento || '09:00 às 19:00'
           }, { emitEvent: false });
           this.carregarCategorias(t.setor);
         } else {
@@ -1966,6 +1988,14 @@ export class AdminGestaoComponent implements OnInit {
 
   obterImagemUrl(url?: string): string {
     return this.api.formatarUrlImagem(url);
+  }
+
+  gerarLinkWhatsAppLoja(tel?: string | null): string {
+    let fone = (tel || '').replace(/\D/g, '');
+    if (fone.length === 10 || fone.length === 11) {
+      fone = '55' + fone;
+    }
+    return `https://api.whatsapp.com/send?phone=${fone}`;
   }
 
   // ===================== IDENTIDADE VISUAL & CORES =====================

@@ -198,6 +198,7 @@ export interface TenantPublicDTO {
   corPrimaria: string;
   corSecundaria: string;
   telefoneWhatsApp?: string;
+  horarioFuncionamento?: string;
   bannerTag?: string;
   bannerTitulo?: string;
   bannerSubtitulo?: string;
@@ -222,6 +223,7 @@ export interface AtualizarIdentidadeVisualRequest {
   corPrimaria?: string;
   corSecundaria?: string;
   telefoneWhatsApp?: string;
+  horarioFuncionamento?: string;
 }
 
 export interface CadastroLojistaRequest {

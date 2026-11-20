@@ -59,6 +59,7 @@ public class TenantDTOs {
         String corPrimaria,
         String corSecundaria,
         String telefoneWhatsApp,
+        String horarioFuncionamento,
         String bannerTag,
         String bannerTitulo,
         String bannerSubtitulo,
@@ -82,7 +83,8 @@ public class TenantDTOs {
         String logoUrl,
         String corPrimaria,
         String corSecundaria,
-        String telefoneWhatsApp
+        String telefoneWhatsApp,
+        String horarioFuncionamento
     ) {}
 
     public record CadastroLojistaResponse(

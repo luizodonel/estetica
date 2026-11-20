@@ -652,6 +652,7 @@ public class TenantService {
                 t.getCorPrimaria(),
                 t.getCorSecundaria(),
                 t.getTelefoneWhatsApp(),
+                (t.getHorarioFuncionamento() != null && !t.getHorarioFuncionamento().isBlank()) ? t.getHorarioFuncionamento() : "09:00 às 19:00",
                 bannerTag,
                 bannerTitulo,
                 bannerSubtitulo,
@@ -742,6 +743,10 @@ public class TenantService {
 
         if (req.telefoneWhatsApp() != null && !req.telefoneWhatsApp().isBlank()) {
             tenant.setTelefoneWhatsApp(req.telefoneWhatsApp().replaceAll("[^0-9]", ""));
+        }
+
+        if (req.horarioFuncionamento() != null && !req.horarioFuncionamento().isBlank()) {
+            tenant.setHorarioFuncionamento(req.horarioFuncionamento().trim());
         }
 
         tenant = tenantRepository.save(tenant);

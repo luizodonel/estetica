@@ -53,6 +53,10 @@ public class ClinicaTenant {
     @Column(name = "telefone_whatsapp", length = 50)
     private String telefoneWhatsApp;
 
+    @Builder.Default
+    @Column(name = "horario_funcionamento", length = 150)
+    private String horarioFuncionamento = "09:00 às 19:00";
+
     @Column(name = "cpf_cnpj", length = 30)
     private String cpfCnpj;
 

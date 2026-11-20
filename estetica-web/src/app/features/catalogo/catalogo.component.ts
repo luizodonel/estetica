@@ -70,19 +70,39 @@ interface DiaCarrossel {
             </span>
           </div>
 
-          <!-- Informações de Endereço & Horário -->
+          <!-- Informações de Endereço / WhatsApp & Horário -->
           <div class="py-5 border-b border-slate-100 space-y-3 text-xs text-stone-600">
-            <div class="flex items-start gap-2.5">
-              <span class="text-stone-400 text-sm shrink-0">📍</span>
-              <span class="leading-relaxed">
-                {{ enderecoLoja() }}
-              </span>
-            </div>
+            @if (tenantService.tenant()?.telefoneWhatsApp) {
+              <a
+                [href]="gerarLinkContatoWhatsAppLoja()"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Falar no WhatsApp da Loja"
+                class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 transition-all group">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm shrink-0 shadow-sm">
+                    💬
+                  </span>
+                  <div class="min-w-0">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-emerald-700">WhatsApp da Loja</span>
+                    <span class="font-bold text-xs text-emerald-950 truncate block">{{ formatarTelefoneBR(tenantService.tenant()?.telefoneWhatsApp) }}</span>
+                  </div>
+                </div>
+                <span class="text-[11px] font-bold text-emerald-700 group-hover:translate-x-0.5 transition-transform shrink-0">Abrir ↗</span>
+              </a>
+            } @else {
+              <div class="flex items-start gap-2.5">
+                <span class="text-stone-400 text-sm shrink-0">📍</span>
+                <span class="leading-relaxed">
+                  {{ enderecoLoja() }}
+                </span>
+              </div>
+            }
             <div class="flex items-start gap-2.5">
               <span class="text-stone-400 text-sm shrink-0">🕒</span>
               <div>
                 <span class="block text-stone-700 font-semibold">Horário de funcionamento</span>
-                <span class="text-[11px] text-stone-500">09:00 às 19:00</span>
+                <span class="text-[11px] text-stone-500">{{ tenantService.tenant()?.horarioFuncionamento || '09:00 às 19:00' }}</span>
               </div>
             </div>
             <div class="flex items-center gap-2 pt-1">
@@ -151,14 +171,27 @@ interface DiaCarrossel {
                   {{ tenantService.nomeEmpresa() }}
                 </h1>
                 <p class="text-[11px] text-stone-500 truncate max-w-[200px] sm:max-w-xs mt-0.5">
-                  {{ enderecoLoja() }}
+                  🕒 {{ tenantService.tenant()?.horarioFuncionamento || '09:00 às 19:00' }}
                 </p>
               </div>
             </div>
 
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Aberto
-            </span>
+            <div class="flex items-center gap-2 shrink-0">
+              @if (tenantService.tenant()?.telefoneWhatsApp) {
+                <a
+                  [href]="gerarLinkContatoWhatsAppLoja()"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Falar no WhatsApp da Loja"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
+                  <span>💬</span>
+                  <span class="hidden sm:inline">WhatsApp</span>
+                </a>
+              }
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Aberto
+              </span>
+            </div>
           </div>
 
           <!-- BARRA DE BUSCA -->
@@ -1207,6 +1240,15 @@ export class CatalogoComponent implements OnInit {
   fecharModalSucesso(): void {
     this.agendamentoConcluido.set(false);
     this.limparServicos();
+  }
+
+  gerarLinkContatoWhatsAppLoja(): string {
+    let fone = (this.tenantService.tenant()?.telefoneWhatsApp || '').replace(/\D/g, '');
+    if (fone.length === 10 || fone.length === 11) {
+      fone = '55' + fone;
+    }
+    const texto = `Olá! Vim pelo site de agendamentos da *${this.tenantService.nomeEmpresa()}* e gostaria de tirar uma dúvida.`;
+    return `https://api.whatsapp.com/send?phone=${fone}&text=${encodeURIComponent(texto)}`;
   }
 
   gerarLinkComprovanteWhatsAppLoja(): string {
