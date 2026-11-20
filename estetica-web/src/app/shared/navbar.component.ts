@@ -127,6 +127,8 @@ import { SetorService } from '../core/services/setor.service';
             }
           }
 
+        </div>
+
       </div>
 
       <!-- LINHA 2: Barra Dedicada de Gestão Operacional (Exclusiva para Administradores e Especialistas autenticados no seu subdomínio) -->
