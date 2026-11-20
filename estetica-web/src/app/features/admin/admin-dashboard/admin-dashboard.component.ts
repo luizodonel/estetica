@@ -273,10 +273,10 @@ export class AdminDashboardComponent implements OnInit {
     const link = this.tenantService.tenant()?.linkPersonalizado;
     if (link) return link;
     const slug = this.tenantService.obterSlugAtual();
-    if (slug && slug !== 'estetica') {
+    if (slug && slug !== 'agendoou' && slug !== 'estetica') {
       return `https://${slug}.logistadigital.com.br/`;
     }
-    return typeof window !== 'undefined' ? `${window.location.origin}/catalogo` : 'https://estetica.logistadigital.com.br/';
+    return typeof window !== 'undefined' ? `${window.location.origin}/catalogo` : 'https://agendoou.logistadigital.com.br/';
   }
 
   copiarLinkPublico(): void {

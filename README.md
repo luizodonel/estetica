@@ -1,4 +1,4 @@
-# 📅 Agendar. — Plataforma SaaS Multi-Nicho de Agendamento Online & Gestão
+# 📅 Agendoou — Plataforma SaaS Multi-Nicho de Agendamento Online & Gestão
 
 Plataforma completa **SaaS Multi-Tenant e White-Label** de agendamento online, gestão operacional, prontuários e cobrança recorrente via PIX (Mercado Pago), projetada para atender **13 setores de serviços** (Clínicas de Estética, Salões de Beleza, Barbearias, Clínicas Médicas, Odontologia, Psicologia, Nutrição, Pilates & Personal, Spas, Estúdios de Tatuagem, Estúdios Fotográficos, Estética Automotiva e Restaurantes).
 

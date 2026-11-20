@@ -29,7 +29,7 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   obterSlugAtual(): string {
-    if (typeof window === 'undefined') return 'estetica';
+    if (typeof window === 'undefined') return 'agendoou';
     const params = new URLSearchParams(window.location.search);
     const param = params.get('empresa') || params.get('loja') || params.get('tenant');
     if (param) return param.trim().toLowerCase();
@@ -42,7 +42,7 @@ export class AuthService {
         return sub;
       }
     }
-    return 'estetica';
+    return 'agendoou';
   }
 
   login(dados: { login: string; senha: string; host?: string; origin?: string; slug?: string }): Observable<AuthResponse> {

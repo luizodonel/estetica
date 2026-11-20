@@ -149,7 +149,7 @@ public class AuthService {
 
         String slugAmbiente = extrairSlugDoAmbiente(request);
         if (slugAmbiente == null || slugAmbiente.isBlank()) {
-            slugAmbiente = "estetica";
+            slugAmbiente = "agendoou";
         }
         slugAmbiente = slugAmbiente.toLowerCase().trim();
 
@@ -204,6 +204,12 @@ public class AuthService {
         return autenticarUsuario(usuario, request, slugAmbiente);
     }
 
+    private boolean isSlugPortalPrincipal(String slug) {
+        return "agendoou".equalsIgnoreCase(slug)
+                || "estetica".equalsIgnoreCase(slug)
+                || "localhost".equalsIgnoreCase(slug);
+    }
+
     private Usuario selecionarUsuarioDoAmbiente(List<Usuario> candidatos, String slugAmbiente) {
         if (candidatos == null || candidatos.isEmpty()) return null;
 
@@ -213,19 +219,25 @@ public class AuthService {
                     boolean isMaster = "admin@logistadigital.com.br".equalsIgnoreCase(u.getEmail())
                             || (u.getTenant() == null && u.getRole() == Role.ROLE_ADMIN);
                     if (isMaster) {
-                        return "estetica".equalsIgnoreCase(slugAmbiente);
+                        return isSlugPortalPrincipal(slugAmbiente);
                     }
-                    return u.getTenant() != null && u.getTenant().getSlug() != null
-                            && slugAmbiente.equalsIgnoreCase(u.getTenant().getSlug().trim());
+                    if (u.getTenant() != null && u.getTenant().getSlug() != null) {
+                        String tSlug = u.getTenant().getSlug().trim();
+                        if (isSlugPortalPrincipal(tSlug) && isSlugPortalPrincipal(slugAmbiente)) {
+                            return true;
+                        }
+                        return slugAmbiente.equalsIgnoreCase(tSlug);
+                    }
+                    return false;
                 })
                 .findFirst()
                 .orElse(null);
 
         if (match != null) return match;
 
-        // 2. Se estiver acessando pelo portal geral ("estetica", "localhost") ou se for o único especialista encontrado:
+        // 2. Se estiver acessando pelo portal geral ("agendoou", "estetica", "localhost") ou se for o único especialista encontrado:
         // Permite que o especialista ou admin faça login diretamente!
-        if ("estetica".equalsIgnoreCase(slugAmbiente) || "localhost".equalsIgnoreCase(slugAmbiente) || candidatos.size() == 1) {
+        if (isSlugPortalPrincipal(slugAmbiente) || candidatos.size() == 1) {
             return candidatos.stream()
                     .filter(u -> u.getRole() == Role.ROLE_ADMIN || u.getRole() == Role.ROLE_PROFISSIONAL)
                     .findFirst()
@@ -243,7 +255,7 @@ public class AuthService {
         if (lojistaSlug == null) {
             throw new BadCredentialsException("Login ou usuário inválido.");
         }
-        boolean isPortalGeral = "estetica".equalsIgnoreCase(slugAmbiente) || "localhost".equalsIgnoreCase(slugAmbiente);
+        boolean isPortalGeral = isSlugPortalPrincipal(slugAmbiente);
         if (!isPortalGeral && !slugAmbiente.equalsIgnoreCase(lojistaSlug.trim())) {
             throw new BadCredentialsException("Login ou usuário inválido.");
         }
@@ -345,14 +357,13 @@ public class AuthService {
 
         // REGRA DE ACESSO DE LINK / DOMÍNIO:
         if (isMasterAdmin) {
-            // Administrador Master: acessa pelo link principal (estetica) ou localhost
-            if (!"estetica".equalsIgnoreCase(slugAmbiente) && !"localhost".equalsIgnoreCase(slugAmbiente)) {
+            // Administrador Master: acessa pelo link principal (agendoou / estetica) ou localhost
+            if (!isSlugPortalPrincipal(slugAmbiente)) {
                 throw new BadCredentialsException("Login ou usuário inválido.");
             }
         } else {
-            // Especialista: pode acessar tanto pelo link da própria clínica quanto pelo portal principal "estetica" ou localhost!
-            boolean ambienteValido = "estetica".equalsIgnoreCase(slugAmbiente)
-                    || "localhost".equalsIgnoreCase(slugAmbiente)
+            // Especialista: pode acessar tanto pelo link da própria clínica quanto pelo portal principal "agendoou", "estetica" ou localhost!
+            boolean ambienteValido = isSlugPortalPrincipal(slugAmbiente)
                     || (userSlug != null && slugAmbiente.equalsIgnoreCase(userSlug.trim()));
             if (!ambienteValido) {
                 throw new BadCredentialsException("Login ou usuário inválido.");
@@ -436,7 +447,7 @@ public class AuthService {
                 host = httpServletRequest.getHeader("Origin");
             }
         }
-        if (host == null || host.isBlank()) return "estetica";
+        if (host == null || host.isBlank()) return "agendoou";
 
         host = host.toLowerCase().trim()
                 .replace("https://", "")
@@ -450,18 +461,18 @@ public class AuthService {
 
         if (host.endsWith(".logistadigital.com.br")) {
             String sub = host.substring(0, host.indexOf(".logistadigital.com.br")).trim();
-            return sub.isBlank() ? "estetica" : sub;
+            return sub.isBlank() ? "agendoou" : sub;
         }
 
-        if (host.equals("logistadigital.com.br") || host.equals("estetica.local")) {
-            return "estetica";
+        if (host.equals("logistadigital.com.br") || host.equals("estetica.local") || host.equals("agendoou.local")) {
+            return "agendoou";
         }
 
         if (!host.equals("localhost") && !host.equals("127.0.0.1") && !host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
             return host;
         }
 
-        return "estetica";
+        return "agendoou";
     }
 
     // =========================================================================

@@ -20,7 +20,7 @@ import { CicloFaturacao, PlanoConfig, PlanoId } from '../../planos/planos.compon
             <span>←</span> Voltar para o Dashboard
           </a>
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white text-slate-700 border border-slate-200 shadow-sm">
-            💎 Gestão de Plano & Assinatura Agendar.
+            💎 Gestão de Plano & Assinatura Agendoou
           </span>
         </div>
 

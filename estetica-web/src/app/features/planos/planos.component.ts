@@ -37,7 +37,7 @@ export interface PlanoConfig {
         <div class="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold tracking-wide uppercase mb-4 shadow-sm">
             <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-            <span>Agendar. • Plataforma Multi-Nicho de Agendamento & Gestão</span>
+            <span>Agendoou • Plataforma Multi-Nicho de Agendamento & Gestão</span>
           </div>
 
           <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">

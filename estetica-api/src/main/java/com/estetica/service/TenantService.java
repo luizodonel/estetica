@@ -88,7 +88,7 @@ public class TenantService {
     }
 
     private static final Set<String> SLUGS_RESERVADOS = Set.of(
-            "admin", "api", "www", "app", "dashboard", "mail", "portal", "estetica", "teste"
+            "admin", "api", "www", "app", "dashboard", "mail", "portal", "estetica", "agendoou", "teste"
     );
 
     @Transactional
@@ -408,6 +408,13 @@ public class TenantService {
     @Transactional(readOnly = true)
     public TenantPublicDTO buscarPorSlug(String slug) {
         String cleanSlug = normalizarSlug(slug);
+        if ("estetica".equalsIgnoreCase(cleanSlug) || "agendoou".equalsIgnoreCase(cleanSlug)) {
+            ClinicaTenant master = tenantRepository.findBySlugIgnoreCase("agendoou")
+                    .or(() -> tenantRepository.findBySlugIgnoreCase("estetica"))
+                    .or(() -> tenantRepository.findAll().stream().findFirst())
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento principal não encontrado."));
+            return toPublicDTO(master);
+        }
         ClinicaTenant tenant = tenantRepository.findBySlugIgnoreCase(cleanSlug)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado com o link: " + slug));
         return toPublicDTO(tenant);
@@ -786,7 +793,7 @@ public class TenantService {
                             tenant,
                             lojista,
                             valor,
-                            "Assinatura Agendar. - " + nomeEmpresa
+                            "Assinatura Agendoou - " + nomeEmpresa
                     );
 
                     if (mp != null) {
@@ -895,7 +902,7 @@ public class TenantService {
                     tenant,
                     lojista,
                     valor,
-                    "Assinatura Agendar. Plano " + labelPlano + " - " + nomeEmpresa
+                    "Assinatura Agendoou Plano " + labelPlano + " - " + nomeEmpresa
             );
 
             if (mp != null) {

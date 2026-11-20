@@ -24,7 +24,7 @@ export class TenantService {
         } catch {}
       }
     }
-    return 'Agendar.';
+    return 'Agendoou';
   });
 
   logoUrl = computed(() => {
@@ -56,7 +56,7 @@ export class TenantService {
   }
 
   obterSlugAtual(): string {
-    if (typeof window === 'undefined') return 'estetica';
+    if (typeof window === 'undefined') return 'agendoou';
     const urlParams = new URLSearchParams(window.location.search);
     const paramSlug = urlParams.get('empresa') || urlParams.get('loja') || urlParams.get('tenant');
     if (paramSlug) return paramSlug.trim().toLowerCase();
@@ -69,7 +69,7 @@ export class TenantService {
         return subdominio;
       }
     }
-    return 'estetica';
+    return 'agendoou';
   }
 
   detectarECarregarTenant(): void {
@@ -83,7 +83,7 @@ export class TenantService {
       return;
     }
 
-    // 2. Tenta extrair do subdomínio (ex: luizodonelcoefur.logistadigital.com.br ou estetica.logistadigital.com.br)
+    // 2. Tenta extrair do subdomínio (ex: agendoou.logistadigital.com.br ou belavida.logistadigital.com.br)
     const hostname = window.location.hostname.toLowerCase();
     const dominioPadrao = 'logistadigital.com.br';
 
@@ -109,8 +109,8 @@ export class TenantService {
       }
     }
 
-    // Padrão: carregar tenant estetica
-    this.carregarTenant('estetica');
+    // Padrão: carregar tenant agendoou
+    this.carregarTenant('agendoou');
   }
 
   carregarTenant(slug: string): void {
@@ -133,7 +133,7 @@ export class TenantService {
 
     // Atualiza o título da página
     if (tenant.nomeEmpresa) {
-      document.title = `${tenant.nomeEmpresa} | Agendar.`;
+      document.title = `${tenant.nomeEmpresa} | Agendoou`;
     }
 
     // Injeta as cores originais da identidade da plataforma no elemento raiz (:root)

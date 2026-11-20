@@ -1,7 +1,7 @@
 {
-  "name": "agendar-saas",
+  "name": "agendoou-saas",
   "version": "1.0.0",
-  "description": "Agendar. — Plataforma SaaS Multi-Nicho de Agendamento e Gestão para Empresas & Autônomos",
+  "description": "Agendoou — Plataforma SaaS Multi-Nicho de Agendamento e Gestão para Empresas & Autônomos",
   "scripts": {
     "start": "npm --prefix estetica-web start",
     "web": "npm --prefix estetica-web start",

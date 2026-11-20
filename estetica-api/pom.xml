@@ -13,8 +13,8 @@
     <groupId>com.estetica</groupId>
     <artifactId>estetica-api</artifactId>
     <version>1.0.0</version>
-    <name>agendar-api</name>
-    <description>Agendar. — API SaaS Multi-Nicho de Agendamento Online e Gestão Operacional</description>
+    <name>agendoou-api</name>
+    <description>Agendoou — API SaaS Multi-Nicho de Agendamento Online e Gestão Operacional</description>
     
     <properties>
         <java.version>17</java.version>

@@ -44,8 +44,8 @@ public class DatabaseMigrationUtil {
             } else {
                 // Cria o tenant default para a plataforma master
                 stmt.execute("INSERT INTO tb_clinica_tenant (nome_empresa, slug, link_personalizado, cor_primaria, cor_secundaria, ativo, data_criacao) " +
-                             "VALUES ('Agendar. Plataforma Master', 'estetica', 'https://estetica.logistadigital.com.br/', '#e11d48', '#f43f5e', true, NOW());");
-                ResultSet rsNew = stmt.executeQuery("SELECT id FROM tb_clinica_tenant WHERE slug = 'estetica';");
+                             "VALUES ('Agendoou', 'agendoou', 'https://agendoou.logistadigital.com.br/', '#e11d48', '#f43f5e', true, NOW());");
+                ResultSet rsNew = stmt.executeQuery("SELECT id FROM tb_clinica_tenant WHERE slug = 'agendoou';");
                 if (rsNew.next()) {
                     defaultTenantId = rsNew.getLong("id");
                     System.out.println("Tenant padrão criado com ID: " + defaultTenantId);

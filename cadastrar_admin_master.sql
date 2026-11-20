@@ -1,6 +1,6 @@
 -- ======================================================================================
 -- SCRIPT SQL: CRIAR OU ATUALIZAR ADMINISTRADOR NO BANCO DE PRODUÇÃO (PostgreSQL)
--- Agendar. Plataforma Multi-Nicho | Host: 93.127.212.65:3008 | Database: postgres
+-- Agendoou Plataforma Multi-Nicho | Host: 93.127.212.65:3008 | Database: postgres
 -- ======================================================================================
 
 -- OPÇÃO 1: INSERT DIRETO COM HASH BCRYPT PRÉ-COMPILADO (100% compatível com Spring Security)

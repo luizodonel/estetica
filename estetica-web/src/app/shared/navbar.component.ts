@@ -34,7 +34,7 @@ import { SetorService } from '../core/services/setor.service';
               {{ tenantService.nomeEmpresa() }}
             </span>
             <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold bg-slate-100 text-slate-600 mt-0.5 truncate">
-              {{ tenantService.tenant() ? (setorService.config().label + ' ' + setorService.icone()) : 'Agendar.' }}
+              {{ tenantService.tenant() ? (setorService.config().label + ' ' + setorService.icone()) : 'Agendoou' }}
             </span>
           </div>
         </a>

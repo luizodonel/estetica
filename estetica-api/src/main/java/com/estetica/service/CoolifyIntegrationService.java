@@ -33,7 +33,7 @@ public class CoolifyIntegrationService {
 
     @Async
     public void adicionarDominioLojista(String slug) {
-        if (slug == null || slug.isBlank() || "estetica".equalsIgnoreCase(slug)) {
+        if (slug == null || slug.isBlank() || "estetica".equalsIgnoreCase(slug) || "agendoou".equalsIgnoreCase(slug)) {
             return;
         }
         if (baseUrl == null || baseUrl.isBlank() || token == null || token.isBlank() || appUuid == null || appUuid.isBlank()) {

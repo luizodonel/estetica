@@ -58,8 +58,9 @@ public class TenantResolverService {
             }
         }
 
-        // Fallback: tenant padrão 'estetica' ou primeiro tenant
-        return tenantRepository.findBySlugIgnoreCase("estetica")
+        // Fallback: tenant padrão 'agendoou', 'estetica' ou primeiro tenant
+        return tenantRepository.findBySlugIgnoreCase("agendoou")
+                .or(() -> tenantRepository.findBySlugIgnoreCase("estetica"))
                 .or(() -> tenantRepository.findAll().stream().findFirst())
                 .orElse(null);
     }
@@ -105,11 +106,11 @@ public class TenantResolverService {
 
             if (host.endsWith(".logistadigital.com.br")) {
                 String sub = host.substring(0, host.indexOf(".logistadigital.com.br")).trim();
-                return sub.isBlank() ? "estetica" : sub;
+                return sub.isBlank() ? "agendoou" : sub;
             }
 
-            if (host.equals("logistadigital.com.br") || host.equals("estetica.local")) {
-                return "estetica";
+            if (host.equals("logistadigital.com.br") || host.equals("estetica.local") || host.equals("agendoou.local")) {
+                return "agendoou";
             }
 
             if (!host.equals("localhost") && !host.equals("127.0.0.1") && !host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {

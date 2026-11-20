@@ -21,12 +21,12 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
         <!-- Header da Página Privada -->
         <div class="text-center mb-8">
           <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900 text-white text-xs font-semibold mb-3 shadow-sm">
-            <span class="font-serif font-black text-sm text-rose-400">Agendar.</span>
+            <span class="font-serif font-black text-sm text-rose-400">Agendoou</span>
             <span class="text-stone-500">•</span>
             <span class="text-[11px] font-normal text-stone-300">Plataforma Multi-Nicho para Empresas & Autônomos</span>
           </div>
           <h1 class="font-serif text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight">
-            Crie sua Plataforma no Agendar.
+            Crie sua Plataforma no Agendoou
           </h1>
           <p class="mt-2 text-xs sm:text-sm text-stone-500 max-w-lg mx-auto leading-relaxed">
             Selecione seu setor de atuação, personalize sua marca e tenha um link exclusivo com inteligência sob medida para o seu nicho.

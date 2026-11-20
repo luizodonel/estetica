@@ -49,7 +49,7 @@ public class NotificacaoService {
         String horarioFormatado = a.getDataHoraInicio().format(FORMATTER);
         String nomeEstabelecimento = (a.getTenant() != null && a.getTenant().getNomeEmpresa() != null)
                 ? a.getTenant().getNomeEmpresa()
-                : "Agendar.";
+                : "Agendoou";
         log.info("[LEMBRETE AUTOMÁTICO WHATSAPP/EMAIL] Olá {}, lembre-se do seu agendamento de {} ({}) em {}!",
                 a.getCliente().getNome(), a.getProcedimento().getTitulo(), horarioFormatado, nomeEstabelecimento);
     }
