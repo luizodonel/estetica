@@ -70,14 +70,10 @@ public class NotificacaoService {
     }
 
     private String montarBlocoBotoesAcao(Agendamento a) {
-        String baseUrl = obterBaseUrlEstabelecimento(a);
-        if (a.getId() != null && a.getTokenConfirmacao() != null && !a.getTokenConfirmacao().isBlank()) {
-            String linkConfirmar = baseUrl + "/confirmar/" + a.getId() + "?t=" + a.getTokenConfirmacao() + "&acao=confirmar";
-            String linkReagendar = baseUrl + "/confirmar/" + a.getId() + "?t=" + a.getTokenConfirmacao() + "&acao=reagendar";
-            return "\n\n👉 *Confirmar Presença (1 clique):*\n" + linkConfirmar +
-                   "\n\n🔄 *Precisa Reagendar? Escolha novo horário:*\n" + linkReagendar;
-        }
-        return "\n\n🔄 *Precisa Reagendar? Acesse:*\n" + baseUrl + "/catalogo";
+        return "\n\nPodemos confirmar sua presença?\n" +
+               "Responda aqui no WhatsApp:\n" +
+               "*1* - Confirmar presença\n" +
+               "*2* - Reagendar horário";
     }
 
     @Async
@@ -90,18 +86,15 @@ public class NotificacaoService {
         String nomeEmpresa = obterNomeEstabelecimento(a);
         String primeiroNomeCliente = extrairPrimeiroNome(a.getCliente().getNome());
 
-        // 1. Mensagem para o Cliente (com Spintax + Links de Confirmar/Reagendar + Opt-in "Responda OK" Anti-Ban)
+        // 1. Mensagem para o Cliente (Discreta, sem links longos e sem emojis quebrados)
         String saudacao = sortear(SAUDACOES);
-        String optIn = sortear(FECHAMENTOS_OPT_IN);
         String botoesAcao = montarBlocoBotoesAcao(a);
         String msgCliente = String.format(
-                "✅ *Agendamento Confirmado — %s*\n\n" +
-                "%s *%s*!\n" +
-                "Seu horário foi reservado com sucesso:\n\n" +
-                "📋 *Serviço:* %s\n" +
-                "👤 *Profissional:* %s\n" +
-                "📅 *Data:* %s às *%s*" +
-                "%s\n\n" +
+                "*%s — Agendamento Confirmado*\n\n" +
+                "%s *%s*! Seu horário foi reservado:\n\n" +
+                "• *Serviço:* %s\n" +
+                "• *Profissional:* %s\n" +
+                "• *Data:* %s às *%s*" +
                 "%s",
                 nomeEmpresa,
                 saudacao,
@@ -110,8 +103,7 @@ public class NotificacaoService {
                 a.getProfissional().getNome(),
                 dataFormatada,
                 horaFormatada,
-                botoesAcao,
-                optIn
+                botoesAcao
         );
 
         log.info("[WHATSAPP AUTO] Disparando confirmação de agendamento #{} para cliente {} ({})",
@@ -127,11 +119,11 @@ public class NotificacaoService {
         if (telEmpresa != null && !telEmpresa.isBlank() && !limparDigitos(telEmpresa).equals(limparDigitos(a.getCliente().getTelefoneWhatsApp()))) {
             aguardarDelayHumanizado(5500, 8500);
             String msgLojista = String.format(
-                    "📅 *Novo Agendamento Recebido — %s*\n\n" +
-                    "👤 *Cliente:* %s (%s)\n" +
-                    "✨ *Serviço:* %s\n" +
-                    "👩‍⚕️ *Profissional:* %s\n" +
-                    "🕒 *Data/Hora:* %s",
+                    "*Novo Agendamento Recebido — %s*\n\n" +
+                    "• *Cliente:* %s (%s)\n" +
+                    "• *Serviço:* %s\n" +
+                    "• *Profissional:* %s\n" +
+                    "• *Data/Hora:* %s",
                     nomeEmpresa,
                     a.getCliente().getNome(),
                     a.getCliente().getTelefoneWhatsApp(),
@@ -153,9 +145,9 @@ public class NotificacaoService {
         String primeiroNome = extrairPrimeiroNome(a.getCliente().getNome());
 
         String msgCancelamento = String.format(
-                "ℹ️ *Aviso de Cancelamento — %s*\n\n" +
+                "*Aviso de Cancelamento — %s*\n\n" +
                 "%s *%s*, informamos que o agendamento de *%s* previsto para *%s* foi cancelado.\n\n" +
-                "Caso deseje escolher um novo horário, acesse nossa agenda online.",
+                "Caso deseje reagendar um novo horário, responda *2* nesta mensagem.",
                 nomeEmpresa,
                 sortear(SAUDACOES),
                 primeiroNome,
@@ -175,13 +167,12 @@ public class NotificacaoService {
         String botoesAcao = montarBlocoBotoesAcao(a);
 
         String msgLembrete = String.format(
-                "⏰ *Lembrete de Horário — %s*\n\n" +
+                "*%s — Lembrete de Horário*\n\n" +
                 "%s *%s*! Passando para lembrar do seu agendamento:\n\n" +
-                "📋 *Serviço:* %s\n" +
-                "👤 *Profissional:* %s\n" +
-                "📅 *Data:* %s às *%s*" +
-                "%s\n\n" +
-                "Ou responda *SIM* aqui no WhatsApp para confirmar sua presença!",
+                "• *Serviço:* %s\n" +
+                "• *Profissional:* %s\n" +
+                "• *Data:* %s às *%s*" +
+                "%s",
                 nomeEstabelecimento,
                 sortear(SAUDACOES),
                 primeiroNome,
