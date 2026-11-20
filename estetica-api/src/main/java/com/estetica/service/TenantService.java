@@ -306,8 +306,8 @@ public class TenantService {
                     .diaSemana(dia)
                     .horaInicio(java.time.LocalTime.of(8, 0))
                     .horaFim(java.time.LocalTime.of(19, 0))
-                    .inicioIntervalo(java.time.LocalTime.of(12, 0))
-                    .fimIntervalo(java.time.LocalTime.of(13, 0))
+                    .inicioIntervalo(null)
+                    .fimIntervalo(null)
                     .ativo(true)
                     .build();
             horarioTrabalhoRepository.save(ht);

@@ -29,8 +29,8 @@ public class DisponibilidadeService {
     private final BloqueioAgendaRepository bloqueioAgendaRepository;
     private final AgendamentoRepository agendamentoRepository;
 
-    private static final int STEP_MINUTOS = 30; // Granularidade da grade
-    private static final int ANTECEDENCIA_MINIMA_MINUTOS = 10; // Margem para agendamento no próprio dia
+    private static final int STEP_MINUTOS = 15; // Granularidade da grade (15 em 15 minutos)
+    private static final int ANTECEDENCIA_MINIMA_MINUTOS = 0; // Permite agendar imediatamente a partir do horário atual
 
     @Transactional(readOnly = true)
     public DisponibilidadeResponseDTO calcularSlots(Long procedimentoId, Long profissionalId, LocalDate data) {
@@ -107,15 +107,16 @@ public class DisponibilidadeService {
                 LocalDateTime slotDataHoraInicio = data.atTime(slotInicio);
                 LocalDateTime slotDataHoraFim = data.atTime(slotFim);
 
-                // Se for hoje, ignora horários passados ou muito próximos
-                if (data.isEqual(hoje) && slotDataHoraInicio.isBefore(agora.plusMinutes(ANTECEDENCIA_MINIMA_MINUTOS))) {
+                // Se for hoje, ignora horários que já passaram (com tolerância de 5 min para o horário atual)
+                if (data.isEqual(hoje) && slotDataHoraInicio.isBefore(agora.minusMinutes(5))) {
                     horaAtual = horaAtual.plusMinutes(STEP_MINUTOS);
                     continue;
                 }
 
-                // Verifica colisão com intervalo de almoço/descanso
+                // Verifica colisão com intervalo de almoço/descanso (somente se inicioIntervalo < fimIntervalo)
                 boolean colideAlmoco = false;
-                if (jornada.getInicioIntervalo() != null && jornada.getFimIntervalo() != null) {
+                if (jornada.getInicioIntervalo() != null && jornada.getFimIntervalo() != null
+                        && jornada.getInicioIntervalo().isBefore(jornada.getFimIntervalo())) {
                     if (slotInicio.isBefore(jornada.getFimIntervalo()) && slotFim.isAfter(jornada.getInicioIntervalo())) {
                         colideAlmoco = true;
                     }

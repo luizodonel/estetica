@@ -45,7 +45,8 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_clinica_tenant_link_lower ON tb_clinica_tenant (LOWER(link_personalizado)) WHERE link_personalizado IS NOT NULL");
             jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_lojista_link_lower ON tb_lojista (LOWER(link_personalizado)) WHERE link_personalizado IS NOT NULL");
 
-            // Garante que especialistas não fiquem bloqueados em primeiro acesso
+            // Remove bloqueio automático padrão de almoço (12:00 às 13:00) que impedia agendamentos entre 11:30 e 13:00
+            jdbcTemplate.execute("UPDATE tb_horario_trabalho SET inicio_intervalo = NULL, fim_intervalo = NULL WHERE inicio_intervalo = '12:00:00' AND fim_intervalo = '13:00:00'");
             jdbcTemplate.execute("UPDATE tb_usuario SET primeiro_acesso = false WHERE role = 'ROLE_PROFISSIONAL' AND primeiro_acesso = true");
             org.springframework.security.crypto.password.PasswordEncoder encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
             String hash123456 = encoder.encode("123456");

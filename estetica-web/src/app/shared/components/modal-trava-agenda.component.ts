@@ -436,9 +436,9 @@ export class ModalTravaAgendaComponent implements OnInit, OnChanges {
             label: d.label,
             ativo: existente ? Boolean(existente.ativo) : false,
             horaInicio: existente?.horaInicio ? existente.horaInicio.substring(0, 5) : '08:00',
-            horaFim: existente?.horaFim ? existente.horaFim.substring(0, 5) : '18:00',
-            inicioIntervalo: existente?.inicioIntervalo ? existente.inicioIntervalo.substring(0, 5) : '12:00',
-            fimIntervalo: existente?.fimIntervalo ? existente.fimIntervalo.substring(0, 5) : '13:00'
+            horaFim: existente?.horaFim ? existente.horaFim.substring(0, 5) : '19:00',
+            inicioIntervalo: existente?.inicioIntervalo ? existente.inicioIntervalo.substring(0, 5) : '',
+            fimIntervalo: existente?.fimIntervalo ? existente.fimIntervalo.substring(0, 5) : ''
           };
         });
 

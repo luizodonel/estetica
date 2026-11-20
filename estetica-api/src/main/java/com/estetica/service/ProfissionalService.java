@@ -173,23 +173,23 @@ public class ProfissionalService {
 
         prof = profissionalRepository.save(prof);
 
-        // Cria jornada semanal padrão (Segunda a Sexta, 08:00 às 18:00, almoço 12:00 às
-        // 13:00)
+        // Cria jornada semanal padrão (Segunda a Sábado, 08:00 às 19:00, sem bloquear almoço por padrão)
         List<DayOfWeek> diasUteis = List.of(
                 DayOfWeek.MONDAY,
                 DayOfWeek.TUESDAY,
                 DayOfWeek.WEDNESDAY,
                 DayOfWeek.THURSDAY,
-                DayOfWeek.FRIDAY);
+                DayOfWeek.FRIDAY,
+                DayOfWeek.SATURDAY);
 
         for (DayOfWeek dia : diasUteis) {
             HorarioTrabalho ht = HorarioTrabalho.builder()
                     .profissional(prof)
                     .diaSemana(dia)
                     .horaInicio(LocalTime.of(8, 0))
-                    .horaFim(LocalTime.of(18, 0))
-                    .inicioIntervalo(LocalTime.of(12, 0))
-                    .fimIntervalo(LocalTime.of(13, 0))
+                    .horaFim(LocalTime.of(19, 0))
+                    .inicioIntervalo(null)
+                    .fimIntervalo(null)
                     .ativo(true)
                     .build();
             horarioTrabalhoRepository.save(ht);
