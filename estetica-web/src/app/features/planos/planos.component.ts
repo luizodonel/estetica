@@ -35,9 +35,16 @@ export interface PlanoConfig {
         <!-- CABEÇALHO & PROPOSTA DE VALOR -->
         <!-- ========================================================================= -->
         <div class="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold tracking-wide uppercase mb-4 shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-            <span>Agendoou • Plataforma Multi-Nicho de Agendamento & Gestão</span>
+          <div class="mb-5 flex justify-center">
+            <img
+              src="/logo-agendoou.png"
+              alt="Agendoou — Agendou, vendeu, lucrou. Sua empresa no piloto automático."
+              class="h-16 sm:h-20 w-auto object-contain drop-shadow-sm" />
+          </div>
+
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold tracking-wide uppercase mb-4 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Agendou, vendeu, lucrou • Sua empresa no piloto automático</span>
           </div>
 
           <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">

@@ -28,6 +28,9 @@ export class TenantService {
   });
 
   logoUrl = computed(() => {
+    if (this.isDominioMaster()) {
+      return '/logo-agendoou.png';
+    }
     const raw = this.tenant()?.logoUrl;
     if (raw) return this.api.formatarUrlImagem(raw);
 

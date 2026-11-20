@@ -16,27 +16,34 @@ import { SetorService } from '../core/services/setor.service';
       <!-- LINHA 1: Header Principal (Marca + Links de Atendimento + Perfil) -->
       <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-4">
         
-        <!-- 1. Logo e Marca da Empresa (Whitelabel Dinâmico) -->
+        <!-- 1. Logo e Marca da Empresa (Whitelabel Dinâmico / Logo Oficial Agendoou no Domínio Principal) -->
         <a routerLink="/" class="flex items-center gap-3 group min-w-0 max-w-[280px] sm:max-w-[400px] lg:max-w-[550px]">
-          @if (tenantService.logoUrl()) {
-            <div class="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center bg-white group-hover:scale-105 transition-transform shrink-0">
-              <img [src]="tenantService.logoUrl()!" [alt]="tenantService.nomeEmpresa()" class="w-full h-full object-contain p-1" />
-            </div>
+          @if (tenantService.isDominioMaster()) {
+            <img
+              src="/logo-agendoou.png"
+              alt="Agendoou — Agendou, vendeu, lucrou."
+              class="h-10 sm:h-12 w-auto object-contain group-hover:scale-[1.02] transition-transform" />
           } @else {
-            <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform duration-300 shrink-0">
-              <span class="text-base font-bold">✨</span>
+            @if (tenantService.logoUrl()) {
+              <div class="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center bg-white group-hover:scale-105 transition-transform shrink-0">
+                <img [src]="tenantService.logoUrl()!" [alt]="tenantService.nomeEmpresa()" class="w-full h-full object-contain p-1" />
+              </div>
+            } @else {
+              <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform duration-300 shrink-0">
+                <span class="text-base font-bold">✨</span>
+              </div>
+            }
+            <div class="min-w-0 flex-1">
+              <span 
+                class="font-bold text-base sm:text-lg lg:text-xl tracking-tight text-slate-900 block leading-tight truncate" 
+                [title]="tenantService.nomeEmpresa()">
+                {{ tenantService.nomeEmpresa() }}
+              </span>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold bg-slate-100 text-slate-600 mt-0.5 truncate">
+                {{ tenantService.tenant() ? (setorService.config().label + ' ' + setorService.icone()) : 'Agendoou' }}
+              </span>
             </div>
           }
-          <div class="min-w-0 flex-1">
-            <span 
-              class="font-bold text-base sm:text-lg lg:text-xl tracking-tight text-slate-900 block leading-tight truncate" 
-              [title]="tenantService.nomeEmpresa()">
-              {{ tenantService.nomeEmpresa() }}
-            </span>
-            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold bg-slate-100 text-slate-600 mt-0.5 truncate">
-              {{ tenantService.tenant() ? (setorService.config().label + ' ' + setorService.icone()) : 'Agendoou' }}
-            </span>
-          </div>
         </a>
 
         <!-- 2. Lado Direito: Links do Cliente + Perfil do Usuário -->

@@ -7,17 +7,22 @@
     <router-outlet></router-outlet>
   </main>
 
-  <!-- Rodapé Dinâmico com o Nome da Clínica / Lojista -->
+  <!-- Rodapé Dinâmico com o Nome da Clínica / Lojista ou Logo Oficial Agendoou -->
   <footer class="border-t border-slate-200 bg-white py-8 px-4 sm:px-6 mb-16 md:mb-0 text-slate-500 text-xs">
     <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-      <div class="flex items-center gap-2">
-        @if (tenantService.logoUrl()) {
-          <img [src]="tenantService.logoUrl()!" [alt]="tenantService.nomeEmpresa()" class="h-6 w-auto object-contain max-w-[120px]" />
+      <div class="flex items-center gap-3">
+        @if (tenantService.isDominioMaster()) {
+          <img src="/logo-agendoou.png" alt="Agendoou" class="h-8 w-auto object-contain" />
+          <span class="text-slate-400 hidden sm:inline">• Agendou, vendeu, lucrou. Sua empresa no piloto automático.</span>
+        } @else {
+          @if (tenantService.logoUrl()) {
+            <img [src]="tenantService.logoUrl()!" [alt]="tenantService.nomeEmpresa()" class="h-6 w-auto object-contain max-w-[120px]" />
+          }
+          <span class="font-bold text-base text-slate-900">{{ tenantService.nomeEmpresa() }}</span>
+          <span class="text-slate-400">• {{ tenantService.tenant() ? 'Portal Oficial' : 'Portal de Agendamento' }}</span>
         }
-        <span class="font-bold text-base text-slate-900">{{ tenantService.nomeEmpresa() }}</span>
-        <span class="text-slate-400">• {{ tenantService.tenant() ? 'Portal Oficial' : 'Portal de Agendamento' }}</span>
       </div>
-      <p class="text-slate-400">© 2026 {{ tenantService.nomeEmpresa() }}. Todos os direitos reservados.</p>
+      <p class="text-slate-400">© 2026 {{ tenantService.isDominioMaster() ? 'Agendoou' : tenantService.nomeEmpresa() }}. Todos os direitos reservados.</p>
     </div>
   </footer>
 

@@ -24,16 +24,22 @@ interface PixPendenteInfo {
       <div class="max-w-md w-full bg-white rounded-3xl p-8 border border-nude-200 shadow-xl shadow-nude-200/50">
         
         <div class="text-center mb-6">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-rose-400 to-rose-600 flex items-center justify-center text-white mx-auto mb-3 shadow-md shadow-rose-200">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-            </svg>
-          </div>
+          @if (tenantService.isDominioMaster() || !tenantService.logoUrl()) {
+            <img
+              src="/logo-agendoou.png"
+              alt="Agendoou"
+              class="h-12 sm:h-14 w-auto object-contain mx-auto mb-3" />
+          } @else {
+            <img
+              [src]="tenantService.logoUrl()!"
+              [alt]="tenantService.nomeEmpresa()"
+              class="h-14 w-auto object-contain mx-auto mb-3 rounded-xl" />
+          }
           <h2 class="font-sans text-2xl font-extrabold text-slate-900 tracking-tight">
             Acesso da Equipe
           </h2>
           <p class="text-xs text-slate-500 mt-1">
-            Área restrita para Administradores e Especialistas.
+            {{ tenantService.isDominioMaster() ? 'Portal Administrativo Master Agendoou' : ('Área restrita para Administradores e Especialistas de ' + tenantService.nomeEmpresa()) }}
           </p>
         </div>
 
