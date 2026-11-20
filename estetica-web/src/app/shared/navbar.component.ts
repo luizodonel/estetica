@@ -144,11 +144,6 @@ import { SetorService } from '../core/services/setor.service';
           <div class="max-w-[1440px] mx-auto flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
             
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-              <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 mr-2 select-none shrink-0 flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Gestão
-              </span>
-
               <a 
                 routerLink="/admin/dashboard" 
                 routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
