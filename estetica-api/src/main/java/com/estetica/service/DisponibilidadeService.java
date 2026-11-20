@@ -147,15 +147,19 @@ public class DisponibilidadeService {
             }
         }
 
-        // Ordenar os slots cronologicamente
+        // Ordenar os slots cronologicamente e garantir que não existam horários duplicados na grade
         slotsDisponiveis.sort(Comparator.comparing(SlotDisponivelDTO::horarioInicio));
+        Map<LocalTime, SlotDisponivelDTO> slotsUnicos = new LinkedHashMap<>();
+        for (SlotDisponivelDTO s : slotsDisponiveis) {
+            slotsUnicos.putIfAbsent(s.horarioInicio(), s);
+        }
 
         return new DisponibilidadeResponseDTO(
                 data,
                 procedimento.getId(),
                 procedimento.getTitulo(),
                 duracaoEfetiva,
-                slotsDisponiveis
+                new ArrayList<>(slotsUnicos.values())
         );
     }
 }

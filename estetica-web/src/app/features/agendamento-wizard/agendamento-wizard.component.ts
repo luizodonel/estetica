@@ -209,36 +209,10 @@ import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive
             <div class="mb-6">
               <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Etapa 2 de 4</span>
               <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Escolha o {{ setorService.termoProfissional() }}</h2>
-              <p class="text-xs text-slate-500 mt-1">Prefere atendimento com alguém específico ou o primeiro horário disponível?</p>
+              <p class="text-xs text-slate-500 mt-1">Selecione o especialista que realizará o atendimento.</p>
             </div>
 
             <div class="space-y-3">
-              <!-- Opção "Primeiro Horário Disponível" -->
-              <div 
-                (click)="selecionarProfissional(null)"
-                [class.border-slate-900]="profissionalSelecionado() === null"
-                [class.ring-2]="profissionalSelecionado() === null"
-                [class.ring-slate-900]="profissionalSelecionado() === null"
-                [class.bg-slate-50]="profissionalSelecionado() === null"
-                class="p-4 rounded-2xl border border-slate-200 hover:border-slate-400 cursor-pointer transition-all flex items-center justify-between">
-                <div class="flex items-center gap-3.5">
-                  <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-lg">
-                    ⚡
-                  </div>
-                  <div>
-                    <h4 class="font-bold text-slate-900 text-sm sm:text-base">Primeiro Horário Disponível</h4>
-                    <p class="text-[11px] text-slate-500">Agiliza buscando qualquer especialista disponível.</p>
-                  </div>
-                </div>
-                <span 
-                  class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                  [class.bg-slate-900]="profissionalSelecionado() === null"
-                  [class.text-white]="profissionalSelecionado() === null"
-                  [class.text-slate-500]="profissionalSelecionado() !== null">
-                  {{ profissionalSelecionado() === null ? 'Selecionado ✓' : 'Escolher' }}
-                </span>
-              </div>
-
               <!-- Lista de Profissionais Habilitados -->
               @for (prof of profissionais(); track prof.id) {
                 <div 
@@ -840,7 +814,12 @@ export class AgendamentoWizardComponent implements OnInit {
 
   carregarProfissionaisHabilitados(procId: number): void {
     this.api.getProfissionais(procId).subscribe({
-      next: (dados) => this.profissionais.set(dados),
+      next: (dados) => {
+        this.profissionais.set(dados || []);
+        if (dados && dados.length > 0) {
+          this.profissionalSelecionado.set(dados[0]);
+        }
+      },
       error: (err) => console.error(err)
     });
   }

@@ -400,22 +400,6 @@ interface DiaCarrossel {
               </span>
 
               <div class="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-                
-                <!-- Qualquer Profissional -->
-                <button
-                  type="button"
-                  (click)="selecionarProfissional(null)"
-                  [class.border-[#1e293b]]="profissionalSelecionado() === null"
-                  [class.bg-slate-100]="profissionalSelecionado() === null"
-                  class="flex flex-col items-center gap-1 shrink-0 p-1.5 rounded-2xl border-2 border-transparent transition-all">
-                  <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-stone-600 text-lg shadow-sm">
-                    👤
-                  </div>
-                  <span class="text-[10px] font-medium text-stone-600 text-center max-w-[64px] leading-tight">
-                    Qualquer Profissional
-                  </span>
-                </button>
-
                 <!-- Profissionais Habilitados -->
                 @for (prof of profissionais(); track prof.id) {
                   <button
@@ -952,7 +936,12 @@ export class CatalogoComponent implements OnInit {
     });
 
     this.api.getProfissionais().subscribe({
-      next: (profs) => this.profissionais.set(profs),
+      next: (profs) => {
+        this.profissionais.set(profs || []);
+        if (profs && profs.length > 0 && !this.profissionalSelecionado()) {
+          this.profissionalSelecionado.set(profs[0]);
+        }
+      },
       error: () => {}
     });
   }
@@ -976,6 +965,9 @@ export class CatalogoComponent implements OnInit {
   adicionarServico(proc: Procedimento): void {
     const sel = this.servicosSelecionados();
     if (!sel.some(p => p.id === proc.id)) {
+      if (!this.profissionalSelecionado() && this.profissionais().length > 0) {
+        this.profissionalSelecionado.set(this.profissionais()[0]);
+      }
       this.servicosSelecionados.set([...sel, proc]);
       this.carregarSlots();
     }
