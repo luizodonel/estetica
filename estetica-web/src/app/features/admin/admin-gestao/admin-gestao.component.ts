@@ -518,7 +518,7 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
                           <div class="truncate text-stone-600">✉ {{ prof.email }}</div>
                         }
                         @if (prof.telefoneWhatsApp) {
-                          <div class="text-emerald-700 font-medium">💬 {{ prof.telefoneWhatsApp }}</div>
+                          <div class="text-emerald-700 font-medium">💬 {{ prof.telefoneWhatsApp | telefone }}</div>
                         }
                       </div>
                     }

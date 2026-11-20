@@ -7,11 +7,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { SetorService } from '../../../core/services/setor.service';
 import { Agendamento, Profissional, StatusAgendamento } from '../../../core/models';
 import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trava-agenda.component';
+import { TelefonePipe } from '../../../shared/pipes/telefone.pipe';
 
 @Component({
   selector: 'app-admin-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ModalTravaAgendaComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ModalTravaAgendaComponent, TelefonePipe],
   template: `
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-12 font-sans">
       
@@ -128,7 +129,7 @@ import { ModalTravaAgendaComponent } from '../../../shared/components/modal-trav
 
                   <h3 class="text-base font-bold text-slate-900 leading-snug">
                     {{ a.clienteNome }}
-                    <span class="font-normal text-xs text-slate-500">({{ a.clienteWhatsApp }})</span>
+                    <span class="font-normal text-xs text-slate-500">({{ a.clienteWhatsApp | telefone }})</span>
                   </h3>
 
                   <p class="text-xs text-slate-600 mt-0.5">

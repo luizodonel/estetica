@@ -867,7 +867,7 @@ export class CatalogoComponent implements OnInit {
   enderecoLoja = computed(() => {
     const t = this.tenantService.tenant();
     if (t?.telefoneWhatsApp) {
-      return `WhatsApp: ${t.telefoneWhatsApp}`;
+      return `WhatsApp: ${formatarTelefoneBR(t.telefoneWhatsApp)}`;
     }
     return 'Atendimento com horário marcado no local';
   });
