@@ -29,18 +29,20 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     List<Usuario> findAllByTelefoneWhatsApp(String telefoneWhatsApp);
     boolean existsByTelefoneWhatsApp(String telefoneWhatsApp);
     Optional<Usuario> findFirstByTenantIdAndTelefoneWhatsApp(Long tenantId, String telefoneWhatsApp);
+    Optional<Usuario> findFirstByTenantIdAndTelefoneWhatsAppAndNomeIgnoreCase(Long tenantId, String telefoneWhatsApp, String nome);
+    Optional<Usuario> findFirstByTelefoneWhatsAppAndNomeIgnoreCase(String telefoneWhatsApp, String nome);
     boolean existsByTenantIdAndTelefoneWhatsApp(Long tenantId, String telefoneWhatsApp);
 
     List<Usuario> findByRoleOrderByNomeAsc(Role role);
     List<Usuario> findByTenantIdAndRoleOrderByNomeAsc(Long tenantId, Role role);
 
-    @org.springframework.data.jpa.repository.Query("SELECT u FROM Usuario u WHERE u.role = :role AND (:tenantId IS NULL OR u.tenant.id = :tenantId) ORDER BY u.nome ASC")
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT u FROM Usuario u WHERE u.role = :role AND (:tenantId IS NULL OR u.tenant.id = :tenantId OR u.id IN (SELECT a.cliente.id FROM Agendamento a WHERE a.tenant.id = :tenantId OR a.profissional.tenant.id = :tenantId)) ORDER BY u.nome ASC")
     List<Usuario> findClientesPorTenantOuSemTenant(@org.springframework.data.repository.query.Param("tenantId") Long tenantId, @org.springframework.data.repository.query.Param("role") Role role);
 
     long countByRole(Role role);
     long countByTenantIdAndRole(Long tenantId, Role role);
 
-    @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM Usuario u WHERE u.role = :role AND (:tenantId IS NULL OR u.tenant.id = :tenantId)")
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT u.id) FROM Usuario u WHERE u.role = :role AND (:tenantId IS NULL OR u.tenant.id = :tenantId OR u.id IN (SELECT a.cliente.id FROM Agendamento a WHERE a.tenant.id = :tenantId OR a.profissional.tenant.id = :tenantId))")
     long countClientesPorTenantOuSemTenant(@org.springframework.data.repository.query.Param("tenantId") Long tenantId, @org.springframework.data.repository.query.Param("role") Role role);
 
     @org.springframework.data.jpa.repository.Query("SELECT DISTINCT a.cliente FROM Agendamento a WHERE a.profissional.id = :profissionalId AND a.status != com.estetica.model.StatusAgendamento.CANCELADO ORDER BY a.cliente.nome ASC")

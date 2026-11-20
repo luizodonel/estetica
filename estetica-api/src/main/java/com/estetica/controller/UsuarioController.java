@@ -73,25 +73,9 @@ public class UsuarioController {
         com.estetica.model.ClinicaTenant tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
         Long tenantId = tenant != null ? tenant.getId() : null;
 
-        boolean telExiste = (tenantId != null)
-                ? usuarioRepository.existsByTenantIdAndTelefoneWhatsApp(tenantId, cleanPhone)
-                : usuarioRepository.existsByTelefoneWhatsApp(cleanPhone);
-        if (telExiste) {
-            throw new RegraNegocioException("Já existe um cliente cadastrado com este WhatsApp: " + cleanPhone);
-        }
-
         String email = (request.email() != null && !request.email().isBlank())
                 ? request.email().toLowerCase().trim()
                 : null;
-
-        if (email != null) {
-            boolean emailExiste = (tenantId != null)
-                    ? usuarioRepository.existsByTenantIdAndEmailIgnoreCase(tenantId, email)
-                    : usuarioRepository.existsByEmail(email);
-            if (emailExiste) {
-                throw new RegraNegocioException("Já existe um cliente cadastrado com o e-mail: " + email);
-            }
-        }
 
         Usuario cliente = Usuario.builder()
                 .nome(request.nome().trim())
@@ -125,23 +109,12 @@ public class UsuarioController {
         cliente.setNome(request.nome().trim());
 
         if (request.email() != null && !request.email().isBlank()) {
-            String novoEmail = request.email().toLowerCase().trim();
-            boolean emailExiste = (tenantId != null)
-                    ? usuarioRepository.existsByTenantIdAndEmailIgnoreCase(tenantId, novoEmail)
-                    : usuarioRepository.existsByEmail(novoEmail);
-            if (!novoEmail.equalsIgnoreCase(cliente.getEmail()) && emailExiste) {
-                throw new RegraNegocioException("Já existe um cliente cadastrado com o e-mail: " + novoEmail);
-            }
-            cliente.setEmail(novoEmail);
+            cliente.setEmail(request.email().toLowerCase().trim());
+        } else {
+            cliente.setEmail(null);
         }
 
         String cleanPhone = request.telefoneWhatsApp().replaceAll("[^0-9]", "");
-        boolean telExiste = (tenantId != null)
-                ? usuarioRepository.existsByTenantIdAndTelefoneWhatsApp(tenantId, cleanPhone)
-                : usuarioRepository.existsByTelefoneWhatsApp(cleanPhone);
-        if (!cleanPhone.equals(cliente.getTelefoneWhatsApp()) && telExiste) {
-            throw new RegraNegocioException("Já existe um cliente cadastrado com este WhatsApp: " + cleanPhone);
-        }
         cliente.setTelefoneWhatsApp(cleanPhone);
 
         if (request.senha() != null && !request.senha().isBlank()) {

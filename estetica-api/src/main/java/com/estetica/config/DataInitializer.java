@@ -54,9 +54,22 @@ public class DataInitializer implements CommandLineRunner {
             String hash123456 = encoder.encode("123456");
             jdbcTemplate.update("UPDATE tb_usuario SET senha_hash = ? WHERE role = 'ROLE_PROFISSIONAL' AND (senha_hash IS NULL OR senha_hash = '' OR senha_hash = 'SEM_LOGIN')", hash123456);
 
-            // Remove restrições únicas globais legadas em tb_usuario (email e login são isolados por tenant)
+            // Remove restrições únicas globais legadas em tb_usuario (email, login e telefone de clientes podem repetir para familiares)
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario DROP CONSTRAINT IF EXISTS uk_spmnyb4dsul95fjmr5kmdmvub");
             jdbcTemplate.execute("ALTER TABLE IF EXISTS tb_usuario DROP CONSTRAINT IF EXISTS uk_1vofibjsgo77e7km8wowva1qe");
+            jdbcTemplate.execute(
+                "DO $$ " +
+                "DECLARE r RECORD; " +
+                "BEGIN " +
+                "  FOR r IN ( " +
+                "    SELECT conname FROM pg_constraint con " +
+                "    INNER JOIN pg_class rel ON rel.oid = con.conrelid " +
+                "    WHERE rel.relname = 'tb_usuario' AND con.contype = 'u' " +
+                "  ) LOOP " +
+                "    EXECUTE 'ALTER TABLE tb_usuario DROP CONSTRAINT IF EXISTS ' || quote_ident(r.conname); " +
+                "  END LOOP; " +
+                "END $$;"
+            );
             jdbcTemplate.execute("UPDATE tb_usuario SET email = NULL WHERE email LIKE '%@cliente.local' OR email LIKE '%@especialista.local'");
 
             // Atualiza eventual nome legado "L'Élégance" ou "Agendar." no tenant master para "Agendoou" e define a logo oficial /logo-agendoou.png

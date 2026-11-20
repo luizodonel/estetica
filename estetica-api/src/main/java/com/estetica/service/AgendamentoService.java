@@ -65,7 +65,7 @@ public class AgendamentoService {
             }
 
             final Long tid = tenant != null ? tenant.getId() : null;
-            cliente = buscarClientePorTelefoneNoTenant(tid, telefoneLimpo);
+            cliente = buscarClientePorTelefoneENomeNoTenant(tid, telefoneLimpo, nomeCliente);
 
             if (cliente == null) {
                 cliente = Usuario.builder()
@@ -79,13 +79,10 @@ public class AgendamentoService {
                         .build();
                 cliente = usuarioRepository.save(cliente);
             } else {
-                if (request.clienteNome() != null && !request.clienteNome().isBlank()) {
-                    cliente.setNome(nomeCliente);
-                }
                 if (request.clienteEmail() != null && !request.clienteEmail().isBlank()) {
                     cliente.setEmail(request.clienteEmail().trim());
+                    cliente = usuarioRepository.save(cliente);
                 }
-                cliente = usuarioRepository.save(cliente);
             }
         } else if (principal instanceof com.estetica.model.Lojista lojista) {
             tenant = tenantResolverService.getTenantDoUsuarioAutenticado();
@@ -105,7 +102,7 @@ public class AgendamentoService {
                     telLimpo = telLimpo.substring(0, 30);
                 }
                 final Long tid = tenant != null ? tenant.getId() : null;
-                cliente = buscarClientePorTelefoneNoTenant(tid, telLimpo);
+                cliente = buscarClientePorTelefoneENomeNoTenant(tid, telLimpo, request.clienteNome().trim());
                 if (cliente == null) {
                     cliente = Usuario.builder()
                             .nome(request.clienteNome().trim())
@@ -137,7 +134,7 @@ public class AgendamentoService {
                         telLimpo = telLimpo.substring(0, 30);
                     }
                     final Long tid = tenant != null ? tenant.getId() : null;
-                    cliente = buscarClientePorTelefoneNoTenant(tid, telLimpo);
+                    cliente = buscarClientePorTelefoneENomeNoTenant(tid, telLimpo, request.clienteNome().trim());
                     if (cliente == null) {
                         cliente = Usuario.builder()
                                 .nome(request.clienteNome().trim())
@@ -334,7 +331,13 @@ public class AgendamentoService {
         return prof;
     }
 
-    private Usuario buscarClientePorTelefoneNoTenant(Long tenantId, String telefone) {
+    private Usuario buscarClientePorTelefoneENomeNoTenant(Long tenantId, String telefone, String nome) {
+        if (nome != null && !nome.isBlank()) {
+            if (tenantId != null) {
+                return usuarioRepository.findFirstByTenantIdAndTelefoneWhatsAppAndNomeIgnoreCase(tenantId, telefone, nome.trim()).orElse(null);
+            }
+            return usuarioRepository.findFirstByTelefoneWhatsAppAndNomeIgnoreCase(telefone, nome.trim()).orElse(null);
+        }
         if (tenantId != null) {
             return usuarioRepository.findFirstByTenantIdAndTelefoneWhatsApp(tenantId, telefone).orElse(null);
         }
