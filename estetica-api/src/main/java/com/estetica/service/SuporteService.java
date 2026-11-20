@@ -3,18 +3,21 @@ package com.estetica.service;
 import com.estetica.dto.SuporteDTOs.*;
 import com.estetica.exception.RecursoNaoEncontradoException;
 import com.estetica.exception.RegraNegocioException;
-import com.estetica.model.SuporteChamado;
-import com.estetica.model.SuporteMensagem;
+import com.estetica.model.*;
+import com.estetica.repository.ClinicaTenantRepository;
 import com.estetica.repository.SuporteChamadoRepository;
 import com.estetica.repository.SuporteMensagemRepository;
+import com.estetica.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -22,14 +25,52 @@ public class SuporteService {
 
     private final SuporteChamadoRepository chamadoRepository;
     private final SuporteMensagemRepository mensagemRepository;
+    private final ClinicaTenantRepository tenantRepository;
+    private final UsuarioRepository usuarioRepository;
+
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+
+    private record DonoAutenticado(
+            boolean autenticado,
+            boolean isAdminLojista,
+            Long usuarioId,
+            Long lojistaId,
+            Long tenantId,
+            String nomeEmpresaPadrao
+    ) {}
 
     @Transactional
-    public SuporteChamadoDTO criarChamado(CriarChamadoSuporteRequest req) {
-        String foneLimpo = normalizarWhatsapp(req.whatsapp());
-        if (foneLimpo.length() < 10) {
-            throw new RegraNegocioException("Informe um WhatsApp válido com DDD para receber a resposta.");
+    public SuporteChamadoDTO criarChamado(CriarChamadoSuporteRequest req, Authentication authentication) {
+        String nome = req.nome() != null ? req.nome().trim() : "";
+        if (nome.length() < 2) {
+            throw new RegraNegocioException("Informe seu nome completo (mínimo 2 caracteres).");
         }
+
+        String foneLimpo = normalizarWhatsapp(req.whatsapp());
+        if (foneLimpo.length() < 10 || foneLimpo.length() > 11 || foneLimpo.chars().distinct().count() <= 1) {
+            throw new RegraNegocioException("Informe um número de WhatsApp válido com DDD (10 ou 11 dígitos).");
+        }
+
+        String emailLimpo = req.email() != null && !req.email().isBlank() ? req.email().trim() : null;
+        if (emailLimpo != null && !EMAIL_PATTERN.matcher(emailLimpo).matches()) {
+            throw new RegraNegocioException("Informe um e-mail válido ou deixe o campo em branco.");
+        }
+
+        String assunto = req.assunto() != null ? req.assunto().trim() : "";
+        if (assunto.length() < 3) {
+            throw new RegraNegocioException("Informe o assunto da sua dúvida (mínimo 3 caracteres).");
+        }
+
+        String textoMensagem = req.mensagem() != null ? req.mensagem().trim() : "";
+        if (textoMensagem.length() < 5) {
+            throw new RegraNegocioException("Descreva sua dúvida com pelo menos 5 caracteres.");
+        }
+
+        DonoAutenticado dono = extrairDono(authentication);
+        String nomeEmpresa = req.nomeEmpresa() != null && !req.nomeEmpresa().isBlank()
+                ? req.nomeEmpresa().trim()
+                : dono.nomeEmpresaPadrao();
 
         String protocolo = gerarProtocoloUnico();
         LocalDateTime agora = LocalDateTime.now();
@@ -39,15 +80,19 @@ public class SuporteService {
                 : "DUVIDA";
         String origem = (req.origem() != null && !req.origem().isBlank())
                 ? req.origem().trim().toUpperCase()
-                : "PLANOS";
+                : (dono.autenticado() ? "PAINEL_LOJISTA" : "PLANOS");
 
         SuporteChamado chamado = SuporteChamado.builder()
                 .protocolo(protocolo)
-                .nome(req.nome().trim())
+                .usuarioId(dono.usuarioId())
+                .lojistaId(dono.lojistaId())
+                .tenantId(dono.tenantId())
+                .clienteCadastrado(dono.autenticado())
+                .nome(nome)
                 .whatsapp(foneLimpo)
-                .email(req.email() != null && !req.email().isBlank() ? req.email().trim() : null)
-                .nomeEmpresa(req.nomeEmpresa() != null && !req.nomeEmpresa().isBlank() ? req.nomeEmpresa().trim() : null)
-                .assunto(req.assunto().trim())
+                .email(emailLimpo)
+                .nomeEmpresa(nomeEmpresa)
+                .assunto(assunto)
                 .categoria(categoria)
                 .status("ABERTO")
                 .origem(origem)
@@ -60,7 +105,7 @@ public class SuporteService {
                 .chamado(chamado)
                 .remetente("CLIENTE")
                 .autorNome(chamado.getNome())
-                .mensagem(req.mensagem().trim())
+                .mensagem(textoMensagem)
                 .criadoEm(agora)
                 .build();
         mensagemRepository.save(msg);
@@ -69,40 +114,45 @@ public class SuporteService {
     }
 
     @Transactional(readOnly = true)
-    public List<SuporteChamadoDTO> consultarChamados(String protocolo, String whatsapp) {
-        if (protocolo != null && !protocolo.isBlank()) {
-            SuporteChamado chamado = chamadoRepository.findByProtocoloIgnoreCase(protocolo.trim())
-                    .orElseThrow(() -> new RecursoNaoEncontradoException("Protocolo não encontrado: " + protocolo));
-            return List.of(toDTO(chamado));
+    public List<SuporteChamadoDTO> listarMeusChamados(Authentication authentication) {
+        DonoAutenticado dono = extrairDono(authentication);
+        if (!dono.autenticado()) {
+            throw new RegraNegocioException("Faça login para visualizar suas conversas de suporte.");
         }
 
-        if (whatsapp != null && !whatsapp.isBlank()) {
-            String fone = normalizarWhatsapp(whatsapp);
-            if (fone.length() < 8) {
-                throw new RegraNegocioException("Informe o WhatsApp completo com DDD.");
+        List<SuporteChamado> lista;
+        if (dono.isAdminLojista()) {
+            if (dono.lojistaId() == null && dono.tenantId() == null && dono.usuarioId() == null) {
+                return List.of();
             }
-            List<String> variacoes = gerarVariacoesWhatsapp(fone);
-            return chamadoRepository.findByWhatsappInOrderByAtualizadoEmDesc(variacoes)
-                    .stream()
-                    .map(this::toDTO)
-                    .toList();
+            lista = chamadoRepository.findMeusChamados(dono.lojistaId(), dono.tenantId(), dono.usuarioId());
+        } else {
+            if (dono.usuarioId() == null) {
+                return List.of();
+            }
+            lista = chamadoRepository.findByUsuarioIdOrderByAtualizadoEmDesc(dono.usuarioId());
         }
 
-        throw new RegraNegocioException("Informe o número do protocolo ou seu WhatsApp para consultar.");
+        return lista.stream().map(this::toDTO).toList();
     }
 
     @Transactional
-    public SuporteChamadoDTO enviarMensagemCliente(String protocolo, ResponderChamadoClienteRequest req) {
-        SuporteChamado chamado = chamadoRepository.findByProtocoloIgnoreCase(protocolo.trim())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Protocolo não encontrado: " + protocolo));
+    public SuporteChamadoDTO enviarMensagemNoMeuChamado(Long chamadoId, ResponderChamadoClienteRequest req, Authentication authentication) {
+        DonoAutenticado dono = extrairDono(authentication);
+        if (!dono.autenticado()) {
+            throw new RegraNegocioException("Faça login para responder nesta conversa.");
+        }
 
-        String foneInformado = normalizarWhatsapp(req.whatsapp());
-        String foneCadastro = normalizarWhatsapp(chamado.getWhatsapp());
-        String ult8Inf = foneInformado.length() >= 8 ? foneInformado.substring(foneInformado.length() - 8) : foneInformado;
-        String ult8Cad = foneCadastro.length() >= 8 ? foneCadastro.substring(foneCadastro.length() - 8) : foneCadastro;
+        SuporteChamado chamado = chamadoRepository.findById(chamadoId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Chamado de suporte não encontrado."));
 
-        if (!ult8Inf.equals(ult8Cad)) {
-            throw new RegraNegocioException("O WhatsApp informado não confere com o protocolo.");
+        if (!pertenceAoDono(chamado, dono)) {
+            throw new RegraNegocioException("Acesso negado: você só pode visualizar e responder às suas próprias conversas.");
+        }
+
+        String texto = req.mensagem() != null ? req.mensagem().trim() : "";
+        if (texto.isEmpty()) {
+            throw new RegraNegocioException("Escreva sua mensagem antes de enviar.");
         }
 
         LocalDateTime agora = LocalDateTime.now();
@@ -110,7 +160,7 @@ public class SuporteService {
                 .chamado(chamado)
                 .remetente("CLIENTE")
                 .autorNome(chamado.getNome())
-                .mensagem(req.mensagem().trim())
+                .mensagem(texto)
                 .criadoEm(agora)
                 .build();
         mensagemRepository.save(msg);
@@ -120,6 +170,46 @@ public class SuporteService {
         chamadoRepository.save(chamado);
 
         return toDTO(chamado);
+    }
+
+    private boolean pertenceAoDono(SuporteChamado chamado, DonoAutenticado dono) {
+        if (!dono.autenticado()) return false;
+        if (dono.isAdminLojista()) {
+            boolean matchLojista = dono.lojistaId() != null && Objects.equals(chamado.getLojistaId(), dono.lojistaId());
+            boolean matchTenant = dono.tenantId() != null && Objects.equals(chamado.getTenantId(), dono.tenantId());
+            boolean matchUsuario = dono.usuarioId() != null && Objects.equals(chamado.getUsuarioId(), dono.usuarioId());
+            return matchLojista || matchTenant || matchUsuario;
+        }
+        return dono.usuarioId() != null && Objects.equals(chamado.getUsuarioId(), dono.usuarioId());
+    }
+
+    private DonoAutenticado extrairDono(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal() == null || "anonymousUser".equals(auth.getPrincipal())) {
+            return new DonoAutenticado(false, false, null, null, null, null);
+        }
+
+        Object principal = auth.getPrincipal();
+        if (principal instanceof Lojista l) {
+            Long tenantId = l.getSlug() != null
+                    ? tenantRepository.findBySlugIgnoreCase(l.getSlug()).map(ClinicaTenant::getId).orElse(null)
+                    : null;
+            return new DonoAutenticado(true, true, null, l.getId(), tenantId, l.getNomeEmpresa());
+        }
+
+        if (principal instanceof Usuario uDetached) {
+            Usuario u = usuarioRepository.findById(uDetached.getId()).orElse(uDetached);
+            boolean ehAdmin = u.getRole() == Role.ROLE_ADMIN;
+            ClinicaTenant tenant = u.getTenant();
+            if (tenant == null && ehAdmin) {
+                tenant = tenantRepository.findByAdminUsuarioId(u.getId()).orElse(null);
+            }
+            Long tenantId = tenant != null ? tenant.getId() : null;
+            Long lojistaId = (tenant != null && tenant.getLojista() != null) ? tenant.getLojista().getId() : null;
+            String empresa = tenant != null ? tenant.getNomeEmpresa() : null;
+            return new DonoAutenticado(true, ehAdmin, u.getId(), lojistaId, tenantId, empresa);
+        }
+
+        return new DonoAutenticado(false, false, null, null, null, null);
     }
 
     private SuporteChamadoDTO toDTO(SuporteChamado c) {
@@ -138,6 +228,7 @@ public class SuporteService {
         return new SuporteChamadoDTO(
                 c.getId(),
                 c.getProtocolo(),
+                Boolean.TRUE.equals(c.getClienteCadastrado()),
                 c.getNome(),
                 c.getWhatsapp(),
                 c.getEmail(),
@@ -170,21 +261,5 @@ public class SuporteService {
             return digits.substring(2);
         }
         return digits;
-    }
-
-    private List<String> gerarVariacoesWhatsapp(String fone) {
-        List<String> list = new ArrayList<>();
-        list.add(fone);
-        list.add("55" + fone);
-        if (fone.length() == 11 && fone.charAt(2) == '9') {
-            String sem9 = fone.substring(0, 2) + fone.substring(3);
-            list.add(sem9);
-            list.add("55" + sem9);
-        } else if (fone.length() == 10) {
-            String com9 = fone.substring(0, 2) + "9" + fone.substring(2);
-            list.add(com9);
-            list.add("55" + com9);
-        }
-        return list;
     }
 }

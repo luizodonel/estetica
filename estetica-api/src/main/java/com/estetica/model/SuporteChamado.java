@@ -21,6 +21,19 @@ public class SuporteChamado {
     @Column(nullable = false, unique = true, length = 24)
     private String protocolo;
 
+    @Column(name = "usuario_id")
+    private Long usuarioId;
+
+    @Column(name = "lojista_id")
+    private Long lojistaId;
+
+    @Column(name = "tenant_id")
+    private Long tenantId;
+
+    @Builder.Default
+    @Column(name = "cliente_cadastrado", nullable = false)
+    private Boolean clienteCadastrado = false;
+
     @Column(nullable = false, length = 120)
     private String nome;
 

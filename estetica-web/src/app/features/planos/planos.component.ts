@@ -1,21 +1,15 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { PlanoAssinatura, SuporteChamado } from '../../core/models';
+import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive';
+import { formatarTelefoneBR } from '../../shared/pipes/telefone.pipe';
 
 export type CicloFaturacao = 'MENSAL' | 'SEMESTRAL' | 'ANUAL';
 export type PlanoId = 'STARTER' | 'PRO' | 'VIP';
 export type PlanoConfig = PlanoAssinatura;
-
-interface ProtocoloSalvoLocal {
-  protocolo: string;
-  whatsapp: string;
-  assunto: string;
-}
-
-const STORAGE_SUPORTE_KEY = 'agendoou_suporte_protocolos';
 
 const PLANOS_PADRAO: PlanoAssinatura[] = [
   {
@@ -128,7 +122,7 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
 @Component({
   selector: 'app-planos',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PhoneMaskDirective],
   template: `
     <div class="min-h-screen bg-slate-50 text-slate-900 py-10 sm:py-16 px-4 sm:px-6 lg:px-8 font-sans">
       <div class="max-w-7xl mx-auto">
@@ -157,26 +151,14 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
             Elimine as faltas (No-Show) com lembretes no WhatsApp, tenha seu próprio link de agendamento 24h e gerencie sua equipe sem burocracia. <strong>Comece hoje com 7 dias de teste grátis.</strong>
           </p>
 
-          <!-- Botão de Suporte & Dúvidas direto no topo -->
+          <!-- Botão único de Suporte & Dúvidas direto no WhatsApp -->
           <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
-              (click)="abrirModalSuporte('ENVIAR')"
-              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-300 hover:border-slate-900 text-slate-800 font-bold text-xs shadow-sm transition-all cursor-pointer">
+              (click)="abrirModalSuporte()"
+              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-300 hover:border-slate-900 text-slate-800 font-bold text-xs shadow-sm transition-all cursor-pointer">
               <span>💬</span>
-              <span>Suporte & Dúvidas</span>
-            </button>
-            <button
-              type="button"
-              (click)="abrirModalSuporte('ACOMPANHAR')"
-              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer">
-              <span>🔎</span>
-              <span>Acompanhar Minha Dúvida</span>
-              @if (protocolosSalvos().length > 0) {
-                <span class="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px]">
-                  {{ protocolosSalvos().length }}
-                </span>
-              }
+              <span>Suporte & Dúvidas (Resposta no WhatsApp)</span>
             </button>
           </div>
         </div>
@@ -504,7 +486,7 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
         </div>
 
         <!-- ========================================================================= -->
-        <!-- CENTRAL DEDICADA DE SUPORTE & DÚVIDAS NA TELA DE PLANOS -->
+        <!-- CENTRAL DEDICADA DE SUPORTE & DÚVIDAS (ENVIO DIRETO -> WHATSAPP) -->
         <!-- ========================================================================= -->
         <div class="mt-6 bg-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
           <div class="space-y-1 text-center md:text-left">
@@ -515,21 +497,15 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
               Ficou com alguma dúvida sobre os planos, pagamento ou funcionamento?
             </h3>
             <p class="text-xs sm:text-sm text-slate-300">
-              Envie sua dúvida agora mesmo e acompanhe nossa resposta pelo seu protocolo ou WhatsApp.
+              Envie sua dúvida agora mesmo — nossa equipe analisa e responde diretamente no seu WhatsApp.
             </p>
           </div>
           <div class="flex flex-wrap items-center justify-center gap-3 shrink-0">
             <button
               type="button"
-              (click)="abrirModalSuporte('ENVIAR')"
-              class="min-h-[44px] px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm transition-all cursor-pointer">
-              ✉️ Enviar Dúvida Agora
-            </button>
-            <button
-              type="button"
-              (click)="abrirModalSuporte('ACOMPANHAR')"
-              class="min-h-[44px] px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer">
-              🔎 Acompanhar Respostas
+              (click)="abrirModalSuporte()"
+              class="min-h-[44px] px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm transition-all cursor-pointer">
+              ✉️ Tirar Dúvida pelo WhatsApp
             </button>
           </div>
         </div>
@@ -539,55 +515,31 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
       <!-- Botão Flutuante de Suporte & Dúvidas -->
       <button
         type="button"
-        (click)="abrirModalSuporte('ENVIAR')"
+        (click)="abrirModalSuporte()"
         class="fixed bottom-5 right-5 z-40 px-4 py-3 rounded-full bg-slate-950 hover:bg-slate-800 text-white font-extrabold text-xs shadow-xl border border-slate-700 flex items-center gap-2 transition-transform hover:scale-105 cursor-pointer">
         <span class="text-base">💬</span>
         <span>Suporte & Dúvidas</span>
       </button>
 
       <!-- ========================================================================= -->
-      <!-- MODAL INTERATIVO DE SUPORTE & DÚVIDAS -->
+      <!-- MODAL DE ENVIO DE DÚVIDA PARA VISITANTES (RESPOSTA DIRETA NO WHATSAPP) -->
       <!-- ========================================================================= -->
       @if (modalSuporteAberto()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col overflow-hidden">
+          <div class="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col overflow-hidden">
             <!-- Cabeçalho Modal -->
             <div class="px-6 py-4 bg-slate-950 text-white flex items-center justify-between gap-3 shrink-0">
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">
-                  Central de Atendimento Agendoou
+                  Atendimento Comercial & Suporte Agendoou
                 </span>
-                <h3 class="text-lg font-extrabold">Suporte & Dúvidas</h3>
+                <h3 class="text-lg font-extrabold">Enviar Dúvida (Resposta via WhatsApp)</h3>
               </div>
               <button
                 type="button"
                 (click)="fecharModalSuporte()"
                 class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-bold cursor-pointer">
                 ✕
-              </button>
-            </div>
-
-            <!-- Abas do Modal -->
-            <div class="px-6 pt-3 bg-slate-50 border-b border-slate-200 flex gap-2 shrink-0">
-              <button
-                type="button"
-                (click)="abaSuporte.set('ENVIAR')"
-                [class.bg-white]="abaSuporte() === 'ENVIAR'"
-                [class.text-slate-900]="abaSuporte() === 'ENVIAR'"
-                [class.border-slate-200]="abaSuporte() === 'ENVIAR'"
-                [class.border-b-white]="abaSuporte() === 'ENVIAR'"
-                class="px-4 py-2 rounded-t-xl border border-transparent text-xs font-extrabold transition-colors cursor-pointer">
-                ✉️ Enviar Dúvida
-              </button>
-              <button
-                type="button"
-                (click)="abaSuporte.set('ACOMPANHAR')"
-                [class.bg-white]="abaSuporte() === 'ACOMPANHAR'"
-                [class.text-slate-900]="abaSuporte() === 'ACOMPANHAR'"
-                [class.border-slate-200]="abaSuporte() === 'ACOMPANHAR'"
-                [class.border-b-white]="abaSuporte() === 'ACOMPANHAR'"
-                class="px-4 py-2 rounded-t-xl border border-transparent text-xs font-extrabold transition-colors cursor-pointer">
-                🔎 Acompanhar Respostas
               </button>
             </div>
 
@@ -598,14 +550,42 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                   {{ erroSuporte() }}
                 </div>
               }
-              @if (sucessoSuporte()) {
-                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-                  {{ sucessoSuporte() }}
-                </div>
-              }
 
-              <!-- ABA 1: ENVIAR DÚVIDA -->
-              @if (abaSuporte() === 'ENVIAR') {
+              @if (chamadoEnviado(); as ch) {
+                <div class="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
+                  <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl mx-auto">
+                    ✓
+                  </div>
+                  <span class="inline-block px-3 py-1 rounded-full bg-slate-900 text-white font-mono text-xs font-bold">
+                    Protocolo {{ ch.protocolo }}
+                  </span>
+                  <h4 class="text-base font-extrabold text-slate-900">
+                    Dúvida enviada com sucesso!
+                  </h4>
+                  <p class="text-xs text-emerald-900 leading-relaxed">
+                    Nossa equipe já recebeu sua mensagem e enviará a resposta diretamente para o WhatsApp
+                    <strong>{{ formatarTelefone(ch.whatsapp) }}</strong>.
+                  </p>
+                  <div class="pt-3 flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      (click)="novaDuvidaVisitante()"
+                      class="px-4 py-2 rounded-xl border border-emerald-300 bg-white text-emerald-800 text-xs font-bold hover:bg-emerald-100 cursor-pointer">
+                      Enviar outra dúvida
+                    </button>
+                    <button
+                      type="button"
+                      (click)="fecharModalSuporte()"
+                      class="px-5 py-2 rounded-xl bg-slate-950 text-white text-xs font-bold hover:bg-slate-800 cursor-pointer">
+                      Fechar
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 text-emerald-900 text-xs">
+                  Preencha seus dados abaixo. Caso ainda não seja lojista cadastrado, você receberá o retorno da nossa equipe diretamente no seu <strong>WhatsApp</strong>.
+                </div>
+
                 <form (ngSubmit)="enviarDuvida()" class="space-y-4">
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -615,6 +595,7 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                         [(ngModel)]="formDuvida.nome"
                         name="supNome"
                         required
+                        maxlength="100"
                         placeholder="Ex: Maria Silva"
                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none" />
                     </div>
@@ -622,11 +603,15 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                       <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp com DDD *</label>
                       <input
                         type="tel"
+                        appPhoneMask
                         [(ngModel)]="formDuvida.whatsapp"
+                        (input)="aoDigitarWhatsapp($event)"
                         name="supWhatsApp"
                         required
+                        maxlength="15"
+                        inputmode="numeric"
                         placeholder="(11) 99999-8888"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-slate-900 focus:outline-none" />
                     </div>
                   </div>
 
@@ -637,6 +622,7 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                         type="email"
                         [(ngModel)]="formDuvida.email"
                         name="supEmail"
+                        maxlength="140"
                         placeholder="seu@email.com"
                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none" />
                     </div>
@@ -646,6 +632,7 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                         type="text"
                         [(ngModel)]="formDuvida.nomeEmpresa"
                         name="supEmpresa"
+                        maxlength="120"
                         placeholder="Nome do seu negócio"
                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none" />
                     </div>
@@ -658,8 +645,8 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                         [(ngModel)]="formDuvida.categoria"
                         name="supCategoria"
                         class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-slate-900 focus:outline-none">
-                        <option value="DUVIDA">Dúvida Geral</option>
                         <option value="PLANOS">Planos & Promoções</option>
+                        <option value="DUVIDA">Dúvida Geral</option>
                         <option value="PAGAMENTO">Pagamento PIX/Cartão</option>
                         <option value="SUPORTE">Suporte Técnico</option>
                         <option value="OUTRO">Outro</option>
@@ -672,18 +659,23 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                         [(ngModel)]="formDuvida.assunto"
                         name="supAssunto"
                         required
+                        maxlength="120"
                         placeholder="Ex: Dúvida sobre o plano Clínica Pro"
                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none" />
                     </div>
                   </div>
 
                   <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Escreva sua dúvida ou mensagem *</label>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="block text-xs font-bold text-slate-700">Escreva sua dúvida ou mensagem *</label>
+                      <span class="text-[10px] text-slate-400">{{ formDuvida.mensagem.length }}/1500</span>
+                    </div>
                     <textarea
                       rows="4"
                       [(ngModel)]="formDuvida.mensagem"
                       name="supMensagem"
                       required
+                      maxlength="1500"
                       placeholder="Conte como podemos ajudar você..."
                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"></textarea>
                   </div>
@@ -699,157 +691,10 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                       type="submit"
                       [disabled]="enviandoDuvida()"
                       class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm cursor-pointer disabled:opacity-50">
-                      {{ enviandoDuvida() ? 'Enviando...' : 'Enviar Dúvida para o Suporte' }}
+                      {{ enviandoDuvida() ? 'Enviando...' : 'Enviar Dúvida' }}
                     </button>
                   </div>
                 </form>
-              }
-
-              <!-- ABA 2: ACOMPANHAR RESPOSTAS -->
-              @if (abaSuporte() === 'ACOMPANHAR') {
-                <div class="space-y-4">
-                  @if (protocolosSalvos().length > 0) {
-                    <div>
-                      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                        Seus protocolos recentes neste navegador:
-                      </span>
-                      <div class="flex flex-wrap gap-1.5">
-                        @for (p of protocolosSalvos(); track p.protocolo) {
-                          <button
-                            type="button"
-                            (click)="carregarProtocolo(p.protocolo, p.whatsapp)"
-                            class="px-3 py-1 rounded-full border text-[11px] font-bold transition-colors cursor-pointer"
-                            [class.bg-slate-900]="chamadoSelecionado()?.protocolo === p.protocolo"
-                            [class.text-white]="chamadoSelecionado()?.protocolo === p.protocolo"
-                            [class.border-slate-900]="chamadoSelecionado()?.protocolo === p.protocolo"
-                            [class.bg-slate-50]="chamadoSelecionado()?.protocolo !== p.protocolo"
-                            [class.text-slate-700]="chamadoSelecionado()?.protocolo !== p.protocolo"
-                            [class.border-slate-200]="chamadoSelecionado()?.protocolo !== p.protocolo">
-                            {{ p.protocolo }} • {{ p.assunto }}
-                          </button>
-                        }
-                      </div>
-                    </div>
-                  }
-
-                  <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row gap-2">
-                    <input
-                      type="text"
-                      [(ngModel)]="buscaProtocolo"
-                      name="buscaProt"
-                      placeholder="Protocolo (ex: AG-1234)"
-                      class="sm:w-44 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:outline-none" />
-                    <input
-                      type="tel"
-                      [(ngModel)]="buscaWhatsapp"
-                      name="buscaWa"
-                      placeholder="Ou seu WhatsApp com DDD"
-                      class="flex-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:outline-none" />
-                    <button
-                      type="button"
-                      (click)="consultarChamados()"
-                      [disabled]="consultandoSuporte()"
-                      class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer disabled:opacity-50">
-                      {{ consultandoSuporte() ? 'Buscando...' : 'Buscar' }}
-                    </button>
-                  </div>
-
-                  @if (chamadosEncontrados().length > 1) {
-                    <div class="flex flex-wrap gap-2">
-                      @for (c of chamadosEncontrados(); track c.id) {
-                        <button
-                          type="button"
-                          (click)="chamadoSelecionado.set(c)"
-                          class="px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer"
-                          [class.bg-emerald-600]="chamadoSelecionado()?.id === c.id"
-                          [class.text-white]="chamadoSelecionado()?.id === c.id"
-                          [class.border-emerald-600]="chamadoSelecionado()?.id === c.id"
-                          [class.bg-white]="chamadoSelecionado()?.id !== c.id"
-                          [class.text-slate-700]="chamadoSelecionado()?.id !== c.id">
-                          {{ c.protocolo }} — {{ c.assunto }} ({{ labelStatusSuporte(c.status) }})
-                        </button>
-                      }
-                    </div>
-                  }
-
-                  @if (chamadoSelecionado(); as ch) {
-                    <div class="border border-slate-200 rounded-2xl overflow-hidden">
-                      <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <span class="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-[10px] font-bold">
-                            Protocolo {{ ch.protocolo }}
-                          </span>
-                          <span class="ml-2 text-xs font-extrabold text-slate-900">{{ ch.assunto }}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                                [class.bg-amber-100]="ch.status === 'ABERTO'"
-                                [class.text-amber-800]="ch.status === 'ABERTO'"
-                                [class.bg-emerald-100]="ch.status === 'RESPONDIDO'"
-                                [class.text-emerald-800]="ch.status === 'RESPONDIDO'"
-                                [class.bg-slate-200]="ch.status === 'ENCERRADO'"
-                                [class.text-slate-700]="ch.status === 'ENCERRADO'">
-                            {{ labelStatusSuporte(ch.status) }}
-                          </span>
-                          <button
-                            type="button"
-                            (click)="carregarProtocolo(ch.protocolo, ch.whatsapp)"
-                            class="text-[11px] font-bold text-slate-600 hover:text-slate-900 underline cursor-pointer">
-                            ↻ Atualizar
-                          </button>
-                        </div>
-                      </div>
-
-                      <div class="p-4 space-y-2.5 max-h-64 overflow-y-auto bg-white">
-                        @for (m of ch.mensagens; track m.id) {
-                          <div class="flex" [class.justify-end]="m.remetente === 'CLIENTE'" [class.justify-start]="m.remetente === 'SUPORTE'">
-                            <div
-                              class="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs"
-                              [class.bg-slate-900]="m.remetente === 'CLIENTE'"
-                              [class.text-white]="m.remetente === 'CLIENTE'"
-                              [class.bg-emerald-50]="m.remetente === 'SUPORTE'"
-                              [class.border]="m.remetente === 'SUPORTE'"
-                              [class.border-emerald-200]="m.remetente === 'SUPORTE'"
-                              [class.text-slate-900]="m.remetente === 'SUPORTE'">
-                              <div class="flex items-center justify-between gap-3 mb-1">
-                                <span class="text-[10px] font-bold"
-                                      [class.text-emerald-300]="m.remetente === 'CLIENTE'"
-                                      [class.text-emerald-700]="m.remetente === 'SUPORTE'">
-                                  {{ m.remetente === 'SUPORTE' ? 'Suporte Agendoou' : 'Você' }}
-                                </span>
-                                <span class="text-[10px] opacity-70">{{ formatarDataHora(m.criadoEm) }}</span>
-                              </div>
-                              <p class="whitespace-pre-line leading-relaxed">{{ m.mensagem }}</p>
-                            </div>
-                          </div>
-                        }
-                      </div>
-
-                      @if (ch.status !== 'ENCERRADO') {
-                        <div class="p-3 border-t border-slate-200 bg-slate-50 flex gap-2">
-                          <input
-                            type="text"
-                            [(ngModel)]="novaMensagemCliente"
-                            name="novaMsgCli"
-                            (keyup.enter)="enviarNovaMensagemCliente()"
-                            placeholder="Responder ou enviar mais detalhes..."
-                            class="flex-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-slate-900" />
-                          <button
-                            type="button"
-                            (click)="enviarNovaMensagemCliente()"
-                            [disabled]="enviandoDuvida() || !novaMensagemCliente.trim()"
-                            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50">
-                            Enviar
-                          </button>
-                        </div>
-                      }
-                    </div>
-                  } @else {
-                    <div class="py-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
-                      Informe seu protocolo ou WhatsApp acima para visualizar a conversa e as respostas da nossa equipe.
-                    </div>
-                  }
-                </div>
               }
             </div>
           </div>
@@ -858,28 +703,17 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
     </div>
   `
 })
-export class PlanosComponent implements OnInit, OnDestroy {
+export class PlanosComponent implements OnInit {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
 
   cicloSelecionado = signal<CicloFaturacao>('MENSAL');
   planos = signal<PlanoAssinatura[]>(PLANOS_PADRAO);
 
-  // Modal e Estados do Suporte & Dúvidas
   modalSuporteAberto = signal<boolean>(false);
-  abaSuporte = signal<'ENVIAR' | 'ACOMPANHAR'>('ENVIAR');
   enviandoDuvida = signal<boolean>(false);
-  consultandoSuporte = signal<boolean>(false);
   erroSuporte = signal<string | null>(null);
-  sucessoSuporte = signal<string | null>(null);
-
-  protocolosSalvos = signal<ProtocoloSalvoLocal[]>([]);
-  chamadosEncontrados = signal<SuporteChamado[]>([]);
-  chamadoSelecionado = signal<SuporteChamado | null>(null);
-
-  buscaProtocolo = '';
-  buscaWhatsapp = '';
-  novaMensagemCliente = '';
+  chamadoEnviado = signal<SuporteChamado | null>(null);
 
   formDuvida = {
     nome: '',
@@ -890,8 +724,6 @@ export class PlanosComponent implements OnInit, OnDestroy {
     assunto: '',
     mensagem: ''
   };
-
-  private pollTimer: any = null;
 
   bannerPromocao = computed(() => {
     const lista = this.planos();
@@ -912,17 +744,12 @@ export class PlanosComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.carregarPlanos();
-    this.carregarProtocolosLocais();
 
     this.route.queryParams.subscribe(params => {
       if (params['suporte'] === '1') {
-        this.abrirModalSuporte('ENVIAR');
+        this.abrirModalSuporte();
       }
     });
-  }
-
-  ngOnDestroy(): void {
-    this.pararPollingSuporte();
   }
 
   carregarPlanos(): void {
@@ -977,189 +804,82 @@ export class PlanosComponent implements OnInit, OnDestroy {
     return `${Number.isInteger(n) ? n : n.toFixed(1).replace('.', ',')}%`;
   }
 
-  // ===================== SUPORTE & DÚVIDAS =====================
-  abrirModalSuporte(aba: 'ENVIAR' | 'ACOMPANHAR'): void {
-    this.abaSuporte.set(aba);
+  formatarTelefone(tel: string | null | undefined): string {
+    return formatarTelefoneBR(tel);
+  }
+
+  aoDigitarWhatsapp(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const formatado = formatarTelefoneBR(input.value);
+    input.value = formatado;
+    this.formDuvida.whatsapp = formatado;
+  }
+
+  abrirModalSuporte(): void {
     this.erroSuporte.set(null);
-    this.sucessoSuporte.set(null);
     this.modalSuporteAberto.set(true);
-    if (aba === 'ACOMPANHAR') {
-      const salvos = this.protocolosSalvos();
-      if (salvos.length > 0 && !this.chamadoSelecionado()) {
-        this.carregarProtocolo(salvos[0].protocolo, salvos[0].whatsapp);
-      }
-      this.iniciarPollingSuporte();
-    }
   }
 
   fecharModalSuporte(): void {
     this.modalSuporteAberto.set(false);
-    this.pararPollingSuporte();
+  }
+
+  novaDuvidaVisitante(): void {
+    this.chamadoEnviado.set(null);
+    this.erroSuporte.set(null);
+    this.formDuvida.assunto = '';
+    this.formDuvida.mensagem = '';
   }
 
   enviarDuvida(): void {
-    if (!this.formDuvida.nome.trim() || !this.formDuvida.whatsapp.trim() || !this.formDuvida.assunto.trim() || !this.formDuvida.mensagem.trim()) {
-      this.erroSuporte.set('Preencha nome, WhatsApp, assunto e sua dúvida.');
+    const nome = this.formDuvida.nome.trim();
+    const digits = this.formDuvida.whatsapp.replace(/\D/g, '');
+    const email = this.formDuvida.email.trim();
+    const assunto = this.formDuvida.assunto.trim();
+    const mensagem = this.formDuvida.mensagem.trim();
+
+    if (nome.length < 2) {
+      this.erroSuporte.set('Informe seu nome completo (mínimo 2 caracteres).');
+      return;
+    }
+    if (digits.length < 10 || digits.length > 11 || new Set(digits.split('')).size <= 1) {
+      this.erroSuporte.set('Informe um WhatsApp válido com DDD, ex: (11) 99999-8888.');
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.erroSuporte.set('Informe um e-mail válido ou deixe o campo em branco.');
+      return;
+    }
+    if (assunto.length < 3) {
+      this.erroSuporte.set('Informe o assunto da sua dúvida (mínimo 3 caracteres).');
+      return;
+    }
+    if (mensagem.length < 5) {
+      this.erroSuporte.set('Descreva sua dúvida com pelo menos 5 caracteres.');
       return;
     }
 
     this.enviandoDuvida.set(true);
     this.erroSuporte.set(null);
-    this.sucessoSuporte.set(null);
 
     this.api.criarChamadoSuporte({
-      nome: this.formDuvida.nome.trim(),
-      whatsapp: this.formDuvida.whatsapp.trim(),
-      email: this.formDuvida.email.trim() || undefined,
+      nome,
+      whatsapp: digits,
+      email: email || undefined,
       nomeEmpresa: this.formDuvida.nomeEmpresa.trim() || undefined,
       categoria: this.formDuvida.categoria,
-      assunto: this.formDuvida.assunto.trim(),
-      mensagem: this.formDuvida.mensagem.trim(),
+      assunto,
+      mensagem,
       origem: 'PLANOS'
     }).subscribe({
       next: (ch) => {
         this.enviandoDuvida.set(false);
-        this.salvarProtocoloLocal({
-          protocolo: ch.protocolo,
-          whatsapp: ch.whatsapp,
-          assunto: ch.assunto
-        });
-        this.buscaProtocolo = ch.protocolo;
-        this.buscaWhatsapp = ch.whatsapp;
-        this.chamadosEncontrados.set([ch]);
-        this.chamadoSelecionado.set(ch);
-        this.formDuvida.assunto = '';
-        this.formDuvida.mensagem = '';
-        this.sucessoSuporte.set(`✓ Dúvida enviada! Seu protocolo é ${ch.protocolo}. Nossa equipe responderá em breve e a resposta aparecerá aqui e no seu WhatsApp.`);
-        this.abaSuporte.set('ACOMPANHAR');
-        this.iniciarPollingSuporte();
+        this.chamadoEnviado.set(ch);
       },
       error: (err) => {
         this.enviandoDuvida.set(false);
         this.erroSuporte.set(err?.error?.detail || err?.error?.message || 'Erro ao enviar dúvida. Tente novamente.');
       }
     });
-  }
-
-  consultarChamados(silencioso = false): void {
-    if (!this.buscaProtocolo.trim() && !this.buscaWhatsapp.trim()) {
-      if (!silencioso) this.erroSuporte.set('Informe o número do protocolo ou seu WhatsApp.');
-      return;
-    }
-    if (!silencioso) {
-      this.consultandoSuporte.set(true);
-      this.erroSuporte.set(null);
-    }
-
-    this.api.consultarChamadosSuporte({
-      protocolo: this.buscaProtocolo.trim() || undefined,
-      whatsapp: this.buscaWhatsapp.trim() || undefined
-    }).subscribe({
-      next: (lista) => {
-        this.consultandoSuporte.set(false);
-        this.chamadosEncontrados.set(lista);
-        if (lista.length > 0) {
-          const atual = this.chamadoSelecionado();
-          const encontrado = atual ? lista.find(c => c.protocolo === atual.protocolo) : null;
-          this.chamadoSelecionado.set(encontrado || lista[0]);
-        } else {
-          this.chamadoSelecionado.set(null);
-          if (!silencioso) this.erroSuporte.set('Nenhuma dúvida encontrada para os dados informados.');
-        }
-      },
-      error: (err) => {
-        this.consultandoSuporte.set(false);
-        if (!silencioso) {
-          this.erroSuporte.set(err?.error?.detail || err?.error?.message || 'Não foi possível localizar o protocolo.');
-        }
-      }
-    });
-  }
-
-  carregarProtocolo(protocolo: string, whatsapp: string): void {
-    this.buscaProtocolo = protocolo;
-    this.buscaWhatsapp = whatsapp;
-    this.consultarChamados();
-    this.iniciarPollingSuporte();
-  }
-
-  enviarNovaMensagemCliente(): void {
-    const ch = this.chamadoSelecionado();
-    const texto = this.novaMensagemCliente.trim();
-    if (!ch || !texto) return;
-
-    this.enviandoDuvida.set(true);
-    this.erroSuporte.set(null);
-
-    this.api.enviarMensagemSuporteCliente(ch.protocolo, {
-      whatsapp: this.buscaWhatsapp.trim() || ch.whatsapp,
-      mensagem: texto
-    }).subscribe({
-      next: (atualizado) => {
-        this.enviandoDuvida.set(false);
-        this.novaMensagemCliente = '';
-        this.chamadoSelecionado.set(atualizado);
-      },
-      error: (err) => {
-        this.enviandoDuvida.set(false);
-        this.erroSuporte.set(err?.error?.detail || err?.error?.message || 'Erro ao enviar mensagem.');
-      }
-    });
-  }
-
-  labelStatusSuporte(st: string): string {
-    if (st === 'RESPONDIDO') return 'Respondido';
-    if (st === 'ENCERRADO') return 'Encerrado';
-    return 'Aguardando';
-  }
-
-  formatarDataHora(iso?: string | null): string {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    return d.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
-  private carregarProtocolosLocais(): void {
-    if (typeof localStorage === 'undefined') return;
-    try {
-      const raw = localStorage.getItem(STORAGE_SUPORTE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) this.protocolosSalvos.set(parsed);
-      }
-    } catch {}
-  }
-
-  private salvarProtocoloLocal(item: ProtocoloSalvoLocal): void {
-    const lista = [item, ...this.protocolosSalvos().filter(p => p.protocolo !== item.protocolo)].slice(0, 8);
-    this.protocolosSalvos.set(lista);
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_SUPORTE_KEY, JSON.stringify(lista));
-      } catch {}
-    }
-  }
-
-  private iniciarPollingSuporte(): void {
-    this.pararPollingSuporte();
-    this.pollTimer = setInterval(() => {
-      if (this.modalSuporteAberto() && this.abaSuporte() === 'ACOMPANHAR' && (this.buscaProtocolo.trim() || this.buscaWhatsapp.trim())) {
-        this.consultarChamados(true);
-      }
-    }, 10000);
-  }
-
-  private pararPollingSuporte(): void {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
   }
 }

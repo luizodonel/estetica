@@ -112,6 +112,12 @@ type TabTipo = 'procedimentos' | 'categorias' | 'profissionais' | 'clientes' | '
           class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm">
           <span>💳 Minha Assinatura & Renovação</span>
         </a>
+
+        <a
+          routerLink="/admin/suporte"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm">
+          <span>💬 Suporte / Dúvidas</span>
+        </a>
       </div>
 
       <!-- Feedback de Sucesso ou Erro -->

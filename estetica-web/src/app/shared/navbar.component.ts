@@ -207,6 +207,15 @@ import { SetorService } from '../core/services/setor.service';
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping absolute -top-0.5 -right-0.5"></span>
                   }
                 </a>
+
+                <a 
+                  routerLink="/admin/suporte" 
+                  routerLinkActive="bg-slate-900 text-white font-bold shadow-sm" 
+                  title="Suporte & Dúvidas"
+                  class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 transition-all whitespace-nowrap flex items-center gap-1.5 border border-transparent">
+                  <span>💬</span>
+                  <span>Suporte / Dúvidas</span>
+                </a>
               }
             </div>
 
@@ -258,6 +267,9 @@ import { SetorService } from '../core/services/setor.service';
               </a>
               <a routerLink="/admin/assinatura" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
                 <span>💳</span> Assinatura
+              </a>
+              <a routerLink="/admin/suporte" (click)="menuMobileAberto.set(false)" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5">
+                <span>💬</span> Suporte / Dúvidas
               </a>
             }
             <button type="button" (click)="menuMobileAberto.set(false); abrirModalSenha()" class="p-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-900 hover:text-white flex items-center gap-1.5 text-left">

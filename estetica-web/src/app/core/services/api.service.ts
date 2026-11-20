@@ -414,22 +414,16 @@ export class ApiService {
     return this.http.get<PlanoAssinatura[]>(`${this.baseUrl}/onboarding/planos`);
   }
 
-  // Central de Suporte & Dúvidas Pública
+  // Central de Suporte & Dúvidas
   criarChamadoSuporte(payload: CriarChamadoSuporteRequest): Observable<SuporteChamado> {
     return this.http.post<SuporteChamado>(`${this.baseUrl}/suporte/chamados`, payload);
   }
 
-  consultarChamadosSuporte(filtros: { protocolo?: string; whatsapp?: string }): Observable<SuporteChamado[]> {
-    let params = new HttpParams();
-    if (filtros.protocolo) params = params.set('protocolo', filtros.protocolo);
-    if (filtros.whatsapp) params = params.set('whatsapp', filtros.whatsapp);
-    return this.http.get<SuporteChamado[]>(`${this.baseUrl}/suporte/chamados`, { params });
+  getMeusChamadosSuporte(): Observable<SuporteChamado[]> {
+    return this.http.get<SuporteChamado[]>(`${this.baseUrl}/suporte/meus-chamados`);
   }
 
-  enviarMensagemSuporteCliente(
-    protocolo: string,
-    payload: { whatsapp: string; mensagem: string }
-  ): Observable<SuporteChamado> {
-    return this.http.post<SuporteChamado>(`${this.baseUrl}/suporte/chamados/${protocolo}/mensagens`, payload);
+  enviarMensagemMeuChamado(chamadoId: number, mensagem: string): Observable<SuporteChamado> {
+    return this.http.post<SuporteChamado>(`${this.baseUrl}/suporte/meus-chamados/${chamadoId}/mensagens`, { mensagem });
   }
 }

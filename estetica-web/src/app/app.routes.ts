@@ -58,6 +58,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/admin/admin-assinatura/admin-assinatura.component').then(m => m.AdminAssinaturaComponent)
   },
   {
+    path: 'admin/suporte',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/admin-suporte/admin-suporte.component').then(m => m.AdminSuporteComponent)
+  },
+  {
     path: 'login',
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
   },

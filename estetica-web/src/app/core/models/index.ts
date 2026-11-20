@@ -376,6 +376,7 @@ export interface SuporteMensagem {
 export interface SuporteChamado {
   id: number;
   protocolo: string;
+  clienteCadastrado?: boolean;
   nome: string;
   whatsapp: string;
   email?: string | null;

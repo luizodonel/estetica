@@ -50,7 +50,7 @@ public class SecurityConfig {
                                 "/api/v1/onboarding/verificar-slug",
                                 "/api/v1/onboarding/meu-tenant",
                                 "/api/v1/onboarding/status-pagamento/**").permitAll()
-                        .requestMatchers("/api/v1/suporte/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/suporte/chamados").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/uploads").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/procedimentos/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/profissionais/**").permitAll()

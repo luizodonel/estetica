@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,30 +17,33 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/suporte")
 @RequiredArgsConstructor
-@Tag(name = "Suporte e Dúvidas", description = "Envio e acompanhamento de dúvidas pelo portal público Agendoou")
+@Tag(name = "Suporte e Dúvidas", description = "Envio de dúvidas e atendimento privado autenticado")
 public class SuporteController {
 
     private final SuporteService suporteService;
 
     @PostMapping("/chamados")
-    @Operation(summary = "Abre um chamado/dúvida de suporte e gera número de protocolo")
-    public ResponseEntity<SuporteChamadoDTO> criarChamado(@Valid @RequestBody CriarChamadoSuporteRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(suporteService.criarChamado(request));
+    @Operation(summary = "Abre um chamado/dúvida de suporte (público para visitante com resposta no WhatsApp, ou vinculado ao lojista autenticado)")
+    public ResponseEntity<SuporteChamadoDTO> criarChamado(
+            @Valid @RequestBody CriarChamadoSuporteRequest request,
+            Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(suporteService.criarChamado(request, authentication));
     }
 
-    @GetMapping("/chamados")
-    @Operation(summary = "Consulta dúvidas e respostas por protocolo ou WhatsApp")
-    public ResponseEntity<List<SuporteChamadoDTO>> consultarChamados(
-            @RequestParam(required = false) String protocolo,
-            @RequestParam(required = false) String whatsapp) {
-        return ResponseEntity.ok(suporteService.consultarChamados(protocolo, whatsapp));
+    @GetMapping("/meus-chamados")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Lista exclusivamente os chamados e mensagens pertencentes ao usuário/lojista autenticado")
+    public ResponseEntity<List<SuporteChamadoDTO>> listarMeusChamados(Authentication authentication) {
+        return ResponseEntity.ok(suporteService.listarMeusChamados(authentication));
     }
 
-    @PostMapping("/chamados/{protocolo}/mensagens")
-    @Operation(summary = "Envia uma nova mensagem em um protocolo já aberto")
-    public ResponseEntity<SuporteChamadoDTO> responderComoCliente(
-            @PathVariable String protocolo,
-            @Valid @RequestBody ResponderChamadoClienteRequest request) {
-        return ResponseEntity.ok(suporteService.enviarMensagemCliente(protocolo, request));
+    @PostMapping("/meus-chamados/{id}/mensagens")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Envia uma nova mensagem em um chamado pertencente exclusivamente ao usuário/lojista autenticado")
+    public ResponseEntity<SuporteChamadoDTO> enviarMensagemNoMeuChamado(
+            @PathVariable Long id,
+            @Valid @RequestBody ResponderChamadoClienteRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(suporteService.enviarMensagemNoMeuChamado(id, request, authentication));
     }
 }

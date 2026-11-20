@@ -34,9 +34,6 @@ public class SuporteDTOs {
     ) {}
 
     public record ResponderChamadoClienteRequest(
-        @NotBlank(message = "Informe seu WhatsApp para validar o envio")
-        String whatsapp,
-
         @NotBlank(message = "Escreva sua mensagem")
         String mensagem
     ) {}
@@ -53,6 +50,7 @@ public class SuporteDTOs {
     public record SuporteChamadoDTO(
         Long id,
         String protocolo,
+        Boolean clienteCadastrado,
         String nome,
         String whatsapp,
         String email,

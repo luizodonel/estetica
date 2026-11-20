@@ -129,10 +129,9 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
           </a>
           <div class="flex items-center gap-2">
             <a
-              routerLink="/planos"
-              [queryParams]="{ suporte: '1' }"
+              routerLink="/admin/suporte"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors">
-              💬 Suporte & Dúvidas
+              💬 Suporte / Dúvidas
             </a>
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white text-slate-700 border border-slate-200 shadow-sm">
               💎 Gestão de Plano & Assinatura Agendoou
