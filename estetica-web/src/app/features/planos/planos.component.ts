@@ -410,6 +410,11 @@ const PLANOS_PADRAO: PlanoAssinatura[] = [
                           ✓ Válido somente no 1º mês (após o 1º mês, valor normal de R$ {{ formatarMoeda(obterOriginalCiclo(plano)) }})
                         </span>
                       }
+                      @if (plano.promocaoVagasRestantes !== null && plano.promocaoVagasRestantes !== undefined && plano.promocaoLimiteUsos) {
+                        <span class="text-[10px] font-extrabold text-white/95 bg-black/20 px-2 py-0.5 rounded w-fit mt-0.5">
+                          🎟️ Restam {{ plano.promocaoVagasRestantes }} de {{ plano.promocaoLimiteUsos }} vagas promocionais
+                        </span>
+                      }
                       @if (plano.mensagemPromocao) {
                         <span class="text-[10px] font-semibold text-rose-100">
                           {{ plano.mensagemPromocao }}

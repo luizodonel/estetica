@@ -51,10 +51,109 @@ public class TenantService {
     private final CoolifyIntegrationService coolifyIntegrationService;
     private final ProcedimentoService procedimentoService;
     private final PlanoAssinaturaService planoAssinaturaService;
+    private final CupomDescontoService cupomDescontoService;
     private final jakarta.servlet.http.HttpServletRequest httpServletRequest;
 
     private static final BigDecimal VALOR_ADESAO_PIX = new BigDecimal("99.90");
     private static final int DIAS_TRIAL_GRATIS = 7;
+
+    private int mesesDoCiclo(String ciclo) {
+        if ("ANUAL".equalsIgnoreCase(ciclo)) return 12;
+        if ("SEMESTRAL".equalsIgnoreCase(ciclo)) return 6;
+        return 1;
+    }
+
+    private int diasDoCiclo(String ciclo) {
+        if ("ANUAL".equalsIgnoreCase(ciclo)) return 365;
+        if ("SEMESTRAL".equalsIgnoreCase(ciclo)) return 180;
+        return 30;
+    }
+
+    private BeneficioAtivoDTO montarBeneficioAtivoDTO(com.estetica.model.Lojista l, ClinicaTenant t) {
+        Integer restantes = (l != null && l.getBeneficioMesesRestantes() != null)
+                ? l.getBeneficioMesesRestantes()
+                : (t != null ? t.getBeneficioMesesRestantes() : null);
+        if (restantes == null || restantes <= 0) return null;
+
+        String origem = (l != null && l.getBeneficioOrigem() != null) ? l.getBeneficioOrigem() : (t != null ? t.getBeneficioOrigem() : "PROMOCAO");
+        String codigo = (l != null && l.getBeneficioCodigo() != null) ? l.getBeneficioCodigo() : (t != null ? t.getBeneficioCodigo() : null);
+        String desc = (l != null && l.getBeneficioDescricao() != null) ? l.getBeneficioDescricao() : (t != null ? t.getBeneficioDescricao() : null);
+        String plano = (l != null && l.getPlanoContratado() != null) ? l.getPlanoContratado() : (t != null && t.getPlanoContratado() != null ? t.getPlanoContratado() : "PRO");
+        String ciclo = (l != null && l.getCicloContratado() != null) ? l.getCicloContratado() : (t != null && t.getCicloContratado() != null ? t.getCicloContratado() : "MENSAL");
+        BigDecimal vOrig = (l != null && l.getBeneficioValorOriginal() != null) ? l.getBeneficioValorOriginal() : (t != null ? t.getBeneficioValorOriginal() : null);
+        BigDecimal vPromo = (l != null && l.getBeneficioValorPromocional() != null) ? l.getBeneficioValorPromocional() : (t != null ? t.getBeneficioValorPromocional() : null);
+        Integer totais = (l != null && l.getBeneficioMesesTotais() != null) ? l.getBeneficioMesesTotais() : (t != null ? t.getBeneficioMesesTotais() : restantes);
+        LocalDateTime ativadoEm = (l != null && l.getBeneficioAtivadoEm() != null) ? l.getBeneficioAtivadoEm() : (t != null ? t.getBeneficioAtivadoEm() : null);
+
+        return new BeneficioAtivoDTO(origem, codigo, desc, plano, ciclo, vOrig, vPromo, totais, restantes, ativadoEm);
+    }
+
+    private BigDecimal calcularValorComBeneficioAtivo(BeneficioAtivoDTO ben, String planoCodigo, String ciclo) {
+        if (ben == null || ben.mesesRestantes() == null || ben.mesesRestantes() <= 0) return null;
+        if (ben.planoCodigo() != null && !ben.planoCodigo().equalsIgnoreCase(planoCodigo)) return null;
+
+        int mesesAlvo = mesesDoCiclo(ciclo);
+        if (ben.ciclo() != null && ben.ciclo().equalsIgnoreCase(ciclo)
+                && ben.mesesRestantes() >= mesesAlvo
+                && ben.valorPromocional() != null && ben.valorPromocional().compareTo(BigDecimal.ZERO) > 0) {
+            return ben.valorPromocional();
+        }
+
+        BigDecimal valorPadraoAlvo = planoAssinaturaService.resolverValorPadrao(planoCodigo, ciclo);
+        if (ben.valorOriginal() == null || ben.valorPromocional() == null) return null;
+        int mesesBase = Math.max(1, mesesDoCiclo(ben.ciclo() != null ? ben.ciclo() : "MENSAL"));
+        BigDecimal descTotalBase = ben.valorOriginal().subtract(ben.valorPromocional()).max(BigDecimal.ZERO);
+        BigDecimal descPorMes = descTotalBase.divide(BigDecimal.valueOf(mesesBase), 4, java.math.RoundingMode.HALF_UP);
+        int mesesCobertos = Math.min(ben.mesesRestantes(), mesesAlvo);
+        BigDecimal descAplicado = descPorMes.multiply(BigDecimal.valueOf(mesesCobertos)).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal res = valorPadraoAlvo.subtract(descAplicado).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal min = new BigDecimal("1.00");
+        return res.compareTo(min) < 0 ? min : res;
+    }
+
+    private void gravarCheckoutSnapshot(
+            com.estetica.model.Lojista lojista,
+            ClinicaTenant tenant,
+            String plano,
+            String ciclo,
+            String origem,
+            String cupomCodigo,
+            String descricao,
+            String tipoDesconto,
+            BigDecimal valorDesconto,
+            BigDecimal valorOriginal,
+            BigDecimal valorFinal,
+            Integer mesesTotais
+    ) {
+        if (lojista != null) {
+            lojista.setCheckoutPlano(plano);
+            lojista.setCheckoutCiclo(ciclo);
+            lojista.setCheckoutOrigem(origem);
+            lojista.setCheckoutCupomCodigo(cupomCodigo);
+            lojista.setCheckoutDescricao(descricao);
+            lojista.setCheckoutTipoDesconto(tipoDesconto);
+            lojista.setCheckoutValorDesconto(valorDesconto);
+            lojista.setCheckoutValorOriginal(valorOriginal);
+            lojista.setCheckoutValorFinal(valorFinal);
+            lojista.setCheckoutMesesTotais(mesesTotais);
+        }
+        if (tenant != null) {
+            tenant.setCheckoutPlano(plano);
+            tenant.setCheckoutCiclo(ciclo);
+            tenant.setCheckoutOrigem(origem);
+            tenant.setCheckoutCupomCodigo(cupomCodigo);
+            tenant.setCheckoutDescricao(descricao);
+            tenant.setCheckoutTipoDesconto(tipoDesconto);
+            tenant.setCheckoutValorDesconto(valorDesconto);
+            tenant.setCheckoutValorOriginal(valorOriginal);
+            tenant.setCheckoutValorFinal(valorFinal);
+            tenant.setCheckoutMesesTotais(mesesTotais);
+        }
+    }
+
+    private void limparCheckoutSnapshot(com.estetica.model.Lojista lojista, ClinicaTenant tenant) {
+        gravarCheckoutSnapshot(lojista, tenant, null, null, null, null, null, null, null, null, null, null);
+    }
 
     private BigDecimal obterValorInicialPadrao() {
         try {
@@ -428,8 +527,18 @@ public class TenantService {
                         : ((lojista != null && lojista.getValorAdesao() != null)
                                 ? lojista.getValorAdesao()
                                 : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX));
-                int diasAdicionar = resolverDiasCicloPagamento(mpResponse, valorRef);
+
+                String checkoutCiclo = (lojista != null && lojista.getCheckoutCiclo() != null)
+                        ? lojista.getCheckoutCiclo()
+                        : (tenant != null ? tenant.getCheckoutCiclo() : null);
+                int diasAdicionar = (checkoutCiclo != null && !checkoutCiclo.isBlank())
+                        ? diasDoCiclo(checkoutCiclo)
+                        : resolverDiasCicloPagamento(mpResponse, valorRef);
+                int mesesConsumidos = diasAdicionar >= 360 ? 12 : (diasAdicionar >= 175 ? 6 : 1);
                 LocalDateTime novaDataVencimento = baseDate.plusDays(diasAdicionar);
+
+                processarBeneficioPosPagamento(lojista, tenant, agora, valorRef, mesesConsumidos);
+                limparCheckoutSnapshot(lojista, tenant);
 
                 if (tenant != null) {
                     log.info("[TenantService] Pagamento {} aprovado para a loja: {}. Nova data de vencimento: {}", paymentId, tenant.getNomeEmpresa(), novaDataVencimento);
@@ -892,6 +1001,197 @@ public class TenantService {
         }
     }
 
+    private void aplicarBeneficioEmEntidades(
+            com.estetica.model.Lojista lojista,
+            ClinicaTenant tenant,
+            String plano,
+            String ciclo,
+            String origem,
+            String codigo,
+            String descricao,
+            String tipoDesconto,
+            BigDecimal valorDesconto,
+            BigDecimal valorOriginal,
+            BigDecimal valorPromocional,
+            Integer mesesTotais,
+            Integer mesesRestantes,
+            LocalDateTime ativadoEm,
+            BigDecimal novaValorAdesao
+    ) {
+        if (lojista != null) {
+            lojista.setPlanoContratado(plano);
+            lojista.setCicloContratado(ciclo);
+            lojista.setBeneficioOrigem(origem);
+            lojista.setBeneficioCodigo(codigo);
+            lojista.setBeneficioDescricao(descricao);
+            lojista.setBeneficioTipoDesconto(tipoDesconto);
+            lojista.setBeneficioValorDesconto(valorDesconto);
+            lojista.setBeneficioValorOriginal(valorOriginal);
+            lojista.setBeneficioValorPromocional(valorPromocional);
+            lojista.setBeneficioMesesTotais(mesesTotais);
+            lojista.setBeneficioMesesRestantes(mesesRestantes);
+            lojista.setBeneficioAtivadoEm(ativadoEm);
+            if (novaValorAdesao != null) lojista.setValorAdesao(novaValorAdesao);
+        }
+        if (tenant != null) {
+            tenant.setPlanoContratado(plano);
+            tenant.setCicloContratado(ciclo);
+            tenant.setBeneficioOrigem(origem);
+            tenant.setBeneficioCodigo(codigo);
+            tenant.setBeneficioDescricao(descricao);
+            tenant.setBeneficioTipoDesconto(tipoDesconto);
+            tenant.setBeneficioValorDesconto(valorDesconto);
+            tenant.setBeneficioValorOriginal(valorOriginal);
+            tenant.setBeneficioValorPromocional(valorPromocional);
+            tenant.setBeneficioMesesTotais(mesesTotais);
+            tenant.setBeneficioMesesRestantes(mesesRestantes);
+            tenant.setBeneficioAtivadoEm(ativadoEm);
+            if (novaValorAdesao != null) tenant.setValorAdesao(novaValorAdesao);
+        }
+    }
+
+    private void processarBeneficioPosPagamento(
+            com.estetica.model.Lojista lojista,
+            ClinicaTenant tenant,
+            LocalDateTime agora,
+            BigDecimal valorPagoRef,
+            int mesesConsumidos
+    ) {
+        String origem = (lojista != null && lojista.getCheckoutOrigem() != null)
+                ? lojista.getCheckoutOrigem()
+                : (tenant != null ? tenant.getCheckoutOrigem() : null);
+        if (origem == null || origem.isBlank()) return;
+
+        String plano = (lojista != null && lojista.getCheckoutPlano() != null)
+                ? lojista.getCheckoutPlano()
+                : (tenant != null && tenant.getCheckoutPlano() != null ? tenant.getCheckoutPlano() : "PRO");
+        String ciclo = (lojista != null && lojista.getCheckoutCiclo() != null)
+                ? lojista.getCheckoutCiclo()
+                : (tenant != null && tenant.getCheckoutCiclo() != null
+                        ? tenant.getCheckoutCiclo()
+                        : (mesesConsumidos >= 12 ? "ANUAL" : (mesesConsumidos >= 6 ? "SEMESTRAL" : "MENSAL")));
+
+        String cupomCodigo = (lojista != null && lojista.getCheckoutCupomCodigo() != null)
+                ? lojista.getCheckoutCupomCodigo()
+                : (tenant != null ? tenant.getCheckoutCupomCodigo() : null);
+        String desc = (lojista != null && lojista.getCheckoutDescricao() != null)
+                ? lojista.getCheckoutDescricao()
+                : (tenant != null ? tenant.getCheckoutDescricao() : null);
+        String tipoDesc = (lojista != null && lojista.getCheckoutTipoDesconto() != null)
+                ? lojista.getCheckoutTipoDesconto()
+                : (tenant != null ? tenant.getCheckoutTipoDesconto() : null);
+        BigDecimal vDesc = (lojista != null && lojista.getCheckoutValorDesconto() != null)
+                ? lojista.getCheckoutValorDesconto()
+                : (tenant != null ? tenant.getCheckoutValorDesconto() : null);
+        BigDecimal vOrig = (lojista != null && lojista.getCheckoutValorOriginal() != null)
+                ? lojista.getCheckoutValorOriginal()
+                : (tenant != null && tenant.getCheckoutValorOriginal() != null
+                        ? tenant.getCheckoutValorOriginal()
+                        : planoAssinaturaService.resolverValorPadrao(plano, ciclo));
+        BigDecimal vFinal = (lojista != null && lojista.getCheckoutValorFinal() != null)
+                ? lojista.getCheckoutValorFinal()
+                : (tenant != null && tenant.getCheckoutValorFinal() != null ? tenant.getCheckoutValorFinal() : valorPagoRef);
+        Integer mesesTotais = (lojista != null && lojista.getCheckoutMesesTotais() != null)
+                ? lojista.getCheckoutMesesTotais()
+                : (tenant != null ? tenant.getCheckoutMesesTotais() : mesesConsumidos);
+
+        if ("CUPOM".equalsIgnoreCase(origem)) {
+            cupomDescontoService.registrarUsoCupom(cupomCodigo);
+            int totais = mesesTotais != null && mesesTotais > 0 ? mesesTotais : 1;
+            int restantes = Math.max(0, totais - mesesConsumidos);
+            BigDecimal proxValor = restantes > 0 ? vFinal : planoAssinaturaService.resolverValorPadrao(plano, ciclo);
+            aplicarBeneficioEmEntidades(
+                    lojista, tenant, plano, ciclo, "CUPOM", cupomCodigo, desc, tipoDesc,
+                    vDesc, vOrig, vFinal, totais, restantes, agora, proxValor
+            );
+        } else if ("PROMOCAO".equalsIgnoreCase(origem)) {
+            planoAssinaturaService.registrarUsoPromocao(plano);
+            int totais = mesesTotais != null && mesesTotais > 0 ? mesesTotais : 1;
+            int restantes = Math.max(0, totais - mesesConsumidos);
+            BigDecimal proxValor = restantes > 0 ? vFinal : planoAssinaturaService.resolverValorPadrao(plano, ciclo);
+            aplicarBeneficioEmEntidades(
+                    lojista, tenant, plano, ciclo, "PROMOCAO", "PROMO-" + plano, desc, tipoDesc,
+                    vDesc, vOrig, vFinal, totais, restantes, agora, proxValor
+            );
+        } else if ("BENEFICIO_ATIVO".equalsIgnoreCase(origem)) {
+            BeneficioAtivoDTO ben = montarBeneficioAtivoDTO(lojista, tenant);
+            int antes = (ben != null && ben.mesesRestantes() != null) ? ben.mesesRestantes() : 0;
+            int restantes = Math.max(0, antes - mesesConsumidos);
+            String planoFinal = (ben != null && ben.planoCodigo() != null) ? ben.planoCodigo() : plano;
+            String cicloFinal = (ben != null && ben.ciclo() != null) ? ben.ciclo() : ciclo;
+            BigDecimal proxValor = restantes > 0 && ben != null && ben.valorPromocional() != null
+                    ? ben.valorPromocional()
+                    : planoAssinaturaService.resolverValorPadrao(planoFinal, cicloFinal);
+            if (lojista != null) {
+                lojista.setBeneficioMesesRestantes(restantes);
+                lojista.setValorAdesao(proxValor);
+            }
+            if (tenant != null) {
+                tenant.setBeneficioMesesRestantes(restantes);
+                tenant.setValorAdesao(proxValor);
+            }
+        } else if ("PADRAO".equalsIgnoreCase(origem)) {
+            BigDecimal vPadrao = vFinal != null ? vFinal : planoAssinaturaService.resolverValorPadrao(plano, ciclo);
+            aplicarBeneficioEmEntidades(
+                    lojista, tenant, plano, ciclo, null, null, null, null,
+                    null, null, null, 0, 0, null, vPadrao
+            );
+        }
+    }
+
+    private BigDecimal resolverCheckoutParaPlanoCicloCupom(
+            com.estetica.model.Lojista lojista,
+            ClinicaTenant tenant,
+            String planoParam,
+            String cicloParam,
+            String cupomParam
+    ) {
+        String planoCodigo = PlanoAssinaturaService.normalizarCodigo(planoParam);
+        String ciclo = PlanoAssinaturaService.normalizarCiclo(cicloParam);
+
+        if (cupomParam != null && !cupomParam.isBlank()) {
+            var calc = cupomDescontoService.resolverAplicacaoCupom(cupomParam, planoCodigo, ciclo);
+            gravarCheckoutSnapshot(
+                    lojista, tenant, planoCodigo, ciclo,
+                    "CUPOM", calc.cupom().getCodigo(), calc.descricao(),
+                    calc.cupom().getTipoDesconto(), calc.valorDescontoAplicado(),
+                    calc.valorOriginal(), calc.valorFinal(), calc.duracaoMeses()
+            );
+            return calc.valorFinal();
+        }
+
+        BeneficioAtivoDTO ben = montarBeneficioAtivoDTO(lojista, tenant);
+        BigDecimal valorBen = calcularValorComBeneficioAtivo(ben, planoCodigo, ciclo);
+        if (valorBen != null && ben != null) {
+            BigDecimal valorPadrao = planoAssinaturaService.resolverValorPadrao(planoCodigo, ciclo);
+            gravarCheckoutSnapshot(
+                    lojista, tenant, planoCodigo, ciclo,
+                    "BENEFICIO_ATIVO", ben.codigo(), ben.descricao(),
+                    null, valorPadrao.subtract(valorBen).max(BigDecimal.ZERO),
+                    valorPadrao, valorBen, ben.mesesTotais()
+            );
+            return valorBen;
+        }
+
+        var resPromo = planoAssinaturaService.resolverPromocaoCheckout(planoCodigo, ciclo);
+        if (resPromo.promocaoAplicada()) {
+            gravarCheckoutSnapshot(
+                    lojista, tenant, planoCodigo, ciclo,
+                    "PROMOCAO", null, resPromo.descricao(),
+                    "PERCENTUAL", resPromo.percentualDesconto(),
+                    resPromo.valorOriginal(), resPromo.valorFinal(), resPromo.mesesGarantidos()
+            );
+        } else {
+            gravarCheckoutSnapshot(
+                    lojista, tenant, planoCodigo, ciclo,
+                    "PADRAO", null, resPromo.descricao(),
+                    null, BigDecimal.ZERO,
+                    resPromo.valorOriginal(), resPromo.valorFinal(), 0
+            );
+        }
+        return resPromo.valorFinal();
+    }
+
     @Transactional
     public AssinaturaStatusResponse obterStatusAssinatura(String slugParam) {
         ClinicaTenant tenant = null;
@@ -965,6 +1265,13 @@ public class TenantService {
         boolean podeRenovar = emTrial || diasRestantes <= 5 || vencida;
         String status = vencida ? "VENCIDA" : (emTrial ? "TRIAL" : (diasRestantes <= 5 ? "VENCENDO" : "ATIVA"));
 
+        BeneficioAtivoDTO beneficioAtivo = montarBeneficioAtivoDTO(lojista, tenant);
+        BigDecimal valorAtivo = (beneficioAtivo != null && beneficioAtivo.valorPromocional() != null)
+                ? beneficioAtivo.valorPromocional()
+                : ((lojista != null && lojista.getValorAdesao() != null)
+                        ? lojista.getValorAdesao()
+                        : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX));
+
         String paymentId = null;
         String pixCopiaCola = null;
         String pixQrCodeBase64 = null;
@@ -981,11 +1288,25 @@ public class TenantService {
                 paymentId = lojista.getRenovacaoPaymentId();
                 pixCopiaCola = lojista.getRenovacaoPixCopiaCola();
                 pixQrCodeBase64 = lojista.getRenovacaoPixQrCodeBase64();
+                BigDecimal checkoutVal = lojista.getCheckoutValorFinal() != null
+                        ? lojista.getCheckoutValorFinal()
+                        : (tenant != null ? tenant.getCheckoutValorFinal() : null);
+                if (checkoutVal != null && checkoutVal.compareTo(BigDecimal.ZERO) > 0) {
+                    valorAtivo = checkoutVal;
+                }
             } else {
                 try {
-                    BigDecimal valor = (lojista != null && lojista.getValorAdesao() != null)
-                            ? lojista.getValorAdesao()
-                            : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX);
+                    BigDecimal valor = valorAtivo;
+                    if (beneficioAtivo != null) {
+                        gravarCheckoutSnapshot(
+                                lojista, tenant, beneficioAtivo.planoCodigo(), beneficioAtivo.ciclo(),
+                                "BENEFICIO_ATIVO", beneficioAtivo.codigo(), beneficioAtivo.descricao(),
+                                null, null, beneficioAtivo.valorOriginal(), valor, beneficioAtivo.mesesTotais()
+                        );
+                    } else {
+                        limparCheckoutSnapshot(lojista, tenant);
+                    }
+
                     Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(
                             tenant,
                             lojista,
@@ -1024,9 +1345,6 @@ public class TenantService {
         }
 
         LocalDateTime dataPagamento = lojista != null ? lojista.getDataPagamento() : (tenant != null ? tenant.getDataPagamento() : null);
-        BigDecimal valorAtivo = (lojista != null && lojista.getValorAdesao() != null)
-                ? lojista.getValorAdesao()
-                : (tenant != null && tenant.getValorAdesao() != null ? tenant.getValorAdesao() : VALOR_ADESAO_PIX);
 
         return new AssinaturaStatusResponse(
                 nomeEmpresa,
@@ -1039,17 +1357,23 @@ public class TenantService {
                 valorAtivo,
                 paymentId,
                 pixCopiaCola,
-                pixQrCodeBase64
+                pixQrCodeBase64,
+                beneficioAtivo
         );
     }
 
     @Transactional
     public AssinaturaStatusResponse forcarGerarPixRenovacao(String slugParam) {
-        return forcarGerarPixRenovacao(slugParam, null, null);
+        return forcarGerarPixRenovacao(slugParam, null, null, null);
     }
 
     @Transactional
     public AssinaturaStatusResponse forcarGerarPixRenovacao(String slugParam, String planoParam, String cicloParam) {
+        return forcarGerarPixRenovacao(slugParam, planoParam, cicloParam, null);
+    }
+
+    @Transactional
+    public AssinaturaStatusResponse forcarGerarPixRenovacao(String slugParam, String planoParam, String cicloParam, String cupomParam) {
         ClinicaTenant tenant = null;
         com.estetica.model.Lojista lojista = null;
 
@@ -1085,15 +1409,15 @@ public class TenantService {
 
         String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : (tenant != null ? tenant.getNomeEmpresa() : "Estabelecimento");
         LocalDateTime agora = LocalDateTime.now();
+        BeneficioAtivoDTO beneficioAtivo = montarBeneficioAtivoDTO(lojista, tenant);
 
-        // Calcula o valor vigente do plano (considerando edições e promoções ativas)
         try {
-            BigDecimal valor = (planoParam != null || cicloParam != null)
-                    ? planoAssinaturaService.resolverValorEfetivo(planoParam, cicloParam)
-                    : (lojista != null && lojista.getValorAdesao() != null ? lojista.getValorAdesao() : obterValorInicialPadrao());
+            BigDecimal valor = resolverCheckoutParaPlanoCicloCupom(lojista, tenant, planoParam, cicloParam, cupomParam);
 
-            String labelPlano = (planoParam != null && !planoParam.isBlank() ? planoParam.toUpperCase() : "PRO")
-                    + " (" + (cicloParam != null && !cicloParam.isBlank() ? cicloParam.toUpperCase() : "MENSAL") + ")";
+            String planoNorm = PlanoAssinaturaService.normalizarCodigo(planoParam);
+            String cicloNorm = PlanoAssinaturaService.normalizarCiclo(cicloParam);
+            String labelPlano = planoNorm + " (" + cicloNorm + ")"
+                    + (cupomParam != null && !cupomParam.isBlank() ? " [CUPOM " + cupomParam.trim().toUpperCase() + "]" : "");
 
             Map<String, Object> mp = mercadoPagoService.criarPagamentoPix(
                     tenant,
@@ -1114,7 +1438,6 @@ public class TenantService {
                 }
 
                 if (lojista != null) {
-                    lojista.setValorAdesao(valor);
                     lojista.setRenovacaoPaymentId(paymentId);
                     lojista.setRenovacaoPixCopiaCola(pixCopiaCola);
                     lojista.setRenovacaoPixQrCodeBase64(pixQrCodeBase64);
@@ -1122,7 +1445,6 @@ public class TenantService {
                     lojistaRepository.save(lojista);
                 }
                 if (tenant != null) {
-                    tenant.setValorAdesao(valor);
                     tenant.setRenovacaoPaymentId(paymentId);
                     tenant.setRenovacaoPixCopiaCola(pixCopiaCola);
                     tenant.setRenovacaoPixQrCodeBase64(pixQrCodeBase64);
@@ -1147,9 +1469,12 @@ public class TenantService {
                         valor,
                         paymentId,
                         pixCopiaCola,
-                        pixQrCodeBase64
+                        pixQrCodeBase64,
+                        beneficioAtivo
                 );
             }
+        } catch (RegraNegocioException ex) {
+            throw ex;
         } catch (Exception ex) {
             log.error("[TenantService] Erro ao forçar geração de Pix de renovação: {}", ex.getMessage(), ex);
         }
@@ -1159,6 +1484,11 @@ public class TenantService {
 
     @Transactional
     public Map<String, Object> gerarCheckoutCartaoAssinatura(String slugParam, String planoParam, String cicloParam) {
+        return gerarCheckoutCartaoAssinatura(slugParam, planoParam, cicloParam, null);
+    }
+
+    @Transactional
+    public Map<String, Object> gerarCheckoutCartaoAssinatura(String slugParam, String planoParam, String cicloParam, String cupomParam) {
         ClinicaTenant tenant = null;
         com.estetica.model.Lojista lojista = null;
 
@@ -1189,20 +1519,19 @@ public class TenantService {
             throw new RegraNegocioException("Estabelecimento não encontrado para gerar pagamento por cartão.");
         }
 
-        BigDecimal valor = planoAssinaturaService.resolverValorEfetivo(planoParam, cicloParam);
+        BigDecimal valor = resolverCheckoutParaPlanoCicloCupom(lojista, tenant, planoParam, cicloParam, cupomParam);
         if (lojista != null) {
-            lojista.setValorAdesao(valor);
             lojistaRepository.save(lojista);
         }
         if (tenant != null) {
-            tenant.setValorAdesao(valor);
             tenantRepository.save(tenant);
         }
 
         String nomeEmpresa = lojista != null ? lojista.getNomeEmpresa() : tenant.getNomeEmpresa();
         String slug = lojista != null ? lojista.getSlug() : tenant.getSlug();
-        String labelPlano = (planoParam != null && !planoParam.isBlank() ? planoParam.toUpperCase() : "PRO")
-                + " (" + (cicloParam != null && !cicloParam.isBlank() ? cicloParam.toUpperCase() : "MENSAL") + ")";
+        String labelPlano = PlanoAssinaturaService.normalizarCodigo(planoParam)
+                + " (" + PlanoAssinaturaService.normalizarCiclo(cicloParam) + ")"
+                + (cupomParam != null && !cupomParam.isBlank() ? " [CUPOM " + cupomParam.trim().toUpperCase() + "]" : "");
         String titulo = "Assinatura Agendoou Plano " + labelPlano + " - " + nomeEmpresa;
         String urlRetorno = "https://" + slug + ".logistadigital.com.br/admin/assinatura";
 

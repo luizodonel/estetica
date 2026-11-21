@@ -109,6 +109,37 @@ public class TenantDTOs {
         UsuarioDTO usuario
     ) {}
 
+    public record BeneficioAtivoDTO(
+        String origem,
+        String codigo,
+        String descricao,
+        String planoCodigo,
+        String ciclo,
+        BigDecimal valorOriginal,
+        BigDecimal valorPromocional,
+        Integer mesesTotais,
+        Integer mesesRestantes,
+        LocalDateTime ativadoEm
+    ) {}
+
+    public record ValidarCupomResponse(
+        boolean valido,
+        String mensagem,
+        String codigo,
+        String descricao,
+        String tipoDesconto,
+        BigDecimal valorDesconto,
+        Integer duracaoMeses,
+        String planoAplicavel,
+        String cicloAplicavel,
+        BigDecimal valorOriginal,
+        BigDecimal valorDescontoAplicado,
+        BigDecimal valorFinal,
+        Integer limiteUsos,
+        Integer usosAtuais,
+        Integer usosRestantes
+    ) {}
+
     public record AssinaturaStatusResponse(
         String nomeEmpresa,
         String status, // "ATIVA", "VENCENDO", "VENCIDA", "PENDENTE"
@@ -120,7 +151,8 @@ public class TenantDTOs {
         BigDecimal valorMensalidade,
         String paymentId,
         String pixCopiaCola,
-        String pixQrCodeBase64
+        String pixQrCodeBase64,
+        BeneficioAtivoDTO beneficioAtivo
     ) {}
 
     public record PlanoAssinaturaDTO(
@@ -153,6 +185,9 @@ public class TenantDTOs {
         String tipoPromocao,
         String descricaoDuracaoPromocao,
         BigDecimal percentualDesconto,
-        String mensagemPromocao
+        String mensagemPromocao,
+        Integer promocaoLimiteUsos,
+        Integer promocaoUsosAtuais,
+        Integer promocaoVagasRestantes
     ) {}
 }

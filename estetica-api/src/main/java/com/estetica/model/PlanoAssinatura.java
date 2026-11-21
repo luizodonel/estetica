@@ -85,6 +85,13 @@ public class PlanoAssinatura {
     @Column(name = "mensagem_promocao", length = 255)
     private String mensagemPromocao;
 
+    @Column(name = "promocao_limite_usos")
+    private Integer promocaoLimiteUsos;
+
+    @Builder.Default
+    @Column(name = "promocao_usos_atuais", nullable = false)
+    private Integer promocaoUsosAtuais = 0;
+
     @Builder.Default
     @Column(name = "atualizado_em", nullable = false)
     private LocalDateTime atualizadoEm = LocalDateTime.now();

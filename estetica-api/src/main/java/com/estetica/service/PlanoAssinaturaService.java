@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -148,6 +149,80 @@ public class PlanoAssinaturaService {
                 .toList();
     }
 
+    public record ResolucaoPlanoCheckout(
+            String planoCodigo,
+            String ciclo,
+            BigDecimal valorOriginal,
+            BigDecimal valorFinal,
+            boolean promocaoAplicada,
+            String tipoPromocao,
+            BigDecimal percentualDesconto,
+            int mesesGarantidos,
+            String descricao
+    ) {}
+
+    public boolean promocaoDisponivel(PlanoAssinatura p) {
+        if (p == null || !Boolean.TRUE.equals(p.getPromocional())) return false;
+        Integer lim = p.getPromocaoLimiteUsos();
+        int usados = p.getPromocaoUsosAtuais() != null ? p.getPromocaoUsosAtuais() : 0;
+        return lim == null || lim <= 0 || usados < lim;
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal resolverValorPadrao(String planoParam, String cicloParam) {
+        String codigo = normalizarCodigo(planoParam);
+        String ciclo = normalizarCiclo(cicloParam);
+        return planoRepository.findByCodigoIgnoreCase(codigo)
+                .map(p -> switch (ciclo) {
+                    case "SEMESTRAL" -> p.getPrecoSemestral().setScale(2, RoundingMode.HALF_UP);
+                    case "ANUAL" -> p.getPrecoAnual().setScale(2, RoundingMode.HALF_UP);
+                    default -> p.getPrecoMensal().setScale(2, RoundingMode.HALF_UP);
+                })
+                .orElseGet(() -> TenantService.calcularValorPlano(codigo, ciclo));
+    }
+
+    @Transactional(readOnly = true)
+    public ResolucaoPlanoCheckout resolverPromocaoCheckout(String planoParam, String cicloParam) {
+        String codigo = normalizarCodigo(planoParam);
+        String ciclo = normalizarCiclo(cicloParam);
+        BigDecimal valorOriginal = resolverValorPadrao(codigo, ciclo);
+        Optional<PlanoAssinatura> opt = planoRepository.findByCodigoIgnoreCase(codigo);
+        if (opt.isEmpty()) {
+            return new ResolucaoPlanoCheckout(codigo, ciclo, valorOriginal, valorOriginal, false, "PRIMEIRO_MES", BigDecimal.ZERO, 0, "Plano " + codigo);
+        }
+        PlanoAssinatura p = opt.get();
+        boolean promo = promocaoDisponivel(p);
+        String tipo = normalizarTipoPromocao(p.getTipoPromocao());
+        BigDecimal pct = p.getPercentualDesconto() != null ? p.getPercentualDesconto() : BigDecimal.ZERO;
+        boolean promoNoCiclo = switch (ciclo) {
+            case "SEMESTRAL" -> promo && "RECORRENTE_12_MESES".equals(tipo);
+            case "ANUAL" -> promo && ("RECORRENTE_12_MESES".equals(tipo) || "SOMENTE_ANUAL".equals(tipo));
+            default -> promo && ("PRIMEIRO_MES".equals(tipo) || "RECORRENTE_12_MESES".equals(tipo));
+        };
+        BigDecimal promoValor = switch (ciclo) {
+            case "SEMESTRAL" -> p.getPrecoSemestralPromocional();
+            case "ANUAL" -> p.getPrecoAnualPromocional();
+            default -> p.getPrecoMensalPromocional();
+        };
+        BigDecimal valorFinal = calcularFinal(valorOriginal, promoNoCiclo, promoValor, pct);
+        boolean aplicada = promoNoCiclo && valorFinal.compareTo(valorOriginal) < 0;
+        int meses = 0;
+        if (aplicada) {
+            meses = ("RECORRENTE_12_MESES".equals(tipo) || "SOMENTE_ANUAL".equals(tipo)) ? 12 : 1;
+        }
+        BigDecimal descPct = calcularDescontoPercentual(valorOriginal, calcularDescontoValor(valorOriginal, valorFinal));
+        String desc = aplicada
+                ? String.format("Promoção %s%% OFF (%s)", descPct.stripTrailingZeros().toPlainString(), descricaoDuracao(tipo))
+                : "Plano " + p.getNome();
+        return new ResolucaoPlanoCheckout(codigo, ciclo, valorOriginal, valorFinal, aplicada, tipo, descPct, meses, desc);
+    }
+
+    @Transactional
+    public void registrarUsoPromocao(String planoCodigo) {
+        if (planoCodigo == null || planoCodigo.isBlank()) return;
+        planoRepository.incrementarUsoPromocaoAtomico(normalizarCodigo(planoCodigo));
+    }
+
     @Transactional(readOnly = true)
     public BigDecimal resolverValorEfetivo(String planoParam, String cicloParam) {
         String codigo = normalizarCodigo(planoParam);
@@ -155,7 +230,7 @@ public class PlanoAssinaturaService {
 
         return planoRepository.findByCodigoIgnoreCase(codigo)
                 .map(p -> {
-                    boolean promo = Boolean.TRUE.equals(p.getPromocional());
+                    boolean promo = promocaoDisponivel(p);
                     String tipo = normalizarTipoPromocao(p.getTipoPromocao());
                     BigDecimal pct = p.getPercentualDesconto();
                     return switch (ciclo) {
@@ -254,9 +329,16 @@ public class PlanoAssinaturaService {
     }
 
     private PlanoAssinaturaDTO toDTO(PlanoAssinatura p) {
-        boolean promo = Boolean.TRUE.equals(p.getPromocional());
+        boolean promo = promocaoDisponivel(p);
         String tipo = normalizarTipoPromocao(p.getTipoPromocao());
         BigDecimal pct = p.getPercentualDesconto() != null ? p.getPercentualDesconto() : BigDecimal.ZERO;
+        Integer limiteUsos = p.getPromocaoLimiteUsos() != null && p.getPromocaoLimiteUsos() > 0
+                ? p.getPromocaoLimiteUsos()
+                : null;
+        int usados = p.getPromocaoUsosAtuais() != null ? p.getPromocaoUsosAtuais() : 0;
+        Integer vagasRestantes = (promo && limiteUsos != null)
+                ? Math.max(0, limiteUsos - usados)
+                : null;
 
         boolean promoMensal = promo && ("PRIMEIRO_MES".equals(tipo) || "RECORRENTE_12_MESES".equals(tipo));
         boolean promoSemestral = promo && "RECORRENTE_12_MESES".equals(tipo);
@@ -313,7 +395,10 @@ public class PlanoAssinaturaService {
                 tipo,
                 promo ? descricaoDuracao(tipo) : null,
                 pct,
-                p.getMensagemPromocao()
+                p.getMensagemPromocao(),
+                limiteUsos,
+                usados,
+                vagasRestantes
         );
     }
 }

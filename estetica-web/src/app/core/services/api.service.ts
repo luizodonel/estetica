@@ -27,6 +27,7 @@ import {
   VerificarPrimeiroAcessoResponse,
   AuthResponse,
   PlanoAssinatura,
+  ValidarCupomResponse,
   SuporteChamado,
   CriarChamadoSuporteRequest
 } from '../models';
@@ -378,20 +379,29 @@ export class ApiService {
     return this.http.get<AssinaturaStatusResponse>(`${this.baseUrl}/onboarding/assinatura`, { params });
   }
 
-  forcarGerarPixRenovacao(slug?: string, plano?: string, ciclo?: string): Observable<AssinaturaStatusResponse> {
+  forcarGerarPixRenovacao(slug?: string, plano?: string, ciclo?: string, cupom?: string): Observable<AssinaturaStatusResponse> {
     let params = new HttpParams();
     if (slug) params = params.set('slug', slug);
     if (plano) params = params.set('plano', plano);
     if (ciclo) params = params.set('ciclo', ciclo);
+    if (cupom) params = params.set('cupom', cupom);
     return this.http.post<AssinaturaStatusResponse>(`${this.baseUrl}/onboarding/assinatura/gerar-pix`, null, { params });
   }
 
-  gerarCheckoutCartaoAssinatura(slug?: string, plano?: string, ciclo?: string): Observable<{ preferenceId: string; checkoutUrl: string; valor: number }> {
+  gerarCheckoutCartaoAssinatura(slug?: string, plano?: string, ciclo?: string, cupom?: string): Observable<{ preferenceId: string; checkoutUrl: string; valor: number }> {
     let params = new HttpParams();
     if (slug) params = params.set('slug', slug);
     if (plano) params = params.set('plano', plano);
     if (ciclo) params = params.set('ciclo', ciclo);
+    if (cupom) params = params.set('cupom', cupom);
     return this.http.post<{ preferenceId: string; checkoutUrl: string; valor: number }>(`${this.baseUrl}/onboarding/assinatura/gerar-cartao`, null, { params });
+  }
+
+  validarCupom(codigo: string, plano?: string, ciclo?: string): Observable<ValidarCupomResponse> {
+    let params = new HttpParams().set('codigo', codigo);
+    if (plano) params = params.set('plano', plano);
+    if (ciclo) params = params.set('ciclo', ciclo);
+    return this.http.get<ValidarCupomResponse>(`${this.baseUrl}/onboarding/cupons/validar`, { params });
   }
 
   // Relatórios Financeiros e Operacionais por Especialista

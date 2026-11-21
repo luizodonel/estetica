@@ -282,6 +282,37 @@ export interface StatusPagamentoResponse {
   usuario?: Usuario;
 }
 
+export interface BeneficioAtivo {
+  origem: 'CUPOM' | 'PROMOCAO' | string;
+  codigo?: string | null;
+  descricao?: string | null;
+  planoCodigo: string;
+  ciclo: string;
+  valorOriginal?: number | null;
+  valorPromocional?: number | null;
+  mesesTotais: number;
+  mesesRestantes: number;
+  ativadoEm?: string | null;
+}
+
+export interface ValidarCupomResponse {
+  valido: boolean;
+  mensagem: string;
+  codigo?: string | null;
+  descricao?: string | null;
+  tipoDesconto?: 'PERCENTUAL' | 'VALOR_FIXO' | string | null;
+  valorDesconto?: number;
+  duracaoMeses?: number;
+  planoAplicavel?: string | null;
+  cicloAplicavel?: string | null;
+  valorOriginal?: number;
+  valorDescontoAplicado?: number;
+  valorFinal?: number;
+  limiteUsos?: number | null;
+  usosAtuais?: number | null;
+  usosRestantes?: number | null;
+}
+
 export interface AssinaturaStatusResponse {
   nomeEmpresa: string;
   status: 'ATIVA' | 'TRIAL' | 'VENCENDO' | 'VENCIDA' | 'PENDENTE';
@@ -294,6 +325,7 @@ export interface AssinaturaStatusResponse {
   paymentId?: string;
   pixCopiaCola?: string;
   pixQrCodeBase64?: string;
+  beneficioAtivo?: BeneficioAtivo | null;
 }
 
 export interface RelatorioEspecialistaItem {
@@ -364,6 +396,9 @@ export interface PlanoAssinatura {
   descricaoDuracaoPromocao?: string | null;
   percentualDesconto: number;
   mensagemPromocao?: string | null;
+  promocaoLimiteUsos?: number | null;
+  promocaoUsosAtuais?: number;
+  promocaoVagasRestantes?: number | null;
 }
 
 export interface SuporteMensagem {

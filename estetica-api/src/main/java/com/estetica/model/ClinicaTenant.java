@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -119,6 +120,72 @@ public class ClinicaTenant {
     @Builder.Default
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    @Column(name = "plano_contratado", length = 30)
+    private String planoContratado;
+
+    @Column(name = "ciclo_contratado", length = 30)
+    private String cicloContratado;
+
+    @Column(name = "beneficio_origem", length = 30)
+    private String beneficioOrigem;
+
+    @Column(name = "beneficio_codigo", length = 60)
+    private String beneficioCodigo;
+
+    @Column(name = "beneficio_descricao", length = 255)
+    private String beneficioDescricao;
+
+    @Column(name = "beneficio_tipo_desconto", length = 20)
+    private String beneficioTipoDesconto;
+
+    @Column(name = "beneficio_valor_desconto", precision = 10, scale = 2)
+    private BigDecimal beneficioValorDesconto;
+
+    @Column(name = "beneficio_valor_original", precision = 10, scale = 2)
+    private BigDecimal beneficioValorOriginal;
+
+    @Column(name = "beneficio_valor_promocional", precision = 10, scale = 2)
+    private BigDecimal beneficioValorPromocional;
+
+    @Column(name = "beneficio_meses_totais")
+    private Integer beneficioMesesTotais;
+
+    @Column(name = "beneficio_meses_restantes")
+    private Integer beneficioMesesRestantes;
+
+    @Column(name = "beneficio_ativado_em")
+    private LocalDateTime beneficioAtivadoEm;
+
+    @Column(name = "checkout_plano", length = 30)
+    private String checkoutPlano;
+
+    @Column(name = "checkout_ciclo", length = 30)
+    private String checkoutCiclo;
+
+    @Column(name = "checkout_origem", length = 30)
+    private String checkoutOrigem;
+
+    @Column(name = "checkout_cupom_codigo", length = 40)
+    private String checkoutCupomCodigo;
+
+    @Column(name = "checkout_descricao", length = 255)
+    private String checkoutDescricao;
+
+    @Column(name = "checkout_tipo_desconto", length = 20)
+    private String checkoutTipoDesconto;
+
+    @Column(name = "checkout_valor_desconto", precision = 10, scale = 2)
+    private BigDecimal checkoutValorDesconto;
+
+    @Column(name = "checkout_valor_original", precision = 10, scale = 2)
+    private BigDecimal checkoutValorOriginal;
+
+    @Column(name = "checkout_valor_final", precision = 10, scale = 2)
+    private BigDecimal checkoutValorFinal;
+
+    @Column(name = "checkout_meses_totais")
+    private Integer checkoutMesesTotais;
 
     @CreationTimestamp
     @Column(name = "data_criacao", updatable = false)

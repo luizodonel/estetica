@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { TenantService } from '../../../core/services/tenant.service';
-import { AssinaturaStatusResponse, PlanoAssinatura } from '../../../core/models';
+import { AssinaturaStatusResponse, BeneficioAtivo, PlanoAssinatura, ValidarCupomResponse } from '../../../core/models';
 import { CicloFaturacao, PlanoId } from '../../planos/planos.component';
 
 const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
@@ -114,10 +115,20 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
   }
 ];
 
+function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+function mesesDoCiclo(ciclo?: string | null): number {
+  if (ciclo === 'ANUAL') return 12;
+  if (ciclo === 'SEMESTRAL') return 6;
+  return 1;
+}
+
 @Component({
   selector: 'app-admin-assinatura',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div class="max-w-6xl mx-auto space-y-8">
@@ -215,7 +226,15 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
                 </div>
                 <p class="text-[11px] text-emerald-700 font-semibold mt-0.5">
                   R$ {{ formatarMoeda(valorTotalSelecionado()) }} via PIX ou Cartão de Crédito
-                  @if (temPromocaoNoCiclo(planoSelecionadoObj())) {
+                  @if (cupomAplicaNoCard(planoSelecionadoObj().codigo) && cupomAplicado(); as c) {
+                    <span class="block text-emerald-700 font-bold mt-0.5">
+                      🎟️ Cupom {{ c.codigo }} aplicado • Desconto por {{ c.duracaoMeses }} {{ c.duracaoMeses === 1 ? 'mês' : 'meses' }}
+                    </span>
+                  } @else if (beneficioAplicaNoCard(planoSelecionadoObj().codigo) && sub.beneficioAtivo; as ben) {
+                    <span class="block text-emerald-700 font-bold mt-0.5">
+                      🔒 Desconto garantido ({{ ben.mesesRestantes }}/{{ ben.mesesTotais }} meses restantes)
+                    </span>
+                  } @else if (temPromocaoNoCiclo(planoSelecionadoObj())) {
                     <span class="block text-rose-600 font-bold mt-0.5">
                       🔥 Promoção de {{ formatarPct(obterDescontoPctCiclo(planoSelecionadoObj())) }} • Desconto de R$ {{ formatarMoeda(obterDescontoValorCiclo(planoSelecionadoObj())) }}
                       @if (planoSelecionadoObj().descricaoDuracaoPromocao) {
@@ -227,6 +246,31 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
               </div>
 
             </div>
+
+            <!-- Banner de Benefício Promocional Travado na Conta -->
+            @if (sub.beneficioAtivo; as ben) {
+              @if (ben.mesesRestantes > 0) {
+                <div class="mt-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="space-y-1">
+                    <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                      🔒 Benefício Promocional Garantido ({{ ben.origem === 'CUPOM' ? 'Cupom' : 'Campanha' }})
+                    </span>
+                    <p class="text-xs sm:text-sm font-extrabold text-emerald-950">
+                      {{ ben.descricao || ben.codigo || 'Condição especial ativa na sua assinatura' }}
+                    </p>
+                    <p class="text-[11px] text-emerald-800">
+                      Mesmo se a campanha for encerrada, seu desconto segue garantido para o plano <strong>{{ ben.planoCodigo }}</strong> ({{ ben.ciclo }}). Após o término dos meses restantes, a renovação volta ao valor normal do plano.
+                    </p>
+                  </div>
+                  <div class="px-4 py-2.5 rounded-xl bg-white border border-emerald-200 text-center shrink-0">
+                    <span class="text-[10px] font-bold uppercase text-emerald-700 block">Meses Garantidos</span>
+                    <strong class="text-lg font-extrabold text-emerald-900">
+                      Restam {{ ben.mesesRestantes }} de {{ ben.mesesTotais }}
+                    </strong>
+                  </div>
+                </div>
+              }
+            }
           }
         </div>
 
@@ -251,6 +295,84 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
             </span>
           </div>
         }
+
+        <!-- ========================================================================= -->
+        <!-- CUPOM DE DESCONTO -->
+        <!-- ========================================================================= -->
+        <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-3">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 block">
+                🎟️ Possui um Cupom de Desconto?
+              </span>
+              <h3 class="text-sm sm:text-base font-extrabold text-slate-900">
+                Digite seu código promocional para aplicar na renovação ou contratação
+              </h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                Cupons têm valor e quantidade de participantes definidos pelo administrador (não cumulativos com outras promoções).
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <input
+                type="text"
+                [ngModel]="cupomInput()"
+                (ngModelChange)="cupomInput.set(($event || '').toUpperCase().trim())"
+                (keyup.enter)="aplicarCupom()"
+                placeholder="Ex: BLACK40"
+                maxlength="40"
+                class="flex-1 md:w-52 px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-extrabold uppercase tracking-wider text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+              <button
+                type="button"
+                (click)="aplicarCupom()"
+                [disabled]="validandoCupom() || !cupomInput()"
+                class="min-h-[40px] px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50">
+                {{ validandoCupom() ? 'Validando...' : 'Aplicar Cupom' }}
+              </button>
+              @if (cupomAplicado()?.valido) {
+                <button
+                  type="button"
+                  (click)="removerCupom()"
+                  class="min-h-[40px] px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs cursor-pointer">
+                  Remover
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (erroCupom()) {
+            <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+              ⚠️ {{ erroCupom() }}
+            </div>
+          }
+
+          @if (cupomAplicado(); as cup) {
+            @if (cup.valido) {
+              <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <strong class="font-extrabold">✓ Cupom {{ cup.codigo }} ativo!</strong>
+                  <span class="ml-1.5">{{ cup.descricao || 'Desconto especial aplicado sobre o valor padrão.' }}</span>
+                  <span class="block text-[11px] text-emerald-700 font-semibold mt-0.5">
+                    Duração garantida: {{ cup.duracaoMeses }} {{ cup.duracaoMeses === 1 ? 'mês' : 'meses' }}
+                    @if (cup.limiteUsos && cup.usosRestantes !== null && cup.usosRestantes !== undefined) {
+                      • Restam {{ cup.usosRestantes }} de {{ cup.limiteUsos }} cupons participantes
+                    }
+                  </span>
+                </div>
+                <span class="px-3 py-1 rounded-full bg-emerald-600 text-white font-extrabold text-[11px]">
+                  Economia de R$ {{ formatarMoeda(cup.valorDescontoAplicado || 0) }} no ciclo atual
+                </span>
+              </div>
+            }
+          }
+
+          @if (erroCheckout()) {
+            <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+              ⚠️ {{ erroCheckout() }}
+            </div>
+          }
+        </div>
 
         <!-- ========================================================================= -->
         <!-- 1. SELETOR DE CICLO DE FATURAÇÃO (MENSAL | SEMESTRAL | ANUAL) -->
@@ -322,12 +444,13 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
           @for (plano of planos(); track plano.codigo) {
             <div
               (click)="selecionarPlano(plano.codigo)"
-              [class.border-2]="plano.destaque || planoSelecionado() === plano.codigo || temPromocaoNoCiclo(plano)"
-              [class.border-rose-500]="plano.destaque || temPromocaoNoCiclo(plano)"
-              [class.border-slate-900]="!plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() === plano.codigo"
+              [class.border-2]="plano.destaque || planoSelecionado() === plano.codigo || temPromocaoNoCiclo(plano) || cupomAplicaNoCard(plano.codigo)"
+              [class.border-emerald-600]="cupomAplicaNoCard(plano.codigo) || beneficioAplicaNoCard(plano.codigo)"
+              [class.border-rose-500]="!cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo) && (plano.destaque || temPromocaoNoCiclo(plano))"
+              [class.border-slate-900]="!cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo) && !plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() === plano.codigo"
               [class.shadow-lg]="plano.destaque || planoSelecionado() === plano.codigo"
-              [class.border]="!plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() !== plano.codigo"
-              [class.border-slate-200]="!plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() !== plano.codigo"
+              [class.border]="!cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo) && !plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() !== plano.codigo"
+              [class.border-slate-200]="!cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo) && !plano.destaque && !temPromocaoNoCiclo(plano) && planoSelecionado() !== plano.codigo"
               [class.md:col-span-2]="plano.codigo === 'VIP'"
               [class.lg:col-span-1]="plano.codigo === 'VIP'"
               class="bg-white rounded-2xl p-6 flex flex-col justify-between relative transition-all cursor-pointer hover:shadow-md">
@@ -346,7 +469,15 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
                     <h3 class="text-lg font-extrabold text-slate-900">{{ plano.nome }}</h3>
                     <p class="text-xs text-slate-500">{{ plano.subtitulo }}</p>
                   </div>
-                  @if (temPromocaoNoCiclo(plano)) {
+                  @if (cupomAplicaNoCard(plano.codigo) && cupomAplicado(); as cup) {
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-extrabold shrink-0">
+                      🎟️ {{ cup.codigo }}
+                    </span>
+                  } @else if (beneficioAplicaNoCard(plano.codigo)) {
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-700 text-white text-[10px] font-extrabold shrink-0">
+                      🔒 Garantido
+                    </span>
+                  } @else if (temPromocaoNoCiclo(plano)) {
                     <span class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold shrink-0 animate-pulse">
                       🔥 Promoção {{ formatarPct(obterDescontoPctCiclo(plano)) }} OFF
                     </span>
@@ -363,21 +494,25 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
 
                 <!-- Valores Calculados por Ciclo -->
                 <div class="my-4 p-3.5 rounded-xl border"
-                     [class.bg-rose-50/50]="plano.destaque || temPromocaoNoCiclo(plano)"
-                     [class.border-rose-200]="plano.destaque || temPromocaoNoCiclo(plano)"
-                     [class.bg-slate-50]="!plano.destaque && !temPromocaoNoCiclo(plano)"
-                     [class.border-slate-200/70]="!plano.destaque && !temPromocaoNoCiclo(plano)">
+                     [class.bg-emerald-50/70]="cupomAplicaNoCard(plano.codigo) || beneficioAplicaNoCard(plano.codigo)"
+                     [class.border-emerald-200]="cupomAplicaNoCard(plano.codigo) || beneficioAplicaNoCard(plano.codigo)"
+                     [class.bg-rose-50/50]="!cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo) && (plano.destaque || temPromocaoNoCiclo(plano))"
+                     [class.border-rose-200]="!cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo) && (plano.destaque || temPromocaoNoCiclo(plano))"
+                     [class.bg-slate-50]="!cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo) && !plano.destaque && !temPromocaoNoCiclo(plano)"
+                     [class.border-slate-200/70]="!cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo) && !plano.destaque && !temPromocaoNoCiclo(plano)">
 
-                  @if (temPromocaoNoCiclo(plano)) {
-                    <p class="text-[11px] text-slate-500 mb-0.5">
-                      De <span class="line-through font-semibold">R$ {{ formatarMoeda(obterOriginalCiclo(plano)) }}</span>
-                    </p>
+                  @if (cupomAplicaNoCard(plano.codigo) || beneficioAplicaNoCard(plano.codigo) || temPromocaoNoCiclo(plano)) {
+                    @if (obterOriginalCiclo(plano) > obterTotalPlano(plano)) {
+                      <p class="text-[11px] text-slate-500 mb-0.5">
+                        De <span class="line-through font-semibold">R$ {{ formatarMoeda(obterOriginalCiclo(plano)) }}</span>
+                      </p>
+                    }
                   }
 
                   @if (cicloSelecionado() === 'MENSAL') {
                     <div class="flex items-baseline gap-1">
                       <span class="text-xs font-bold text-slate-500">R$</span>
-                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(plano.precoMensalFinal) }}</span>
+                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(obterTotalPlano(plano)) }}</span>
                       <span class="text-xs font-semibold text-slate-500">/mês</span>
                     </div>
                     <p class="text-[11px] text-slate-500 mt-0.5">Faturação mensal via PIX ou Cartão</p>
@@ -386,12 +521,12 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
                   @if (cicloSelecionado() === 'SEMESTRAL') {
                     <div class="flex items-baseline gap-1">
                       <span class="text-xs font-bold text-slate-500">R$</span>
-                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(plano.precoSemestralMensalEq) }}</span>
+                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(obterTotalPlano(plano) / 6) }}</span>
                       <span class="text-xs font-semibold text-slate-500">/mês*</span>
                     </div>
                     <p class="text-[11px] text-slate-700 font-semibold mt-0.5">
-                      R$ {{ formatarMoeda(plano.precoSemestralFinal) }}/semestre
-                      @if (plano.poupancaSemestral > 0) {
+                      R$ {{ formatarMoeda(obterTotalPlano(plano)) }}/semestre
+                      @if (plano.poupancaSemestral > 0 && !cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo)) {
                         <span class="text-emerald-700 font-bold">(Poupa R$ {{ formatarMoeda(plano.poupancaSemestral) }})</span>
                       }
                     </p>
@@ -400,18 +535,36 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
                   @if (cicloSelecionado() === 'ANUAL') {
                     <div class="flex items-baseline gap-1">
                       <span class="text-xs font-bold text-slate-500">R$</span>
-                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(plano.precoAnualMensalEq) }}</span>
+                      <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{ formatarMoeda(obterTotalPlano(plano) / 12) }}</span>
                       <span class="text-xs font-semibold text-slate-500">/mês*</span>
                     </div>
                     <p class="text-[11px] text-slate-700 font-semibold mt-0.5">
-                      R$ {{ formatarMoeda(plano.precoAnualFinal) }}/ano
-                      @if (plano.poupancaAnual > 0) {
+                      R$ {{ formatarMoeda(obterTotalPlano(plano)) }}/ano
+                      @if (plano.poupancaAnual > 0 && !cupomAplicaNoCard(plano.codigo) && !beneficioAplicaNoCard(plano.codigo)) {
                         <span class="text-rose-600 font-bold">(Poupa R$ {{ formatarMoeda(plano.poupancaAnual) }})</span>
                       }
                     </p>
                   }
 
-                  @if (temPromocaoNoCiclo(plano)) {
+                  @if (cupomAplicaNoCard(plano.codigo) && cupomAplicado(); as cup) {
+                    <div class="mt-2.5 p-2 rounded-lg bg-emerald-600 text-white text-[11px] font-extrabold shadow-sm space-y-0.5">
+                      <span class="block">
+                        🎟️ Cupom {{ cup.codigo }} • Desconto de R$ {{ formatarMoeda(obterOriginalCiclo(plano) - obterTotalPlano(plano)) }}
+                      </span>
+                      <span class="block text-[10px] font-bold text-emerald-100">
+                        ✓ Válido por {{ cup.duracaoMeses }} {{ cup.duracaoMeses === 1 ? 'mês' : 'meses' }} (valor garantido ao ativar)
+                      </span>
+                    </div>
+                  } @else if (beneficioAplicaNoCard(plano.codigo) && dados()?.beneficioAtivo; as ben) {
+                    <div class="mt-2.5 p-2 rounded-lg bg-emerald-700 text-white text-[11px] font-extrabold shadow-sm space-y-0.5">
+                      <span class="block">
+                        🔒 Seu Desconto Travado • Restam {{ ben.mesesRestantes }} de {{ ben.mesesTotais }} {{ ben.mesesTotais === 1 ? 'mês' : 'meses' }}
+                      </span>
+                      <span class="block text-[10px] font-bold text-emerald-100">
+                        ✓ Benefício garantido para sua loja mesmo se a campanha encerrar
+                      </span>
+                    </div>
+                  } @else if (temPromocaoNoCiclo(plano)) {
                     <div class="mt-2.5 p-2 rounded-lg bg-rose-600 text-white text-[11px] font-extrabold shadow-sm space-y-0.5">
                       <span class="block">
                         🔥 Promoção de {{ formatarPct(obterDescontoPctCiclo(plano)) }} • Desconto de R$ {{ formatarMoeda(obterDescontoValorCiclo(plano)) }}
@@ -431,6 +584,11 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
                       } @else {
                         <span class="block text-[10px] font-bold text-amber-200">
                           ✓ Válido somente no 1º mês (depois R$ {{ formatarMoeda(obterOriginalCiclo(plano)) }}/mês)
+                        </span>
+                      }
+                      @if (plano.promocaoVagasRestantes !== null && plano.promocaoVagasRestantes !== undefined && plano.promocaoLimiteUsos) {
+                        <span class="block text-[10px] font-extrabold text-white bg-black/20 px-2 py-0.5 rounded w-fit mt-0.5">
+                          🎟️ Restam {{ plano.promocaoVagasRestantes }} de {{ plano.promocaoLimiteUsos }} vagas promocionais
                         </span>
                       }
                       @if (plano.mensagemPromocao) {
@@ -616,6 +774,15 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
   planoSelecionado = signal<PlanoId | string>('PRO');
   planos = signal<PlanoAssinatura[]>(PLANOS_PADRAO_ADMIN);
 
+  // Cupom de desconto
+  cupomInput = signal('');
+  validandoCupom = signal(false);
+  cupomAplicado = signal<ValidarCupomResponse | null>(null);
+  erroCupom = signal<string | null>(null);
+  erroCheckout = signal<string | null>(null);
+
+  private usuarioAlterouSelecao = false;
+
   bannerPromocao = computed(() => {
     let maiorPct = 0;
     let maiorDescontoValor = 0;
@@ -686,14 +853,119 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
   }
 
   selecionarCiclo(ciclo: CicloFaturacao): void {
+    this.usuarioAlterouSelecao = true;
     this.cicloSelecionado.set(ciclo);
+    if (this.cupomAplicado()?.codigo) {
+      this.validarCupomNoServidor(this.cupomAplicado()!.codigo!, this.planoSelecionado(), ciclo);
+    }
   }
 
   selecionarPlano(plano: string): void {
+    this.usuarioAlterouSelecao = true;
     this.planoSelecionado.set(plano);
+    if (this.cupomAplicado()?.codigo) {
+      this.validarCupomNoServidor(this.cupomAplicado()!.codigo!, plano, this.cicloSelecionado());
+    }
+  }
+
+  aplicarCupom(): void {
+    const code = this.cupomInput().trim().toUpperCase();
+    if (!code) {
+      this.erroCupom.set('Digite o código do cupom.');
+      return;
+    }
+    this.validarCupomNoServidor(code, this.planoSelecionado(), this.cicloSelecionado());
+  }
+
+  removerCupom(): void {
+    this.cupomAplicado.set(null);
+    this.erroCupom.set(null);
+    this.erroCheckout.set(null);
+    this.cupomInput.set('');
+  }
+
+  private validarCupomNoServidor(codigo: string, plano: string, ciclo: CicloFaturacao): void {
+    this.validandoCupom.set(true);
+    this.erroCupom.set(null);
+    this.erroCheckout.set(null);
+
+    this.api.validarCupom(codigo, plano, ciclo).subscribe({
+      next: (res) => {
+        this.validandoCupom.set(false);
+        if (res.valido) {
+          this.cupomAplicado.set(res);
+          this.cupomInput.set(res.codigo || codigo);
+        } else {
+          this.cupomAplicado.set(null);
+          this.erroCupom.set(res.mensagem || 'Cupom inválido ou expirado.');
+        }
+      },
+      error: (err) => {
+        this.validandoCupom.set(false);
+        this.cupomAplicado.set(null);
+        this.erroCupom.set(err?.error?.message || err?.error?.error || 'Não foi possível validar o cupom.');
+      }
+    });
+  }
+
+  cupomAplicaNoCard(planoCodigo: string): boolean {
+    const c = this.cupomAplicado();
+    if (!c || !c.valido) return false;
+    const pAp = (c.planoAplicavel || 'TODOS').toUpperCase();
+    const cAp = (c.cicloAplicavel || 'TODOS').toUpperCase();
+    return (pAp === 'TODOS' || pAp === planoCodigo.toUpperCase())
+      && (cAp === 'TODOS' || cAp === this.cicloSelecionado());
+  }
+
+  beneficioAplicaNoCard(planoCodigo: string): boolean {
+    if (this.cupomAplicaNoCard(planoCodigo)) return false;
+    const ben = this.dados()?.beneficioAtivo;
+    if (!ben || !ben.mesesRestantes || ben.mesesRestantes <= 0) return false;
+    return !ben.planoCodigo || ben.planoCodigo.toUpperCase() === planoCodigo.toUpperCase();
+  }
+
+  private calcularValorBeneficioNoCard(ben: BeneficioAtivo, plano: PlanoAssinatura): number | null {
+    const cicloAtual = this.cicloSelecionado();
+    const mesesAlvo = mesesDoCiclo(cicloAtual);
+    if (ben.ciclo && ben.ciclo.toUpperCase() === cicloAtual && ben.mesesRestantes >= mesesAlvo && ben.valorPromocional && ben.valorPromocional > 0) {
+      return Number(ben.valorPromocional);
+    }
+    const origAlvo = this.obterOriginalCiclo(plano);
+    if (!ben.valorOriginal || !ben.valorPromocional) return null;
+    const mesesBase = Math.max(1, mesesDoCiclo(ben.ciclo));
+    const descPorMes = Math.max(0, Number(ben.valorOriginal) - Number(ben.valorPromocional)) / mesesBase;
+    const mesesCobertos = Math.min(ben.mesesRestantes, mesesAlvo);
+    return Math.max(1, round2(origAlvo - descPorMes * mesesCobertos));
+  }
+
+  private calcularValorCupomNoCard(cup: ValidarCupomResponse, plano: PlanoAssinatura): number {
+    if (cup.planoAplicavel && cup.planoAplicavel !== 'TODOS' && cup.valorFinal) {
+      return Number(cup.valorFinal);
+    }
+    if (plano.codigo.toUpperCase() === this.planoSelecionado().toUpperCase() && cup.valorFinal) {
+      return Number(cup.valorFinal);
+    }
+    const orig = this.obterOriginalCiclo(plano);
+    const mesesCiclo = mesesDoCiclo(this.cicloSelecionado());
+    const duracao = Math.max(1, Number(cup.duracaoMeses || 1));
+    const cobertos = Math.min(mesesCiclo, duracao);
+    const valDesc = Number(cup.valorDesconto || 0);
+    const desconto = cup.tipoDesconto === 'VALOR_FIXO'
+      ? round2(valDesc * cobertos)
+      : round2(orig * (valDesc / 100) * (cobertos / mesesCiclo));
+    return Math.max(1, round2(orig - desconto));
   }
 
   obterTotalPlano(plano: PlanoAssinatura): number {
+    const cup = this.cupomAplicado();
+    if (cup && cup.valido && this.cupomAplicaNoCard(plano.codigo)) {
+      return this.calcularValorCupomNoCard(cup, plano);
+    }
+    const ben = this.dados()?.beneficioAtivo;
+    if (ben && this.beneficioAplicaNoCard(plano.codigo)) {
+      const vBen = this.calcularValorBeneficioNoCard(ben, plano);
+      if (vBen !== null) return vBen;
+    }
     const c = this.cicloSelecionado();
     if (c === 'SEMESTRAL') return Number(plano.precoSemestralFinal || 0);
     if (c === 'ANUAL') return Number(plano.precoAnualFinal || 0);
@@ -745,6 +1017,14 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.dados.set(res);
         this.carregando.set(false);
+        if (!this.usuarioAlterouSelecao && res.beneficioAtivo && res.beneficioAtivo.mesesRestantes > 0) {
+          if (res.beneficioAtivo.planoCodigo) {
+            this.planoSelecionado.set(res.beneficioAtivo.planoCodigo);
+          }
+          if (res.beneficioAtivo.ciclo === 'MENSAL' || res.beneficioAtivo.ciclo === 'SEMESTRAL' || res.beneficioAtivo.ciclo === 'ANUAL') {
+            this.cicloSelecionado.set(res.beneficioAtivo.ciclo as CicloFaturacao);
+          }
+        }
         if (res.podeRenovar && res.paymentId && !this.pagamentoAprovado()) {
           this.iniciarPolling(res.paymentId);
         }
@@ -757,11 +1037,14 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
   }
 
   gerarPixParaPlano(planoId: string): void {
+    this.usuarioAlterouSelecao = true;
     this.planoSelecionado.set(planoId);
     this.carregando.set(true);
+    this.erroCheckout.set(null);
     const slug = this.route.snapshot.queryParamMap.get('slug') || this.tenantService.tenant()?.slug || undefined;
+    const codigoCupom = this.cupomAplicaNoCard(planoId) ? (this.cupomAplicado()?.codigo || undefined) : undefined;
 
-    this.api.forcarGerarPixRenovacao(slug, planoId, this.cicloSelecionado()).subscribe({
+    this.api.forcarGerarPixRenovacao(slug, planoId, this.cicloSelecionado(), codigoCupom).subscribe({
       next: (res) => {
         this.dados.set(res);
         this.carregando.set(false);
@@ -777,16 +1060,20 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Erro ao gerar Pix do plano:', err);
         this.carregando.set(false);
+        this.erroCheckout.set(err?.error?.message || err?.error?.detail || err?.error?.error || 'Não foi possível gerar o PIX para este plano/cupom.');
       }
     });
   }
 
   pagarComCartao(planoId: string): void {
+    this.usuarioAlterouSelecao = true;
     this.planoSelecionado.set(planoId);
     this.gerandoCartao.set(true);
+    this.erroCheckout.set(null);
     const slug = this.route.snapshot.queryParamMap.get('slug') || this.tenantService.tenant()?.slug || undefined;
+    const codigoCupom = this.cupomAplicaNoCard(planoId) ? (this.cupomAplicado()?.codigo || undefined) : undefined;
 
-    this.api.gerarCheckoutCartaoAssinatura(slug, planoId, this.cicloSelecionado()).subscribe({
+    this.api.gerarCheckoutCartaoAssinatura(slug, planoId, this.cicloSelecionado(), codigoCupom).subscribe({
       next: (res) => {
         this.gerandoCartao.set(false);
         if (res && res.checkoutUrl && typeof window !== 'undefined') {
@@ -796,6 +1083,7 @@ export class AdminAssinaturaComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Erro ao iniciar checkout por Cartão de Crédito:', err);
         this.gerandoCartao.set(false);
+        this.erroCheckout.set(err?.error?.message || err?.error?.detail || err?.error?.error || 'Não foi possível iniciar o checkout com cartão.');
       }
     });
   }

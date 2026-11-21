@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/onboarding/lojista", "/api/v1/onboarding/webhook-mercadopago").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/onboarding/planos",
+                                "/api/v1/onboarding/cupons/validar",
                                 "/api/v1/onboarding/tenant/**",
                                 "/api/v1/onboarding/verificar-slug",
                                 "/api/v1/onboarding/meu-tenant",

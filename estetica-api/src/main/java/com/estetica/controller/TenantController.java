@@ -3,6 +3,7 @@ package com.estetica.controller;
 import com.estetica.dto.TenantDTOs.*;
 import com.estetica.model.ClinicaTenant;
 import com.estetica.repository.ClinicaTenantRepository;
+import com.estetica.service.CupomDescontoService;
 import com.estetica.service.PlanoAssinaturaService;
 import com.estetica.service.TenantResolverService;
 import com.estetica.service.TenantService;
@@ -28,11 +29,21 @@ public class TenantController {
     private final TenantResolverService tenantResolverService;
     private final ClinicaTenantRepository tenantRepository;
     private final PlanoAssinaturaService planoAssinaturaService;
+    private final CupomDescontoService cupomDescontoService;
 
     @GetMapping("/planos")
     @Operation(summary = "Lista os planos e valores vigentes (incluindo promoções ativas)")
     public ResponseEntity<List<PlanoAssinaturaDTO>> listarPlanos() {
         return ResponseEntity.ok(planoAssinaturaService.listarPlanosPublicos());
+    }
+
+    @GetMapping("/cupons/validar")
+    @Operation(summary = "Valida um cupom de desconto para o plano e ciclo selecionados")
+    public ResponseEntity<ValidarCupomResponse> validarCupom(
+            @RequestParam String codigo,
+            @RequestParam(required = false) String plano,
+            @RequestParam(required = false) String ciclo) {
+        return ResponseEntity.ok(cupomDescontoService.validarECalcularCupom(codigo, plano, ciclo));
     }
 
     @PostMapping("/lojista")
@@ -122,8 +133,9 @@ public class TenantController {
     public ResponseEntity<AssinaturaStatusResponse> forcarGerarPixRenovacao(
             @RequestParam(required = false) String slug,
             @RequestParam(required = false) String plano,
-            @RequestParam(required = false) String ciclo) {
-        return ResponseEntity.ok(tenantService.forcarGerarPixRenovacao(slug, plano, ciclo));
+            @RequestParam(required = false) String ciclo,
+            @RequestParam(required = false) String cupom) {
+        return ResponseEntity.ok(tenantService.forcarGerarPixRenovacao(slug, plano, ciclo, cupom));
     }
 
     @PostMapping("/assinatura/gerar-cartao")
@@ -132,8 +144,9 @@ public class TenantController {
     public ResponseEntity<Map<String, Object>> gerarCheckoutCartao(
             @RequestParam(required = false) String slug,
             @RequestParam(required = false) String plano,
-            @RequestParam(required = false) String ciclo) {
-        return ResponseEntity.ok(tenantService.gerarCheckoutCartaoAssinatura(slug, plano, ciclo));
+            @RequestParam(required = false) String ciclo,
+            @RequestParam(required = false) String cupom) {
+        return ResponseEntity.ok(tenantService.gerarCheckoutCartaoAssinatura(slug, plano, ciclo, cupom));
     }
 }
 
