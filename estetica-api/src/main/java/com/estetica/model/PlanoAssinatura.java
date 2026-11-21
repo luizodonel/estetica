@@ -66,6 +66,10 @@ public class PlanoAssinatura {
     private Boolean promocional = false;
 
     @Builder.Default
+    @Column(name = "tipo_promocao", nullable = false, length = 30)
+    private String tipoPromocao = "PRIMEIRO_MES";
+
+    @Builder.Default
     @Column(name = "percentual_desconto", nullable = false, precision = 5, scale = 2)
     private BigDecimal percentualDesconto = BigDecimal.ZERO;
 

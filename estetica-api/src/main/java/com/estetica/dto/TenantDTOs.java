@@ -150,6 +150,8 @@ public class TenantDTOs {
         BigDecimal descontoAnualValor,
         BigDecimal descontoAnualPercentual,
         boolean promocional,
+        String tipoPromocao,
+        String descricaoDuracaoPromocao,
         BigDecimal percentualDesconto,
         String mensagemPromocao
     ) {}

@@ -360,6 +360,8 @@ export interface PlanoAssinatura {
   descontoAnualValor: number;
   descontoAnualPercentual: number;
   promocional: boolean;
+  tipoPromocao?: 'PRIMEIRO_MES' | 'RECORRENTE_12_MESES' | 'SOMENTE_ANUAL' | string;
+  descricaoDuracaoPromocao?: string | null;
   percentualDesconto: number;
   mensagemPromocao?: string | null;
 }

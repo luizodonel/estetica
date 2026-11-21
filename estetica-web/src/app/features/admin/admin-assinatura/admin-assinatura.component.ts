@@ -218,6 +218,9 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
                   @if (temPromocaoNoCiclo(planoSelecionadoObj())) {
                     <span class="block text-rose-600 font-bold mt-0.5">
                       🔥 Promoção de {{ formatarPct(obterDescontoPctCiclo(planoSelecionadoObj())) }} • Desconto de R$ {{ formatarMoeda(obterDescontoValorCiclo(planoSelecionadoObj())) }}
+                      @if (planoSelecionadoObj().descricaoDuracaoPromocao) {
+                        <span> • {{ planoSelecionadoObj().descricaoDuracaoPromocao }}</span>
+                      }
                     </span>
                   }
                 </p>
@@ -409,16 +412,47 @@ const PLANOS_PADRAO_ADMIN: PlanoAssinatura[] = [
                   }
 
                   @if (temPromocaoNoCiclo(plano)) {
-                    <div class="mt-2.5 p-2 rounded-lg bg-rose-600 text-white text-[11px] font-extrabold shadow-sm">
-                      <span>
+                    <div class="mt-2.5 p-2 rounded-lg bg-rose-600 text-white text-[11px] font-extrabold shadow-sm space-y-0.5">
+                      <span class="block">
                         🔥 Promoção de {{ formatarPct(obterDescontoPctCiclo(plano)) }} • Desconto de R$ {{ formatarMoeda(obterDescontoValorCiclo(plano)) }}
                       </span>
+                      @if (plano.tipoPromocao === 'RECORRENTE_12_MESES') {
+                        <span class="block text-[10px] font-bold text-amber-200">
+                          @if (cicloSelecionado() === 'MENSAL') {
+                            ✓ Válido em todos os meses durante 12 meses (Economia de R$ {{ formatarMoeda(obterDescontoValorCiclo(plano) * 12) }}/ano)
+                          } @else {
+                            ✓ Desconto válido por 12 meses
+                          }
+                        </span>
+                      } @else if (plano.tipoPromocao === 'SOMENTE_ANUAL') {
+                        <span class="block text-[10px] font-bold text-amber-200">
+                          ✓ Exclusivo no Plano Anual (12 meses)
+                        </span>
+                      } @else {
+                        <span class="block text-[10px] font-bold text-amber-200">
+                          ✓ Válido somente no 1º mês (depois R$ {{ formatarMoeda(obterOriginalCiclo(plano)) }}/mês)
+                        </span>
+                      }
                       @if (plano.mensagemPromocao) {
                         <span class="block text-[10px] font-medium text-rose-100 mt-0.5">
                           {{ plano.mensagemPromocao }}
                         </span>
                       }
                     </div>
+                  } @else if (plano.promocional && plano.tipoPromocao === 'SOMENTE_ANUAL' && cicloSelecionado() !== 'ANUAL') {
+                    <button
+                      type="button"
+                      (click)="selecionarCiclo('ANUAL'); $event.stopPropagation()"
+                      class="mt-2.5 w-full text-left p-2 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-[11px] font-extrabold cursor-pointer">
+                      🔥 Promoção de {{ formatarPct(plano.descontoAnualPercentual) }} disponível no Anual →
+                    </button>
+                  } @else if (plano.promocional && plano.tipoPromocao === 'PRIMEIRO_MES' && cicloSelecionado() !== 'MENSAL') {
+                    <button
+                      type="button"
+                      (click)="selecionarCiclo('MENSAL'); $event.stopPropagation()"
+                      class="mt-2.5 w-full text-left p-2 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-[11px] font-extrabold cursor-pointer">
+                      🔥 Promoção de {{ formatarPct(plano.descontoMensalPercentual) }} disponível no 1º mês →
+                    </button>
                   }
                 </div>
 

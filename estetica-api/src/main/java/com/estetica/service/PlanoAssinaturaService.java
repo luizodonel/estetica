@@ -130,6 +130,7 @@ public class PlanoAssinaturaService {
                 .precoSemestral(semestral)
                 .precoAnual(anual)
                 .promocional(false)
+                .tipoPromocao("PRIMEIRO_MES")
                 .percentualDesconto(BigDecimal.ZERO)
                 .atualizadoEm(LocalDateTime.now())
                 .build();
@@ -155,11 +156,27 @@ public class PlanoAssinaturaService {
         return planoRepository.findByCodigoIgnoreCase(codigo)
                 .map(p -> {
                     boolean promo = Boolean.TRUE.equals(p.getPromocional());
+                    String tipo = normalizarTipoPromocao(p.getTipoPromocao());
                     BigDecimal pct = p.getPercentualDesconto();
                     return switch (ciclo) {
-                        case "SEMESTRAL" -> calcularFinal(p.getPrecoSemestral(), promo, p.getPrecoSemestralPromocional(), pct);
-                        case "ANUAL" -> calcularFinal(p.getPrecoAnual(), promo, p.getPrecoAnualPromocional(), pct);
-                        default -> calcularFinal(p.getPrecoMensal(), promo, p.getPrecoMensalPromocional(), pct);
+                        case "SEMESTRAL" -> calcularFinal(
+                                p.getPrecoSemestral(),
+                                promo && "RECORRENTE_12_MESES".equals(tipo),
+                                p.getPrecoSemestralPromocional(),
+                                pct
+                        );
+                        case "ANUAL" -> calcularFinal(
+                                p.getPrecoAnual(),
+                                promo && ("RECORRENTE_12_MESES".equals(tipo) || "SOMENTE_ANUAL".equals(tipo)),
+                                p.getPrecoAnualPromocional(),
+                                pct
+                        );
+                        default -> calcularFinal(
+                                p.getPrecoMensal(),
+                                promo && ("PRIMEIRO_MES".equals(tipo) || "RECORRENTE_12_MESES".equals(tipo)),
+                                p.getPrecoMensalPromocional(),
+                                pct
+                        );
                     };
                 })
                 .orElseGet(() -> TenantService.calcularValorPlano(codigo, ciclo));
@@ -183,9 +200,24 @@ public class PlanoAssinaturaService {
         };
     }
 
-    private BigDecimal calcularFinal(BigDecimal original, boolean promocional, BigDecimal promoValor, BigDecimal pctDesconto) {
+    public static String normalizarTipoPromocao(String tipo) {
+        String t = tipo != null ? tipo.trim().toUpperCase() : "PRIMEIRO_MES";
+        if ("RECORRENTE_12_MESES".equals(t) || "ANUAL_12_MESES".equals(t)) return "RECORRENTE_12_MESES";
+        if ("SOMENTE_ANUAL".equals(t) || "ANUAL".equals(t)) return "SOMENTE_ANUAL";
+        return "PRIMEIRO_MES";
+    }
+
+    private String descricaoDuracao(String tipo) {
+        return switch (tipo) {
+            case "RECORRENTE_12_MESES" -> "Válido em todos os meses durante 12 meses";
+            case "SOMENTE_ANUAL" -> "Exclusivo no plano Anual (12 meses)";
+            default -> "Válido somente no 1º mês (plano mensal)";
+        };
+    }
+
+    private BigDecimal calcularFinal(BigDecimal original, boolean promoNoCiclo, BigDecimal promoValor, BigDecimal pctDesconto) {
         BigDecimal orig = original != null ? original.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-        if (!promocional) {
+        if (!promoNoCiclo) {
             return orig;
         }
         if (promoValor != null && promoValor.compareTo(BigDecimal.ZERO) > 0 && promoValor.compareTo(orig) < 0) {
@@ -223,15 +255,20 @@ public class PlanoAssinaturaService {
 
     private PlanoAssinaturaDTO toDTO(PlanoAssinatura p) {
         boolean promo = Boolean.TRUE.equals(p.getPromocional());
+        String tipo = normalizarTipoPromocao(p.getTipoPromocao());
         BigDecimal pct = p.getPercentualDesconto() != null ? p.getPercentualDesconto() : BigDecimal.ZERO;
 
+        boolean promoMensal = promo && ("PRIMEIRO_MES".equals(tipo) || "RECORRENTE_12_MESES".equals(tipo));
+        boolean promoSemestral = promo && "RECORRENTE_12_MESES".equals(tipo);
+        boolean promoAnual = promo && ("RECORRENTE_12_MESES".equals(tipo) || "SOMENTE_ANUAL".equals(tipo));
+
         BigDecimal mOrig = p.getPrecoMensal().setScale(2, RoundingMode.HALF_UP);
-        BigDecimal mFinal = calcularFinal(mOrig, promo, p.getPrecoMensalPromocional(), pct);
+        BigDecimal mFinal = calcularFinal(mOrig, promoMensal, p.getPrecoMensalPromocional(), pct);
         BigDecimal mDescVal = calcularDescontoValor(mOrig, mFinal);
         BigDecimal mDescPct = calcularDescontoPercentual(mOrig, mDescVal);
 
         BigDecimal sOrig = p.getPrecoSemestral().setScale(2, RoundingMode.HALF_UP);
-        BigDecimal sFinal = calcularFinal(sOrig, promo, p.getPrecoSemestralPromocional(), pct);
+        BigDecimal sFinal = calcularFinal(sOrig, promoSemestral, p.getPrecoSemestralPromocional(), pct);
         BigDecimal sDescVal = calcularDescontoValor(sOrig, sFinal);
         BigDecimal sDescPct = calcularDescontoPercentual(sOrig, sDescVal);
         BigDecimal sMensalEq = sFinal.divide(new BigDecimal("6"), 2, RoundingMode.HALF_UP);
@@ -239,7 +276,7 @@ public class PlanoAssinaturaService {
         if (sPoupanca.compareTo(BigDecimal.ZERO) < 0) sPoupanca = BigDecimal.ZERO;
 
         BigDecimal aOrig = p.getPrecoAnual().setScale(2, RoundingMode.HALF_UP);
-        BigDecimal aFinal = calcularFinal(aOrig, promo, p.getPrecoAnualPromocional(), pct);
+        BigDecimal aFinal = calcularFinal(aOrig, promoAnual, p.getPrecoAnualPromocional(), pct);
         BigDecimal aDescVal = calcularDescontoValor(aOrig, aFinal);
         BigDecimal aDescPct = calcularDescontoPercentual(aOrig, aDescVal);
         BigDecimal aMensalEq = aFinal.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP);
@@ -273,6 +310,8 @@ public class PlanoAssinaturaService {
                 aDescVal,
                 aDescPct,
                 promo,
+                tipo,
+                promo ? descricaoDuracao(tipo) : null,
                 pct,
                 p.getMensagemPromocao()
         );
