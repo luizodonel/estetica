@@ -6,6 +6,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { SetorService } from '../../core/services/setor.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { PhoneMaskDirective } from '../../shared/directives/phone-mask.directive';
 import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
 
@@ -474,6 +475,7 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private authService = inject(AuthService);
   private tenantService = inject(TenantService);
+  private analyticsService = inject(AnalyticsService);
   setorService = inject(SetorService);
   private router = inject(Router);
 
@@ -684,6 +686,9 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
 
     this.api.cadastrarLojista(dados).subscribe({
       next: (res) => {
+        // Dispara o evento de conversão do Google Ads (Teste Grátis 7 dias) somente no sucesso
+        this.analyticsService.trackSignUpConversion(undefined, res.tenant?.slug || dados.slug);
+
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem('agendoou_trial_used', 'true');
         }
