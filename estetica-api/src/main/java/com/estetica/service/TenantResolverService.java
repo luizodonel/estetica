@@ -104,12 +104,17 @@ public class TenantResolverService {
             int colonIdx = host.indexOf(':');
             if (colonIdx >= 0) host = host.substring(0, colonIdx);
 
-            if (host.endsWith(".logistadigital.com.br")) {
-                String sub = host.substring(0, host.indexOf(".logistadigital.com.br")).trim();
-                return sub.isBlank() ? "agendoou" : sub;
+            if (host.endsWith(".sistemaagendou.com.br")) {
+                String sub = host.substring(0, host.indexOf(".sistemaagendou.com.br")).trim();
+                return (sub.isBlank() || sub.equals("www")) ? "agendoou" : sub;
             }
 
-            if (host.equals("logistadigital.com.br") || host.equals("estetica.local") || host.equals("agendoou.local")) {
+            if (host.endsWith(".logistadigital.com.br")) {
+                String sub = host.substring(0, host.indexOf(".logistadigital.com.br")).trim();
+                return (sub.isBlank() || sub.equals("www")) ? "agendoou" : sub;
+            }
+
+            if (host.equals("sistemaagendou.com.br") || host.equals("logistadigital.com.br") || host.equals("estetica.local") || host.equals("agendoou.local")) {
                 return "agendoou";
             }
 

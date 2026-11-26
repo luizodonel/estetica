@@ -21,8 +21,8 @@ public class OpenApiConfig {
                         .title("Agendoou API — Plataforma SaaS Multi-Nicho de Agendamento Online")
                         .version("1.0.0")
                         .description("API RESTful Multi-Tenant para agendamentos online mobile-first em 13 setores (Estética, Salões, Barbearias, Clínicas Médicas, Odontologia, Restaurantes, Estúdios e mais), cálculo em tempo real de horários livres, prontuário e cobrança PIX.")
-                        .contact(new Contact().name("Equipe Técnica Agendoou").email("contato@logistadigital.com.br"))
-                        .license(new License().name("Proprietária").url("https://agendoou.logistadigital.com.br")))
+                        .contact(new Contact().name("Equipe Técnica Agendoou").email("contato@sistemaagendou.com.br"))
+                        .license(new License().name("Proprietária").url("https://sistemaagendou.com.br")))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,

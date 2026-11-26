@@ -35,11 +35,12 @@ export class AuthService {
     if (param) return param.trim().toLowerCase();
 
     const hostname = window.location.hostname.toLowerCase();
-    const dominioBase = 'logistadigital.com.br';
-    if (hostname.endsWith(dominioBase)) {
-      const sub = hostname.replace(`.${dominioBase}`, '').trim();
-      if (sub && !['www', 'api', 'app', 'painel'].includes(sub)) {
-        return sub;
+    for (const dominioBase of ['sistemaagendou.com.br', 'logistadigital.com.br']) {
+      if (hostname.endsWith(`.${dominioBase}`)) {
+        const sub = hostname.replace(`.${dominioBase}`, '').trim();
+        if (sub && !['www', 'api', 'app', 'painel'].includes(sub)) {
+          return sub;
+        }
       }
     }
     return 'agendoou';

@@ -88,7 +88,7 @@ public class MercadoPagoService {
 
         String emailPagador = (lojista != null && lojista.getEmail() != null && lojista.getEmail().contains("@"))
                 ? lojista.getEmail()
-                : "admin." + slug + "@logistadigital.com.br";
+                : "admin." + slug + "@sistemaagendou.com.br";
 
         Map<String, Object> payer = new HashMap<>();
         payer.put("email", emailPagador);
@@ -161,7 +161,7 @@ public class MercadoPagoService {
 
         String emailPagador = (admin.getEmail() != null && admin.getEmail().contains("@"))
                 ? admin.getEmail()
-                : "admin." + tenant.getSlug() + "@logistadigital.com.br";
+                : "admin." + tenant.getSlug() + "@sistemaagendou.com.br";
 
         Map<String, Object> payer = new HashMap<>();
         payer.put("email", emailPagador);
@@ -230,7 +230,7 @@ public class MercadoPagoService {
 
         String emailPagador = (lojista != null && lojista.getEmail() != null && lojista.getEmail().contains("@"))
                 ? lojista.getEmail()
-                : "admin." + slug + "@logistadigital.com.br";
+                : "admin." + slug + "@sistemaagendou.com.br";
 
         Map<String, Object> payer = new HashMap<>();
         payer.put("email", emailPagador);
@@ -240,7 +240,7 @@ public class MercadoPagoService {
 
         String returnUrl = (urlRetornoBase != null && !urlRetornoBase.isBlank())
                 ? urlRetornoBase
-                : "https://" + slug + ".logistadigital.com.br/admin/assinatura";
+                : "https://" + slug + ".sistemaagendou.com.br/admin/assinatura";
 
         Map<String, Object> backUrls = new HashMap<>();
         backUrls.put("success", returnUrl);
@@ -258,7 +258,7 @@ public class MercadoPagoService {
         requestBody.put("auto_return", "approved");
         requestBody.put("payment_methods", paymentMethods);
         requestBody.put("statement_descriptor", "AGENDOOU");
-        requestBody.put("notification_url", "https://agendoou.logistadigital.com.br/api/v1/onboarding/webhook-mercadopago");
+        requestBody.put("notification_url", "https://sistemaagendou.com.br/api/v1/onboarding/webhook-mercadopago");
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 

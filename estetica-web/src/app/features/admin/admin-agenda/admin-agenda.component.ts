@@ -221,7 +221,7 @@ export class AdminAgendaComponent implements OnInit {
     const empresa = this.tenantService.nomeEmpresa();
     const primeiroNome = (a.clienteNome || 'Cliente').split(' ')[0];
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : `https://${this.tenantService.obterSlugAtual()}.logistadigital.com.br`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : `https://${this.tenantService.obterSlugAtual()}.sistemaagendou.com.br`;
     let blocoLinks = '';
     if (a.id && a.tokenConfirmacao) {
       const urlConfirmar = `${origin}/confirmar/${a.id}?t=${a.tokenConfirmacao}&acao=confirmar`;

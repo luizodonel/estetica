@@ -42,7 +42,7 @@ public class CoolifyIntegrationService {
         }
 
         try {
-            String novoDominio = "https://" + slug.toLowerCase().trim() + ".logistadigital.com.br";
+            String novoDominio = "https://" + slug.toLowerCase().trim() + ".sistemaagendou.com.br";
             String url = baseUrl + "/api/v1/applications/" + appUuid;
 
             HttpHeaders headers = new HttpHeaders();
@@ -54,7 +54,7 @@ public class CoolifyIntegrationService {
 
             if (getRes.getBody() != null) {
                 String fqdnAtual = (String) getRes.getBody().get("fqdn");
-                if (fqdnAtual == null || (!fqdnAtual.contains(novoDominio) && !fqdnAtual.contains("*.logistadigital.com.br"))) {
+                if (fqdnAtual == null || (!fqdnAtual.contains(novoDominio) && !fqdnAtual.contains("*.sistemaagendou.com.br"))) {
                     String novoFqdn = (fqdnAtual != null && !fqdnAtual.isBlank())
                             ? fqdnAtual + "," + novoDominio
                             : novoDominio;

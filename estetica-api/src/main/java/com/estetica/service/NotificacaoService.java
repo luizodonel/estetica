@@ -64,9 +64,13 @@ public class NotificacaoService {
 
     private String obterBaseUrlEstabelecimento(Agendamento a) {
         if (a.getTenant() != null && a.getTenant().getSlug() != null && !a.getTenant().getSlug().isBlank()) {
-            return "https://" + a.getTenant().getSlug().trim().toLowerCase() + ".logistadigital.com.br";
+            String slug = a.getTenant().getSlug().trim().toLowerCase();
+            if (slug.equals("agendoou")) {
+                return "https://sistemaagendou.com.br";
+            }
+            return "https://" + slug + ".sistemaagendou.com.br";
         }
-        return "https://agendoou.logistadigital.com.br";
+        return "https://sistemaagendou.com.br";
     }
 
     private String montarBlocoBotoesAcao(Agendamento a) {

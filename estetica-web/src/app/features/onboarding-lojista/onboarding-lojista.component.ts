@@ -179,7 +179,7 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                       placeholder="belavida"
                       class="flex-1 px-3 py-3 text-xs sm:text-sm font-mono font-bold text-rose-600 bg-transparent focus:outline-none lowercase" />
                     <span class="px-3.5 py-3 text-xs font-semibold text-stone-500 bg-stone-100 border-l border-nude-200 select-none">
-                      .logistadigital.com.br
+                      .sistemaagendou.com.br
                     </span>
                   </div>
 
@@ -351,7 +351,7 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                       🎁 7 Dias Grátis • Sem Cartão
                     </span>
                   </div>
-                  <div><strong>Link exclusivo:</strong> <span class="text-rose-600 font-mono font-bold">https://{{ formLojista.get('slug')?.value }}.logistadigital.com.br/</span></div>
+                  <div><strong>Link exclusivo:</strong> <span class="text-rose-600 font-mono font-bold">https://{{ formLojista.get('slug')?.value }}.sistemaagendou.com.br/</span></div>
                   <div><strong>Usuário Administrador:</strong> <span class="font-semibold text-stone-800">{{ formLojista.get('usuarioLogin')?.value || 'Não definido' }}</span></div>
                   <div class="text-[11px] text-emerald-800 pt-1">
                     ✓ Seu catálogo completo e agenda serão liberados na hora! Após os 7 dias de teste grátis, planos a partir de <strong>R$ 89,90/mês via PIX</strong> (ou com desconto no Semestral e Anual).
@@ -419,10 +419,10 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                           📲 1. Link de Agendamento para seus Clientes (Bio do Instagram & WhatsApp):
                         </span>
                         <a
-                          [href]="tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/')"
+                          [href]="tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.sistemaagendou.com.br/')"
                           target="_blank"
                           class="font-mono text-sm font-bold text-rose-600 hover:underline break-all block mt-0.5">
-                          {{ tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/') }}
+                          {{ tenantCriado()?.linkPersonalizado || ('https://' + formLojista.get('slug')?.value + '.sistemaagendou.com.br/') }}
                         </a>
                       </div>
 
@@ -431,10 +431,10 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
                           🔒 2. Link Exclusivo de Login (Administrador & Especialistas):
                         </span>
                         <a
-                          [href]="'https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/login'"
+                          [href]="'https://' + formLojista.get('slug')?.value + '.sistemaagendou.com.br/login'"
                           target="_blank"
                           class="font-mono text-sm font-bold text-stone-900 hover:underline break-all block mt-0.5">
-                          https://{{ formLojista.get('slug')?.value }}.logistadigital.com.br/login
+                          https://{{ formLojista.get('slug')?.value }}.sistemaagendou.com.br/login
                         </a>
                       </div>
 
@@ -450,7 +450,7 @@ import { TenantPublicDTO, SetorAtuacao } from '../../core/models';
 
                     <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                       <a
-                        [href]="'https://' + formLojista.get('slug')?.value + '.logistadigital.com.br/login'"
+                        [href]="'https://' + formLojista.get('slug')?.value + '.sistemaagendou.com.br/login'"
                         class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold text-xs hover:from-rose-600 hover:to-rose-700 transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2">
                         <span>Acessar Meu Painel Exclusivo ({{ formLojista.get('slug')?.value }}) →</span>
                       </a>
@@ -708,8 +708,8 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
           this.tenantService.setTenantManual(res.tenant);
         }
 
-        // Se estiver em localhost, salva a sessão localmente; em produção (agendoou.logistadigital.com.br),
-        // o lojista recebe seu link exclusivo (https://slug.logistadigital.com.br/login) e loga exclusivamente no próprio subdomínio!
+        // Se estiver em localhost, salva a sessão localmente; em produção (agendoou.sistemaagendou.com.br),
+        // o lojista recebe seu link exclusivo (https://slug.sistemaagendou.com.br/login) e loga exclusivamente no próprio subdomínio!
         if (res.token) {
           this.pagamentoAprovado.set(true);
           if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
@@ -801,7 +801,7 @@ export class OnboardingLojistaComponent implements OnInit, OnDestroy {
   }
 
   copiarLink(): void {
-    const link = this.tenantCriado()?.linkPersonalizado || ('https://' + this.formLojista.get('slug')?.value + '.logistadigital.com.br/');
+    const link = this.tenantCriado()?.linkPersonalizado || ('https://' + this.formLojista.get('slug')?.value + '.sistemaagendou.com.br/');
     if (link && navigator.clipboard) {
       navigator.clipboard.writeText(link).then(() => {
         this.linkCopiado.set(true);
