@@ -236,8 +236,8 @@ public class TenantService {
             throw new RegraNegocioException("Este link exclusivo é reservado pelo sistema. Por favor, escolha outro.");
         }
 
-        String linkPersonalizado = "https://" + cleanSlug + ".sistemaagendou.com.br/";
-        String linkLogin = "https://" + cleanSlug + ".sistemaagendou.com.br/login";
+        String linkPersonalizado = "https://" + cleanSlug + ".agendoousistemas.com.br/";
+        String linkLogin = "https://" + cleanSlug + ".agendoousistemas.com.br/login";
 
         // 1. VALIDAÇÃO ESTRITA DE LINK E SUBDOMÍNIO ÚNICO (Não pode existir 2 iguais)
         if (tenantRepository.existsBySlugIgnoreCase(cleanSlug)
@@ -649,7 +649,7 @@ public class TenantService {
         if (cleanSlug.length() < 3 || SLUGS_RESERVADOS.contains(cleanSlug)) {
             return false;
         }
-        String linkCandidato = "https://" + cleanSlug + ".sistemaagendou.com.br/";
+        String linkCandidato = "https://" + cleanSlug + ".agendoousistemas.com.br/";
         return !tenantRepository.existsBySlugIgnoreCase(cleanSlug)
                 && !lojistaRepository.existsBySlugIgnoreCase(cleanSlug)
                 && !tenantRepository.existsByLinkPersonalizadoIgnoreCase(linkCandidato);
@@ -735,7 +735,7 @@ public class TenantService {
         return slug.toLowerCase().trim()
                 .replace("https://", "")
                 .replace("http://", "")
-                .replace(".sistemaagendou.com.br", "")
+                .replace(".agendoousistemas.com.br", "")
                 .replace(".logistadigital.com.br", "")
                 .replaceAll("[^a-z0-9-]", "");
     }
@@ -1534,7 +1534,7 @@ public class TenantService {
                 + " (" + PlanoAssinaturaService.normalizarCiclo(cicloParam) + ")"
                 + (cupomParam != null && !cupomParam.isBlank() ? " [CUPOM " + cupomParam.trim().toUpperCase() + "]" : "");
         String titulo = "Assinatura Agendoou Plano " + labelPlano + " - " + nomeEmpresa;
-        String urlRetorno = "https://" + slug + ".sistemaagendou.com.br/admin/assinatura";
+        String urlRetorno = "https://" + slug + ".agendoousistemas.com.br/admin/assinatura";
 
         Map<String, Object> pref = mercadoPagoService.criarPreferenciaCheckoutCartao(tenant, lojista, valor, titulo, urlRetorno);
         return Map.of(

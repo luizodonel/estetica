@@ -104,8 +104,8 @@ public class TenantResolverService {
             int colonIdx = host.indexOf(':');
             if (colonIdx >= 0) host = host.substring(0, colonIdx);
 
-            if (host.endsWith(".sistemaagendou.com.br")) {
-                String sub = host.substring(0, host.indexOf(".sistemaagendou.com.br")).trim();
+            if (host.endsWith(".agendoousistemas.com.br")) {
+                String sub = host.substring(0, host.indexOf(".agendoousistemas.com.br")).trim();
                 return (sub.isBlank() || sub.equals("www")) ? "agendoou" : sub;
             }
 
@@ -114,7 +114,7 @@ public class TenantResolverService {
                 return (sub.isBlank() || sub.equals("www")) ? "agendoou" : sub;
             }
 
-            if (host.equals("sistemaagendou.com.br") || host.equals("logistadigital.com.br") || host.equals("estetica.local") || host.equals("agendoou.local")) {
+            if (host.equals("agendoousistemas.com.br") || host.equals("logistadigital.com.br") || host.equals("estetica.local") || host.equals("agendoou.local")) {
                 return "agendoou";
             }
 

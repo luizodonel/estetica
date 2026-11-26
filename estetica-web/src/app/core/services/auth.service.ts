@@ -35,7 +35,7 @@ export class AuthService {
     if (param) return param.trim().toLowerCase();
 
     const hostname = window.location.hostname.toLowerCase();
-    for (const dominioBase of ['sistemaagendou.com.br', 'logistadigital.com.br']) {
+    for (const dominioBase of ['agendoousistemas.com.br', 'logistadigital.com.br']) {
       if (hostname.endsWith(`.${dominioBase}`)) {
         const sub = hostname.replace(`.${dominioBase}`, '').trim();
         if (sub && !['www', 'api', 'app', 'painel'].includes(sub)) {

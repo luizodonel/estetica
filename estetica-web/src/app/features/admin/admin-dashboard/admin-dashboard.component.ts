@@ -275,9 +275,9 @@ export class AdminDashboardComponent implements OnInit {
     if (link) return link;
     const slug = this.tenantService.obterSlugAtual();
     if (slug && slug !== 'agendoou' && slug !== 'estetica') {
-      return `https://${slug}.sistemaagendou.com.br/`;
+      return `https://${slug}.agendoousistemas.com.br/`;
     }
-    return typeof window !== 'undefined' ? `${window.location.origin}/catalogo` : 'https://sistemaagendou.com.br/';
+    return typeof window !== 'undefined' ? `${window.location.origin}/catalogo` : 'https://agendoousistemas.com.br/';
   }
 
   copiarLinkPublico(): void {

@@ -69,7 +69,7 @@ export class TenantService {
     if (paramSlug) return paramSlug.trim().toLowerCase();
 
     const hostname = window.location.hostname.toLowerCase();
-    for (const dominioPadrao of ['sistemaagendou.com.br', 'logistadigital.com.br']) {
+    for (const dominioPadrao of ['agendoousistemas.com.br', 'logistadigital.com.br']) {
       if (hostname.endsWith(`.${dominioPadrao}`)) {
         const subdominio = hostname.replace(`.${dominioPadrao}`, '').trim();
         if (subdominio && !['www', 'api', 'app', 'painel'].includes(subdominio)) {
@@ -91,9 +91,9 @@ export class TenantService {
       return;
     }
 
-    // 2. Tenta extrair do subdomínio (ex: belavida.sistemaagendou.com.br)
+    // 2. Tenta extrair do subdomínio (ex: belavida.agendoousistemas.com.br)
     const hostname = window.location.hostname.toLowerCase();
-    for (const dominioPadrao of ['sistemaagendou.com.br', 'logistadigital.com.br']) {
+    for (const dominioPadrao of ['agendoousistemas.com.br', 'logistadigital.com.br']) {
       if (hostname.endsWith(`.${dominioPadrao}`)) {
         const subdominio = hostname.replace(`.${dominioPadrao}`, '').trim();
         if (subdominio && !['www', 'api', 'app', 'painel'].includes(subdominio)) {
@@ -117,7 +117,7 @@ export class TenantService {
       }
     }
 
-    // Padrão no domínio master (sistemaagendou.com.br): carregar tenant agendoou
+    // Padrão no domínio master (agendoousistemas.com.br): carregar tenant agendoou
     this.carregarTenant('agendoou');
   }
 
@@ -129,7 +129,7 @@ export class TenantService {
       return true;
     }
     const hostname = window.location.hostname.toLowerCase();
-    for (const dominioPadrao of ['sistemaagendou.com.br', 'logistadigital.com.br']) {
+    for (const dominioPadrao of ['agendoousistemas.com.br', 'logistadigital.com.br']) {
       if (hostname.endsWith(`.${dominioPadrao}`)) {
         const sub = hostname.replace(`.${dominioPadrao}`, '').trim();
         if (sub && !['www', 'api', 'app', 'painel', 'agendoou', 'estetica'].includes(sub)) {

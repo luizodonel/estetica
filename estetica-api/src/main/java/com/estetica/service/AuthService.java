@@ -236,10 +236,10 @@ public class AuthService {
         String lojistaSlug = lojista.getSlug();
 
         // REGRA ESTRITA DE ISOLAMENTO DE LINK / DOMÍNIO:
-        // O lojista SÓ pode fazer login no seu próprio link/subdomínio (ex: https://luizodonelcoefur.sistemaagendou.com.br/login)!
+        // O lojista SÓ pode fazer login no seu próprio link/subdomínio (ex: https://luizodonelcoefur.agendoousistemas.com.br/login)!
         // Caso tente logar no portal principal (agendoou) ou no link de outro lojista, é estritamente barrado!
         if (lojistaSlug == null || !slugAmbiente.equalsIgnoreCase(lojistaSlug.trim())) {
-            throw new BadCredentialsException("Acesso negado: Utilize o link exclusivo da sua empresa (https://" + (lojistaSlug != null ? lojistaSlug : "sua-empresa") + ".sistemaagendou.com.br/login) para entrar.");
+            throw new BadCredentialsException("Acesso negado: Utilize o link exclusivo da sua empresa (https://" + (lojistaSlug != null ? lojistaSlug : "sua-empresa") + ".agendoousistemas.com.br/login) para entrar.");
         }
 
         if (!passwordEncoder.matches(request.senha(), lojista.getSenhaHash())) {
@@ -440,8 +440,8 @@ public class AuthService {
         int colonIdx = host.indexOf(':');
         if (colonIdx >= 0) host = host.substring(0, colonIdx);
 
-        if (host.endsWith(".sistemaagendou.com.br")) {
-            String sub = host.substring(0, host.indexOf(".sistemaagendou.com.br")).trim();
+        if (host.endsWith(".agendoousistemas.com.br")) {
+            String sub = host.substring(0, host.indexOf(".agendoousistemas.com.br")).trim();
             return (sub.isBlank() || sub.equals("www")) ? "agendoou" : sub;
         }
 
@@ -450,7 +450,7 @@ public class AuthService {
             return (sub.isBlank() || sub.equals("www")) ? "agendoou" : sub;
         }
 
-        if (host.equals("sistemaagendou.com.br") || host.equals("logistadigital.com.br") || host.equals("estetica.local") || host.equals("agendoou.local")) {
+        if (host.equals("agendoousistemas.com.br") || host.equals("logistadigital.com.br") || host.equals("estetica.local") || host.equals("agendoou.local")) {
             return "agendoou";
         }
 

@@ -75,8 +75,8 @@ public class DataInitializer implements CommandLineRunner {
             // Atualiza eventual nome legado "L'Élégance" ou "Agendar." no tenant master para "Agendoou" e define a logo oficial /logo-agendoou.png
             jdbcTemplate.execute("UPDATE tb_clinica_tenant SET nome_empresa = 'Agendoou' WHERE nome_empresa ILIKE '%Élégance%' OR nome_empresa ILIKE '%Elegance%' OR nome_empresa ILIKE 'Agendar.%'");
             jdbcTemplate.execute("UPDATE tb_lojista SET nome_empresa = 'Agendoou' WHERE nome_empresa ILIKE '%Élégance%' OR nome_empresa ILIKE '%Elegance%' OR nome_empresa ILIKE 'Agendar.%'");
-            jdbcTemplate.execute("UPDATE tb_clinica_tenant SET slug = 'agendoou', link_personalizado = 'https://sistemaagendou.com.br/' WHERE slug = 'estetica' AND NOT EXISTS (SELECT 1 FROM tb_clinica_tenant WHERE slug = 'agendoou')");
-            jdbcTemplate.execute("UPDATE tb_lojista SET slug = 'agendoou', link_personalizado = 'https://sistemaagendou.com.br/', link_login = 'https://sistemaagendou.com.br/login' WHERE slug = 'estetica' AND NOT EXISTS (SELECT 1 FROM tb_lojista WHERE slug = 'agendoou')");
+            jdbcTemplate.execute("UPDATE tb_clinica_tenant SET slug = 'agendoou', link_personalizado = 'https://agendoousistemas.com.br/' WHERE slug = 'estetica' AND NOT EXISTS (SELECT 1 FROM tb_clinica_tenant WHERE slug = 'agendoou')");
+            jdbcTemplate.execute("UPDATE tb_lojista SET slug = 'agendoou', link_personalizado = 'https://agendoousistemas.com.br/', link_login = 'https://agendoousistemas.com.br/login' WHERE slug = 'estetica' AND NOT EXISTS (SELECT 1 FROM tb_lojista WHERE slug = 'agendoou')");
             jdbcTemplate.execute("UPDATE tb_clinica_tenant SET logo_url = '/logo-agendoou.png', banner_subtitulo = 'Agendou, vendeu, lucrou. Sua empresa no piloto automático.' WHERE slug IN ('agendoou', 'estetica')");
             jdbcTemplate.execute("UPDATE tb_lojista SET logo_url = '/logo-agendoou.png' WHERE slug IN ('agendoou', 'estetica')");
 

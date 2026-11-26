@@ -29,7 +29,7 @@ public class ClinicaTenant {
     private SetorAtuacao setor = SetorAtuacao.CLINICA_ESTETICA;
 
     @Column(nullable = false, unique = true, length = 80)
-    private String slug; // Ex: "belavida" -> https://belavida.sistemaagendou.com.br/
+    private String slug; // Ex: "belavida" -> https://belavida.agendoousistemas.com.br/
 
     @Column(name = "link_personalizado", length = 255)
     private String linkPersonalizado;

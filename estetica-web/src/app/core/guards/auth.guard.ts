@@ -46,7 +46,7 @@ export const tenantCatalogoGuard: CanActivateFn = () => {
   const tenantService = inject(TenantService);
   const router = inject(Router);
 
-  // No domínio principal do SaaS (sistemaagendou.com.br), /catalogo não existe: redireciona para /planos
+  // No domínio principal do SaaS (agendoousistemas.com.br), /catalogo não existe: redireciona para /planos
   if (!tenantService.isSubdominioCliente()) {
     return router.createUrlTree(['/planos']);
   }

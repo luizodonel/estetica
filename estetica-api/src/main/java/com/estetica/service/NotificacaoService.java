@@ -66,11 +66,11 @@ public class NotificacaoService {
         if (a.getTenant() != null && a.getTenant().getSlug() != null && !a.getTenant().getSlug().isBlank()) {
             String slug = a.getTenant().getSlug().trim().toLowerCase();
             if (slug.equals("agendoou")) {
-                return "https://sistemaagendou.com.br";
+                return "https://agendoousistemas.com.br";
             }
-            return "https://" + slug + ".sistemaagendou.com.br";
+            return "https://" + slug + ".agendoousistemas.com.br";
         }
-        return "https://sistemaagendou.com.br";
+        return "https://agendoousistemas.com.br";
     }
 
     private String montarBlocoBotoesAcao(Agendamento a) {
